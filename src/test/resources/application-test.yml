@@ -1,0 +1,60 @@
+# 테스트 환경용 설정
+spring:
+  # 테스트용 인메모리 데이터베이스
+  datasource:
+    url: jdbc:h2:mem:testdb
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+
+  # H2 데이터베이스 설정
+  h2:
+    console:
+      enabled: true
+
+  # JPA 테스트 설정
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.H2Dialect
+
+  # Redis 테스트 설정 (임베디드 Redis 또는 비활성화)
+  data:
+    redis:
+      host: localhost
+      port: 6370  # 다른 포트 사용
+
+  # OAuth2 테스트 설정 (실제 값 사용)
+  security:
+    oauth2:
+      client:
+        registration:
+          kakao:
+            client-id: 56efc6afa5c910f2bf972df5836bf9c9
+            client-secret: qtKFtg4lq0w6JuwCKoyOqlelg4eXR9N9
+            redirect-uri: http://localhost:8080/login/oauth2/code/kakao
+            authorization-grant-type: authorization_code
+            scope:
+              - profile_nickname
+              - account_email
+        provider:
+          kakao:
+            authorization-uri: https://kauth.kakao.com/oauth/authorize
+            token-uri: https://kauth.kakao.com/oauth/token
+            user-info-uri: https://kapi.kakao.com/v2/user/me
+            user-name-attribute: id
+
+# JWT 테스트 설정
+jwt:
+  secret: testSecretKey
+  expiration: 86400000
+
+# 로깅 설정 (테스트용)
+logging:
+  level:
+    com.example.foodrecommendation: WARN
+    org.springframework.security: WARN
+    org.springframework.web: WARN
