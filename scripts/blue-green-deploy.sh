@@ -10,6 +10,13 @@ BLUE='\033[0;34m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
+# 설정 변수
+PROJECT_NAME="mechuragi"
+MAIN_SERVICE_PORT="8080"
+GREEN_SERVICE_PORT="8081"
+APP_DIRECTORY="/home/ubuntu/app"
+NGINX_CONFIG="/etc/nginx/conf.d/default.conf"
+
 # 로그 함수
 log() {
     echo -e "${BLUE}[$(date +'%Y-%m-%d %H:%M:%S')]${NC} $1"
@@ -30,9 +37,9 @@ warn() {
 
 # 현재 활성 컨테이너 확인
 get_active_container() {
-    if docker ps -q -f name=mechuragi-main-blue | grep -q .; then
+    if docker ps -q -f name=${PROJECT_NAME}-main-blue | grep -q .; then
         echo "blue"
-    elif docker ps -q -f name=mechuragi-main-green | grep -q .; then
+    elif docker ps -q -f name=${PROJECT_NAME}-main-green | grep -q .; then
         echo "green"
     else
         echo "none"
@@ -45,100 +52,88 @@ health_check() {
     local max_attempts=30
     local attempt=1
 
-    log "헬스체크 시작: localhost:$port"
+    log "헬스체크 시작 (포트: $port)"
 
     while [ $attempt -le $max_attempts ]; do
-        if curl -f -s "http://localhost:$port/actuator/health" > /dev/null 2>&1; then
-            success "헬스체크 성공 (attempt $attempt/$max_attempts)"
+        if curl -f -s http://localhost:$port/actuator/health > /dev/null 2>&1; then
+            success "헬스체크 성공 (시도: $attempt/$max_attempts)"
             return 0
         fi
 
-        log "헬스체크 시도 $attempt/$max_attempts..."
-        sleep 10
-        attempt=$((attempt + 1))
+        log "헬스체크 대기 중... ($attempt/$max_attempts)"
+        sleep 2
+        ((attempt++))
     done
 
-    error "헬스체크 실패: $max_attempts번 시도 후 실패"
-    return 1
+    error "헬스체크 실패 - 애플리케이션이 정상적으로 시작되지 않았습니다"
 }
 
-# Nginx 설정 전환
-switch_nginx_config() {
-    local target=$1
-    local nginx_config="/etc/nginx/conf.d/default.conf"
+# Nginx 설정 업데이트
+update_nginx_config() {
+    local active_port=$1
+    local backup_config="${NGINX_CONFIG}.backup.$(date +%Y%m%d_%H%M%S)"
 
-    log "Nginx 설정을 $target으로 전환 중..."
+    log "Nginx 설정 백업: $backup_config"
+    sudo cp $NGINX_CONFIG $backup_config
 
-    # Docker exec로 nginx 컨테이너 내부에서 설정 변경
-    if [ "$target" == "green" ]; then
-        docker exec mechuragi-nginx sed -i 's/server spring-app-blue:8080/# server spring-app-blue:8080/g' $nginx_config
-        docker exec mechuragi-nginx sed -i 's/# server spring-app-green:8080/server spring-app-green:8080/g' $nginx_config
-    else
-        docker exec mechuragi-nginx sed -i 's/server spring-app-green:8080/# server spring-app-green:8080/g' $nginx_config
-        docker exec mechuragi-nginx sed -i 's/# server spring-app-blue:8080/server spring-app-blue:8080/g' $nginx_config
-    fi
+    log "Nginx 설정 업데이트 (활성 포트: $active_port)"
+    sudo sed -i "s/server 127.0.0.1:[0-9]\+/server 127.0.0.1:$active_port/" $NGINX_CONFIG
 
-    # Nginx 설정 리로드
-    docker exec mechuragi-nginx nginx -s reload
-    success "Nginx 설정이 $target으로 전환되었습니다"
+    log "Nginx 설정 테스트"
+    sudo nginx -t || error "Nginx 설정이 올바르지 않습니다"
+
+    log "Nginx 리로드"
+    sudo nginx -s reload || error "Nginx 리로드에 실패했습니다"
+
+    success "Nginx 설정 업데이트 완료"
 }
 
 # 메인 배포 로직
 main() {
-    log "=== Blue-Green 무중단 배포 시작 ==="
+    log "Blue-Green 무중단 배포 시작"
+
+    cd $APP_DIRECTORY
 
     # 현재 활성 컨테이너 확인
-    current=$(get_active_container)
-    log "현재 활성 컨테이너: $current"
+    current_active=$(get_active_container)
+    log "현재 활성 컨테이너: $current_active"
 
-    # 다음 배포 타겟 결정
-    if [ "$current" == "blue" ] || [ "$current" == "none" ]; then
-        target="green"
-        target_port=8081
-        old="blue"
+    # 새로 배포할 컨테이너 결정
+    if [ "$current_active" = "blue" ] || [ "$current_active" = "none" ]; then
+        new_active="green"
+        new_port=$GREEN_SERVICE_PORT
+        old_container="${PROJECT_NAME}-main-blue"
     else
-        target="blue"
-        target_port=8080
-        old="green"
+        new_active="blue"
+        new_port=$MAIN_SERVICE_PORT
+        old_container="${PROJECT_NAME}-main-green"
     fi
 
-    log "배포 타겟: $target (포트: $target_port)"
+    log "새로 배포할 컨테이너: $new_active (포트: $new_port)"
 
     # 새 컨테이너 시작
-    log "새 컨테이너 시작 중..."
-    docker-compose -f docker-compose.blue-green.yml up -d spring-app-$target
+    log "새 컨테이너 시작: ${PROJECT_NAME}-main-$new_active"
+    docker-compose -f docker-compose.blue-green.yml up -d --no-deps ${PROJECT_NAME}-main-$new_active
 
     # 헬스체크
-    if health_check $target_port; then
-        # Nginx 트래픽 전환
-        switch_nginx_config $target
+    health_check $new_port
 
-        # 잠시 대기 (트래픽 전환 완료 대기)
-        log "트래픽 전환 안정화 대기 중..."
-        sleep 5
+    # Nginx 설정 업데이트 (트래픽 전환)
+    update_nginx_config $new_port
 
-        # 이전 컨테이너 정리 (현재가 none이 아닌 경우)
-        if [ "$current" != "none" ]; then
-            log "이전 컨테이너($old) 정리 중..."
-            docker-compose -f docker-compose.blue-green.yml stop spring-app-$old
-            docker-compose -f docker-compose.blue-green.yml rm -f spring-app-$old
-            success "이전 컨테이너($old) 정리 완료"
-        fi
-
-        # 사용하지 않는 이미지 정리
-        log "사용하지 않는 Docker 이미지 정리 중..."
-        docker image prune -f
-
-        success "=== Blue-Green 배포 성공 ==="
-        success "활성 서비스: $target (포트: $target_port)"
-
-    else
-        error "헬스체크 실패로 인한 배포 중단"
-        log "새 컨테이너($target) 정리 중..."
-        docker-compose -f docker-compose.blue-green.yml stop spring-app-$target
-        docker-compose -f docker-compose.blue-green.yml rm -f spring-app-$target
-        exit 1
+    # 이전 컨테이너 중지 (존재하는 경우)
+    if [ "$current_active" != "none" ]; then
+        log "이전 컨테이너 중지: $old_container"
+        docker stop $old_container || warn "이전 컨테이너 중지 실패 (이미 중지되었을 수 있음)"
+        docker rm $old_container || warn "이전 컨테이너 제거 실패"
     fi
+
+    # 사용하지 않는 이미지 정리
+    log "사용하지 않는 Docker 이미지 정리"
+    docker image prune -f
+
+    success "Blue-Green 무중단 배포 완료!"
+    log "활성 컨테이너: ${PROJECT_NAME}-main-$new_active (포트: $new_port)"
 }
 
 # 스크립트 실행
