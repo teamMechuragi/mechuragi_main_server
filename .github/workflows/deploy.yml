@@ -38,6 +38,18 @@ jobs:
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
 
     steps:
+      - name: Send Discord Notification - Deploy Start
+        uses: sarisia/actions-status-discord@v1
+        with:
+          webhook: ${{ secrets.DISCORD_WEBHOOK }}
+          status: ${{ job.status }}
+          title: "🚀 배포 시작"
+          description: |
+            **메인 서비스 배포가 시작되었습니다**
+            • 커밋: `${{ github.event.head_commit.message }}`
+            • 브랜치: `${{ github.ref_name }}`
+            • 작성자: ${{ github.event.head_commit.author.name }}
+          color: 0xffaa00
       - uses: actions/checkout@v3
 
       - name: Set up JDK 17
@@ -68,42 +80,75 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: Deploy to EC2
+      - name: Deploy to Main Server (Blue-Green)
         uses: appleboy/ssh-action@v0.1.5
         with:
-          host: 43.201.129.2
-          username: ec2-user
+          host: ${{ secrets.MAIN_SERVER_HOST }}
+          username: ubuntu
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            # Pull latest image
-            sudo docker pull mamel1016/mechuragi-app:latest
-            
-            # Stop and remove existing container
-            sudo docker stop mechuragi-app || true
-            sudo docker rm mechuragi-app || true
-            
-            # Run new container with environment variables
-            sudo docker run -d \
-              -p 8080:8080 \
-              --name mechuragi-app \
-              --restart unless-stopped \
-              -e DB_HOST=${{ secrets.DB_HOST }} \
-              -e DB_PORT=${{ secrets.DB_PORT }} \
-              -e DB_NAME=${{ secrets.DB_NAME }} \
-              -e DB_USERNAME=${{ secrets.DB_USERNAME }} \
-              -e DB_PASSWORD=${{ secrets.DB_PASSWORD }} \
-              -e REDIS_HOST=${{ secrets.REDIS_HOST }} \
-              -e REDIS_PORT=${{ secrets.REDIS_PORT }} \
-              -e JWT_SECRET=${{ secrets.JWT_SECRET }} \
-              -e S3_BUCKET=${{ secrets.S3_BUCKET }} \
-              -e AWS_REGION=${{ secrets.AWS_REGION }} \
-              mamel1016/mechuragi-app:latest
-            
-            # Wait for application to start
-            sleep 30
-            
-            # Health check
-            curl -f http://localhost:8080/actuator/health || exit 1
-            
-            # Clean up old images
-            sudo docker image prune -f
+            # 애플리케이션 디렉토리로 이동
+            cd /home/ubuntu/app
+
+            # Docker Compose 설정 다운로드 (GitHub에서)
+            curl -o docker-compose.blue-green.yml https://raw.githubusercontent.com/${{ github.repository }}/main/docker-compose.blue-green.yml
+            curl -o nginx/blue-green.conf https://raw.githubusercontent.com/${{ github.repository }}/main/nginx/blue-green.conf
+            curl -o scripts/blue-green-deploy.sh https://raw.githubusercontent.com/${{ github.repository }}/main/scripts/blue-green-deploy.sh
+
+            # 스크립트 실행 권한 부여
+            chmod +x scripts/blue-green-deploy.sh
+
+            # 환경 변수 설정
+            export DB_HOST="${{ secrets.DB_HOST }}"
+            export DB_PORT="${{ secrets.DB_PORT }}"
+            export DB_NAME="${{ secrets.DB_NAME }}"
+            export DB_USERNAME="${{ secrets.DB_USERNAME }}"
+            export DB_PASSWORD="${{ secrets.DB_PASSWORD }}"
+            export REDIS_HOST="${{ secrets.REDIS_HOST }}"
+            export REDIS_PORT="${{ secrets.REDIS_PORT }}"
+            export JWT_SECRET="${{ secrets.JWT_SECRET }}"
+            export S3_BUCKET="${{ secrets.S3_BUCKET }}"
+            export SES_FROM_EMAIL="${{ secrets.SES_FROM_EMAIL }}"
+            export AWS_REGION="${{ secrets.AWS_REGION }}"
+            export BEDROCK_AI_HOST="${{ secrets.BEDROCK_AI_HOST }}"
+
+            # 최신 이미지 풀
+            docker pull ${{ secrets.DOCKERHUB_USERNAME }}/mechuragi-app:latest
+
+            # Blue-Green 배포 실행
+            ./scripts/blue-green-deploy.sh
+
+            # 최종 헬스체크
+            sleep 10
+            curl -f http://localhost/actuator/health || exit 1
+
+      - name: Send Discord Notification - Deploy Success
+        if: success()
+        uses: sarisia/actions-status-discord@v1
+        with:
+          webhook: ${{ secrets.DISCORD_WEBHOOK }}
+          status: "Success"
+          title: "✅ 배포 성공"
+          description: |
+            **메인 서비스가 성공적으로 배포되었습니다**
+            • 서버: Main Service Server
+            • 배포 방식: Blue-Green 무중단 배포
+            • 커밋: `${{ github.event.head_commit.message }}`
+            • 작성자: ${{ github.event.head_commit.author.name }}
+            • 배포 시간: ${{ job.started_at }}
+          color: 0x00ff00
+
+      - name: Send Discord Notification - Deploy Failure
+        if: failure()
+        uses: sarisia/actions-status-discord@v1
+        with:
+          webhook: ${{ secrets.DISCORD_WEBHOOK }}
+          status: "Failure"
+          title: "❌ 배포 실패"
+          description: |
+            **메인 서비스 배포가 실패했습니다**
+            • 오류 단계: ${{ job.status }}
+            • 커밋: `${{ github.event.head_commit.message }}`
+            • 작성자: ${{ github.event.head_commit.author.name }}
+            • 로그 확인: [GitHub Actions](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+          color: 0xff0000
