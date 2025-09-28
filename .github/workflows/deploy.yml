@@ -67,7 +67,7 @@ jobs:
       - name: Login to DockerHub
         uses: docker/login-action@v2
         with:
-          username: mamel1016
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Build and push Docker image
@@ -76,7 +76,7 @@ jobs:
           context: .
           platforms: linux/amd64,linux/arm64
           push: true
-          tags: mamel1016/mechuragi-app:latest
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/mechuragi-app:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -110,6 +110,7 @@ jobs:
             export SES_FROM_EMAIL="${{ secrets.SES_FROM_EMAIL }}"
             export AWS_REGION="${{ secrets.AWS_REGION }}"
             export BEDROCK_AI_HOST="${{ secrets.BEDROCK_AI_HOST }}"
+            export DOCKERHUB_USERNAME="${{ secrets.DOCKERHUB_USERNAME }}"
 
             # 최신 이미지 풀
             docker pull ${{ secrets.DOCKERHUB_USERNAME }}/mechuragi-app:latest

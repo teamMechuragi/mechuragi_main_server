@@ -3,9 +3,7 @@ version: '3.8'
 services:
   # Spring Boot 메인 서비스 - Blue 버전
   mechuragi-main-blue:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    image: ${DOCKERHUB_USERNAME}/mechuragi-app:latest
     container_name: mechuragi-main-blue
     ports:
       - "8080:8080"
@@ -35,9 +33,7 @@ services:
 
   # Spring Boot 메인 서비스 - Green 버전 (배포 시에만 사용)
   mechuragi-main-green:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    image: ${DOCKERHUB_USERNAME}/mechuragi-app:latest
     container_name: mechuragi-main-green
     ports:
       - "8081:8080"
@@ -64,7 +60,7 @@ services:
       timeout: 10s
       retries: 3
       start_period: 40s
-    profiles: ["deploy"]  # 배포 시에만 실행
+    # profiles: ["deploy"]  # 블루-그린 배포에서는 프로파일 사용하지 않음
 
   # Nginx는 호스트에서 직접 실행 (Ansible로 관리)
 
