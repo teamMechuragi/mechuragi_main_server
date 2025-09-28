@@ -73,6 +73,22 @@ update_nginx_config() {
     local active_port=$1
     local backup_config="${NGINX_CONFIG}.backup.$(date +%Y%m%d_%H%M%S)"
 
+    # Nginx 설정 파일 존재 확인
+    if [ ! -f "$NGINX_CONFIG" ]; then
+        warn "Nginx 설정 파일을 찾을 수 없습니다: $NGINX_CONFIG"
+        warn "가능한 설정 파일 위치를 확인하고 있습니다..."
+
+        # 일반적인 Nginx 설정 파일 위치들 확인
+        for potential_config in "/etc/nginx/nginx.conf" "/etc/nginx/sites-available/default" "/etc/nginx/sites-enabled/default"; do
+            if [ -f "$potential_config" ]; then
+                log "발견된 Nginx 설정 파일: $potential_config"
+            fi
+        done
+
+        warn "Nginx 설정 업데이트를 건너뜁니다. 수동으로 설정을 확인해주세요."
+        return 0
+    fi
+
     log "Nginx 설정 백업: $backup_config"
     sudo cp $NGINX_CONFIG $backup_config
 
