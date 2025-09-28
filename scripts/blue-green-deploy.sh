@@ -93,7 +93,8 @@ update_nginx_config() {
     sudo cp $NGINX_CONFIG $backup_config
 
     log "Nginx 설정 업데이트 (활성 포트: $active_port)"
-    sudo sed -i "s/server 127.0.0.1:[0-9]\+/server 127.0.0.1:$active_port/" $NGINX_CONFIG
+    # upstream backend 블록에서 server 포트 업데이트
+    sudo sed -i "/upstream backend/,/^}/ s/server 127.0.0.1:[0-9]\+/server 127.0.0.1:$active_port/" $NGINX_CONFIG
 
     log "Nginx 설정 테스트"
     sudo nginx -t || error "Nginx 설정이 올바르지 않습니다"
