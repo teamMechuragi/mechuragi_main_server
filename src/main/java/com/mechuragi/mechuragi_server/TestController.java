@@ -15,7 +15,7 @@ public class TestController {
     @GetMapping("/test")
     public Map<String, Object> test() {
         Map<String, Object> response = new HashMap<>();
-        response.put("message", "Mechuragi Server API is running! - Blue-Green Deploy Test v3");
+        response.put("message", "Mechuragi Server API is running! - Blue-Green Deploy Test v4");
         response.put("timestamp", LocalDateTime.now());
         response.put("status", "OK");
         return response;

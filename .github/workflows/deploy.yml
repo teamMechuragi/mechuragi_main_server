@@ -90,13 +90,13 @@ jobs:
             # 애플리케이션 디렉토리로 이동
             cd /home/ubuntu/app
 
-            # Docker Compose 설정 확인 (파일이 이미 서버에 업로드됨)
+            # Docker Compose 설정 확인 (파일은 서버에 업로드됨)
             echo "블루-그린 배포 파일 확인 중..."
             ls -la docker-compose.blue-green.yml nginx/blue-green.conf scripts/blue-green-deploy.sh || echo "일부 파일이 없을 수 있음 (정상)"
 
             # 스크립트 실행 권한 부여
             chmod +x scripts/blue-green-deploy.sh
-
+            
             # 환경 변수 설정
             export DB_HOST="${{ secrets.DB_HOST }}"
             export DB_PORT="${{ secrets.DB_PORT }}"
