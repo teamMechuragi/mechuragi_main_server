@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   # Spring Boot 메인 서비스 - Blue 버전
-  spring-app-blue:
+  mechuragi-main-blue:
     build:
       context: .
       dockerfile: Dockerfile
@@ -34,7 +34,7 @@ services:
       start_period: 40s
 
   # Spring Boot 메인 서비스 - Green 버전 (배포 시에만 사용)
-  spring-app-green:
+  mechuragi-main-green:
     build:
       context: .
       dockerfile: Dockerfile
