@@ -15,7 +15,7 @@ PROJECT_NAME="mechuragi"
 MAIN_SERVICE_PORT="8080"
 GREEN_SERVICE_PORT="8081"
 APP_DIRECTORY="/home/ubuntu/app"
-NGINX_CONFIG="/etc/nginx/conf.d/default.conf"
+NGINX_CONFIG="/etc/nginx/sites-available/main-service"
 
 # 로그 함수
 log() {
