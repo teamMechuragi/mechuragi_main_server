@@ -127,9 +127,7 @@ jobs:
             # Blue-Green 배포 실행
             ./scripts/blue-green-deploy.sh
 
-            # 최종 헬스체크
-            sleep 10
-            curl -f http://localhost/actuator/health || exit 1
+            # Blue-Green 스크립트에서 헬스체크가 완료됨
 
       - name: Send Discord Notification - Deploy Success
         if: success()
