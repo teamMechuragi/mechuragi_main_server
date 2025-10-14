@@ -2,17 +2,23 @@
 
 ## 전체 구현 계획
 
-### 1단계: 프로젝트 기반 설정
+### 1단계: 프로젝트 기반 설정 ✅ 완료
 - **build.gradle 의존성 추가**
-  - Spring Security
-  - JWT (jjwt 라이브러리)
-  - AWS SES (이메일 인증)
-  - OAuth2 Client (카카오 소셜 로그인)
-  - BCrypt (비밀번호 암호화)
+  - ✅ Spring Security (주석 해제)
+  - ✅ Spring OAuth2 Client (주석 해제)
+  - ✅ JWT (io.jsonwebtoken:jjwt-api:0.12.3, jjwt-impl, jjwt-jackson)
+  - ✅ AWS SES (software.amazon.awssdk:ses:2.20.26)
+  - ✅ BCrypt (Spring Security에 포함)
+
 - **application.yml 설정**
-  - JWT 설정 (secret, expiration)
-  - AWS SES 설정
-  - OAuth2 카카오 클라이언트 설정
+  - ✅ JWT 설정 (secret: ${JWT_SECRET}, expiration: 86400000)
+  - ✅ AWS SES 설정 (from-email, region)
+  - ✅ OAuth2 카카오 클라이언트 설정 (client-id, client-secret, redirect-uri, scope 등)
+
+- **.env 환경 변수**
+  - ✅ JWT_SECRET
+  - ✅ SES_FROM_EMAIL, SES_DOMAIN, SUPPORT_EMAIL, SEND_TEST_EMAIL, TEST_EMAIL
+  - ✅ KAKAO_CLIENT_ID, KAKAO_CLIENT_SECRET
 
 ### 2단계: member 패키지 구현 (회원 도메인)
 - **Member 엔티티**
