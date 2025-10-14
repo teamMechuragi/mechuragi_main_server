@@ -33,7 +33,20 @@ mechuragi_main_server/
 │   ├── main/
 │   │   ├── java/com/mechuragi/mechuragi_server/
 │   │   │   ├── MechuragiServerApplication.java    # 메인 애플리케이션
-│   │   │   └── TestController.java                # 테스트 API 컨트롤러
+│   │   │   ├── TestController.java                # 테스트 API 컨트롤러
+│   │   │   ├── auth/                              # 인증/인가 패키지
+│   │   │   │   ├── config/                        # SecurityConfig, JwtConfig
+│   │   │   │   ├── entity/                        # RefreshToken, EmailVerification
+│   │   │   │   ├── dto/                           # SignupRequest, LoginRequest/Response
+│   │   │   │   ├── service/                       # AuthService, EmailService, JwtService
+│   │   │   │   ├── controller/                    # AuthController
+│   │   │   │   └── filter/                        # JwtAuthenticationFilter
+│   │   │   └── member/                            # 회원 도메인 패키지
+│   │   │       ├── entity/                        # Member (회원 엔티티)
+│   │   │       ├── dto/                           # MemberRequest, MemberResponse
+│   │   │       ├── repository/                    # MemberRepository
+│   │   │       ├── service/                       # MemberService
+│   │   │       └── controller/                    # MemberController
 │   │   └── resources/
 │   │       ├── application.yml                    # 공통 설정
 │   │       ├── application-local.yml              # 로컬 환경 설정
