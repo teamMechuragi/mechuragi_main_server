@@ -54,7 +54,9 @@ public class SecurityConfig {
                                 "/actuator/**",              // Actuator
                                 "/error",                    // 에러 페이지
                                 "/oauth2/**",                // OAuth2 로그인
-                                "/login/oauth2/**"           // OAuth2 콜백
+                                "/login/oauth2/**",          // OAuth2 콜백
+                                "/swagger-ui/**",            // Swagger UI
+                                "/v3/api-docs/**"            // OpenAPI 문서
                         ).permitAll()
 
                         // 관리자만 접근 가능
