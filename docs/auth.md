@@ -20,18 +20,47 @@
   - ✅ SES_FROM_EMAIL, SES_DOMAIN, SUPPORT_EMAIL, SEND_TEST_EMAIL, TEST_EMAIL
   - ✅ KAKAO_CLIENT_ID, KAKAO_CLIENT_SECRET
 
-### 2단계: member 패키지 구현 (회원 도메인)
+### 2단계: member 도메인 구현 ✅ 완료
 - **Member 엔티티**
-  - 기본 정보: id, email, nickname, password
-  - 인증 정보: emailVerified (이메일 인증 여부), provider (일반/카카오)
-  - 역할: role (USER, ADMIN)
-  - Audit 필드: createdAt, updatedAt
+  - ✅ 기본 정보: id, email (unique), nickname (unique), password, profileImageUrl
+  - ✅ 인증 정보: emailVerified (이메일 인증 여부), provider (NORMAL/KAKAO)
+  - ✅ 역할: role (USER, ADMIN)
+  - ✅ 상태: status (ACTIVE, INACTIVE, SUSPENDED)
+  - ✅ Audit 필드: createdAt, updatedAt
+  - ✅ 도메인 메서드: updateProfile, updatePassword, verifyEmail, changeStatus
+  - ✅ **DB 제약조건**: email, nickname에 unique 제약조건 (동시성 안전)
+
+- **Enum 분리** (entity/type 패키지)
+  - ✅ AuthProvider (NORMAL, KAKAO)
+  - ✅ Role (USER, ADMIN)
+  - ✅ MemberStatus (ACTIVE, INACTIVE, SUSPENDED)
+
 - **MemberRepository**
-  - findByEmail, existsByEmail, existsByNickname 등
-- **MemberService/Impl**
-  - 회원 조회, 수정, 삭제 등 회원 관리 기능
+  - ✅ findByEmail, existsByEmail, existsByNickname
+
+- **MemberService**
+  - ✅ 회원 조회 (ID, 이메일)
+  - ✅ 회원 정보 수정 (닉네임 중복 체크 포함)
+  - ✅ 비밀번호 변경 (현재 비밀번호 확인 포함)
+  - ✅ 회원 탈퇴 (소프트 삭제)
+  - ✅ 이메일/닉네임 중복 확인
+
 - **MemberController**
-  - 회원 정보 조회/수정 API
+  - ✅ GET /api/members/{memberId} - 회원 조회
+  - ✅ PUT /api/members/{memberId} - 회원 정보 수정
+  - ✅ PUT /api/members/{memberId}/password - 비밀번호 변경
+  - ✅ DELETE /api/members/{memberId} - 회원 탈퇴
+  - ✅ GET /api/members/check/email - 이메일 중복 체크
+  - ✅ GET /api/members/check/nickname - 닉네임 중복 체크
+
+- **DTO**
+  - ✅ MemberResponse - 회원 정보 응답
+  - ✅ UpdateMemberRequest - 회원 정보 수정 요청
+  - ✅ UpdatePasswordRequest - 비밀번호 변경 요청
+
+- **중복 검증 전략** (이중 방어)
+  - ✅ 애플리케이션 레벨: existsByEmail/Nickname (빠른 피드백)
+  - ✅ 데이터베이스 레벨: unique 제약조건 (동시성 안전, 최종 방어선)
 
 ### 3단계: auth 패키지 - JWT 토큰 처리
 - **JWT 유틸리티 클래스**

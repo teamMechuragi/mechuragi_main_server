@@ -1,5 +1,8 @@
 package com.mechuragi.mechuragi_server.domain.member.entity;
 
+import com.mechuragi.mechuragi_server.domain.member.entity.type.AuthProvider;
+import com.mechuragi.mechuragi_server.domain.member.entity.type.MemberStatus;
+import com.mechuragi.mechuragi_server.domain.member.entity.type.Role;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -22,14 +25,28 @@ public class Member {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, length = 100)
+    @Column(nullable = false, unique = true, length = 100)
     private String email;
 
-    @Column(nullable = false, length = 50)
+    @Column(nullable = false, unique = true, length = 50)
     private String nickname;
 
     @Column(length = 500)
+    private String password;
+
+    @Column(length = 500)
     private String profileImageUrl;
+
+    @Column(nullable = false)
+    private Boolean emailVerified = false;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private AuthProvider provider = AuthProvider.NORMAL;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private Role role = Role.USER;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -44,14 +61,15 @@ public class Member {
     private LocalDateTime updatedAt;
 
     @Builder
-    public Member(String email, String nickname, String profileImageUrl) {
+    public Member(String email, String nickname, String password, String profileImageUrl,
+                  Boolean emailVerified, AuthProvider provider, Role role) {
         this.email = email;
         this.nickname = nickname;
+        this.password = password;
         this.profileImageUrl = profileImageUrl;
-    }
-
-    public enum MemberStatus {
-        ACTIVE, INACTIVE, SUSPENDED
+        this.emailVerified = emailVerified != null ? emailVerified : false;
+        this.provider = provider != null ? provider : AuthProvider.NORMAL;
+        this.role = role != null ? role : Role.USER;
     }
 
     public void updateProfile(String nickname, String profileImageUrl) {
@@ -61,5 +79,17 @@ public class Member {
         if (profileImageUrl != null) {
             this.profileImageUrl = profileImageUrl;
         }
+    }
+
+    public void updatePassword(String password) {
+        this.password = password;
+    }
+
+    public void verifyEmail() {
+        this.emailVerified = true;
+    }
+
+    public void changeStatus(MemberStatus status) {
+        this.status = status;
     }
 }
