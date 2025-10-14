@@ -1,4 +1,4 @@
-package com.mechuragi.mechuragi_server.domain.user.entity;
+package com.mechuragi.mechuragi_server.domain.member.entity;
 
 import jakarta.persistence.*;
 import lombok.AccessLevel;
@@ -12,11 +12,11 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "users")
+@Table(name = "members")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @EntityListeners(AuditingEntityListener.class)
-public class User {
+public class Member {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -33,7 +33,7 @@ public class User {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private UserStatus status = UserStatus.ACTIVE;
+    private MemberStatus status = MemberStatus.ACTIVE;
 
     @CreatedDate
     @Column(nullable = false, updatable = false)
@@ -44,13 +44,13 @@ public class User {
     private LocalDateTime updatedAt;
 
     @Builder
-    public User(String email, String nickname, String profileImageUrl) {
+    public Member(String email, String nickname, String profileImageUrl) {
         this.email = email;
         this.nickname = nickname;
         this.profileImageUrl = profileImageUrl;
     }
 
-    public enum UserStatus {
+    public enum MemberStatus {
         ACTIVE, INACTIVE, SUSPENDED
     }
 
