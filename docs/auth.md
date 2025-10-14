@@ -254,17 +254,80 @@
   - ✅ signup() - 회원가입 시 이메일 인증 메일 자동 발송
     - ✅ 발송 실패해도 회원가입은 완료 (재발송 가능)
 
-### 7단계: 소셜 로그인 (카카오)
-- **OAuth2 설정**
-  - application.yml에 카카오 클라이언트 설정
-  - OAuth2UserService 커스터마이징
-- **카카오 로그인 처리**
-  - OAuth2SuccessHandler (로그인 성공 시 JWT 발급)
-  - 카카오에서 받은 정보로 회원 자동 가입 or 로그인
-  - provider = "KAKAO" 설정
-- **카카오 로그인 API**
-  - GET /api/auth/oauth2/authorization/kakao (카카오 로그인 페이지로 리다이렉트)
-  - GET /api/auth/login/oauth2/code/kakao (콜백 처리)
+### 7단계: 소셜 로그인 (카카오) ✅ 완료
+- **OAuth2Attributes DTO**
+  - ✅ OAuth2 사용자 정보를 담는 DTO
+  - ✅ of() - Provider에 따라 attributes 변환
+  - ✅ ofKakao() - 카카오 로그인 정보 변환 (email, nickname, profileImageUrl)
+  - ✅ toEntity() - Member 엔티티로 변환 (emailVerified: true)
+
+- **CustomOAuth2UserService**
+  - ✅ OAuth2UserService 구현
+  - ✅ loadUser() - OAuth2 로그인 시 사용자 정보 처리
+    - ✅ OAuth2User 정보 로드
+    - ✅ registrationId로 Provider 확인 (kakao)
+    - ✅ OAuth2Attributes로 변환
+    - ✅ 회원 정보 조회 또는 생성
+  - ✅ saveOrUpdate() - 회원 정보 저장/업데이트
+    - ✅ 기존 회원: 프로필 정보 업데이트
+    - ✅ 신규 회원: 회원 가입 (provider: KAKAO, role: USER, emailVerified: true)
+    - ✅ 소셜 로그인 Provider 불일치 체크
+  - ✅ generateUniqueNickname() - 중복되지 않는 닉네임 생성
+
+- **OAuth2SuccessHandler**
+  - ✅ SimpleUrlAuthenticationSuccessHandler 상속
+  - ✅ onAuthenticationSuccess() - OAuth2 로그인 성공 시 처리
+    - ✅ JWT 토큰 발급 (JwtService 사용)
+    - ✅ 프론트엔드로 리다이렉트 (쿼리 파라미터로 토큰 전달)
+    - ✅ redirectUri: ${oauth2.redirect-uri} (기본값: http://localhost:3000/oauth2/callback)
+
+- **CustomUserDetails 업데이트**
+  - ✅ OAuth2User 인터페이스 추가 구현
+  - ✅ 일반 로그인용 생성자: CustomUserDetails(Member)
+  - ✅ OAuth2 로그인용 생성자: CustomUserDetails(Member, attributes)
+  - ✅ getAttributes() - OAuth2 사용자 정보 반환
+  - ✅ getName() - 회원 ID 반환
+
+- **SecurityConfig 업데이트**
+  - ✅ CustomOAuth2UserService 주입
+  - ✅ OAuth2SuccessHandler 주입
+  - ✅ oauth2Login 설정 추가
+    - ✅ userInfoEndpoint: customOAuth2UserService 사용
+    - ✅ successHandler: oAuth2SuccessHandler 사용
+  - ✅ permitAll 경로 추가: /oauth2/**, /login/oauth2/**
+
+- **카카오 로그인 흐름**
+  ```
+  1. 프론트엔드 → 백엔드
+     └─ GET /oauth2/authorization/kakao
+
+  2. 백엔드 → 카카오
+     └─ 카카오 로그인 페이지로 리다이렉트 (Spring Security 자동 처리)
+
+  3. 카카오 → 백엔드 ⬅️ spring.security.oauth2.client.registration.kakao.redirect-uri 사용
+     └─ GET /login/oauth2/code/kakao?code=...
+        ├─ Spring Security가 카카오에서 access token 요청
+        ├─ 카카오에서 사용자 정보 조회
+        └─ CustomOAuth2UserService.loadUser() 호출
+           ├─ OAuth2Attributes로 변환 (email, nickname, profileImageUrl)
+           └─ saveOrUpdate() - 회원 자동 가입 or 정보 업데이트
+              ├─ 신규 회원: Member 생성 (provider: KAKAO, emailVerified: true)
+              └─ 기존 회원: 프로필 정보 업데이트
+
+  4. 백엔드 → 프론트엔드 ⬅️ oauth2.redirect-uri 사용
+     └─ OAuth2SuccessHandler.onAuthenticationSuccess() 호출
+        ├─ JwtService.issueTokens() - JWT 토큰 발급
+        └─ 프론트엔드로 리다이렉트
+           GET http://localhost:3000/oauth2/callback
+               ?accessToken=...
+               &refreshToken=...
+               &tokenType=Bearer
+               &expiresIn=86400000
+  ```
+
+  **두 가지 redirect-uri 차이:**
+  - `spring.security.oauth2.redirect-uri`: 카카오 → 백엔드 (OAuth2 콜백)
+  - `oauth2.redirect-uri`: 백엔드 → 프론트엔드 (JWT 토큰 전달)
 
 ### 8단계: 공통 예외 처리 및 응답 형식
 - **GlobalExceptionHandler**
@@ -277,15 +340,19 @@
 
 ```
 auth/
-├── config/          # SecurityConfig, JwtConfig
+├── config/          # SecurityConfig
 ├── entity/          # RefreshToken, EmailVerification
-├── dto/             # SignupRequest, LoginRequest/Response
-├── service/         # AuthService, EmailService, JwtService
+├── dto/             # SignupRequest, LoginRequest/Response, OAuth2Attributes
+├── service/         # AuthService, EmailService, JwtService, CustomUserDetailsService, CustomOAuth2UserService
 ├── controller/      # AuthController
-└── filter/          # JwtAuthenticationFilter
+├── filter/          # JwtAuthenticationFilter
+├── handler/         # OAuth2SuccessHandler
+├── util/            # JwtTokenProvider
+└── repository/      # RefreshTokenRepository, EmailVerificationRepository
 
 member/
 ├── entity/          # Member (회원 엔티티)
+│   └── type/        # AuthProvider, Role, MemberStatus (Enum)
 ├── dto/             # MemberRequest, MemberResponse
 ├── repository/      # MemberRepository
 ├── service/         # MemberService

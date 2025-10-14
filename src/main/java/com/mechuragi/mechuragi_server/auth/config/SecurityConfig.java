@@ -1,6 +1,8 @@
 package com.mechuragi.mechuragi_server.auth.config;
 
 import com.mechuragi.mechuragi_server.auth.filter.JwtAuthenticationFilter;
+import com.mechuragi.mechuragi_server.auth.handler.OAuth2SuccessHandler;
+import com.mechuragi.mechuragi_server.auth.service.CustomOAuth2UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -26,6 +28,8 @@ import java.util.Arrays;
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final CustomOAuth2UserService customOAuth2UserService;
+    private final OAuth2SuccessHandler oAuth2SuccessHandler;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -48,7 +52,9 @@ public class SecurityConfig {
                                 "/api/test/**",              // 테스트
                                 "/api/members/check/**",     // 이메일/닉네임 중복 체크
                                 "/actuator/**",              // Actuator
-                                "/error"                     // 에러 페이지
+                                "/error",                    // 에러 페이지
+                                "/oauth2/**",                // OAuth2 로그인
+                                "/login/oauth2/**"           // OAuth2 콜백
                         ).permitAll()
 
                         // 관리자만 접근 가능
@@ -56,6 +62,13 @@ public class SecurityConfig {
 
                         // 그 외 모든 요청은 인증 필요
                         .anyRequest().authenticated()
+                )
+
+                // OAuth2 로그인 설정
+                .oauth2Login(oauth2 -> oauth2
+                        .userInfoEndpoint(userInfo -> userInfo
+                                .userService(customOAuth2UserService))
+                        .successHandler(oAuth2SuccessHandler)
                 )
 
                 // JWT 필터 등록 (UsernamePasswordAuthenticationFilter 앞에)
