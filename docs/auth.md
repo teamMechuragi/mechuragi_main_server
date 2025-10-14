@@ -210,17 +210,49 @@
   - logout: 토큰 있음 → @AuthenticationPrincipal 사용 가능
   - refresh: 토큰 만료 → Refresh Token만 사용
 
-### 6단계: 이메일 인증 (AWS SES)
+### 6단계: 이메일 인증 (AWS SES) ✅ 완료
 - **EmailVerification 엔티티**
-  - memberId, verificationCode, expiresAt, verified
+  - ✅ memberId (unique) - 회원 ID
+  - ✅ verificationCode - 6자리 인증 코드
+  - ✅ expiresAt - 만료 시간 (30분)
+  - ✅ verified - 인증 완료 여부
+  - ✅ createdAt - 생성 시간
+  - ✅ isExpired() - 만료 여부 확인
+  - ✅ verify() - 인증 완료 처리
+  - ✅ updateCode() - 인증 코드 재발급
+
+- **EmailVerificationRepository**
+  - ✅ findByMemberId() - 회원 ID로 조회
+  - ✅ findByMemberIdAndVerificationCode() - 인증 코드 검증용
+  - ✅ deleteByMemberId() - 회원 ID로 삭제
+
+- **DTO**
+  - ✅ SendVerificationEmailRequest - 이메일 인증 메일 발송 요청
+  - ✅ VerifyEmailRequest - 이메일 인증 코드 확인 요청
+
 - **EmailService**
-  - AWS SES 연동
-  - 인증 메일 발송 (sendVerificationEmail)
-  - 인증 코드 생성
-- **이메일 인증 API**
-  - POST /api/auth/email/send (인증 메일 발송/재발송)
-  - POST /api/auth/email/verify (인증 코드 확인)
-  - Member.emailVerified 업데이트
+  - ✅ sendVerificationEmail() - 이메일 인증 메일 발송
+    - ✅ 이미 인증된 이메일 체크
+    - ✅ 6자리 랜덤 코드 생성
+    - ✅ 인증 정보 DB 저장/업데이트
+    - ✅ AWS SES를 통한 이메일 발송
+    - ✅ HTML 템플릿 사용 (30분 유효 안내)
+  - ✅ verifyEmail() - 이메일 인증 코드 확인
+    - ✅ 인증 코드 일치 여부 확인
+    - ✅ 만료 여부 확인
+    - ✅ 인증 완료 처리
+    - ✅ Member.emailVerified 업데이트
+  - ✅ generateVerificationCode() - 6자리 랜덤 코드 생성 (100000~999999)
+  - ✅ sendEmail() - AWS SES 이메일 발송 (HTML + Text)
+  - ✅ buildEmailHtml() - 이메일 HTML 템플릿
+
+- **AuthController**
+  - ✅ POST /api/auth/email/send - 이메일 인증 메일 발송/재발송
+  - ✅ POST /api/auth/email/verify - 이메일 인증 코드 확인
+
+- **AuthService 업데이트**
+  - ✅ signup() - 회원가입 시 이메일 인증 메일 자동 발송
+    - ✅ 발송 실패해도 회원가입은 완료 (재발송 가능)
 
 ### 7단계: 소셜 로그인 (카카오)
 - **OAuth2 설정**

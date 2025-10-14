@@ -25,6 +25,7 @@ public class AuthService {
     private final MemberRepository memberRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
+    private final EmailService emailService;
 
     /**
      * 일반 회원가입
@@ -60,7 +61,13 @@ public class AuthService {
 
         log.info("회원가입 완료: email={}, nickname={}", request.getEmail(), request.getNickname());
 
-        // TODO: 이메일 인증 메일 발송 (6단계에서 구현)
+        // 이메일 인증 메일 발송
+        try {
+            emailService.sendVerificationEmail(request.getEmail());
+        } catch (Exception e) {
+            log.error("이메일 인증 메일 발송 실패: email={}, error={}", request.getEmail(), e.getMessage());
+            // 이메일 발송 실패해도 회원가입은 완료됨 (나중에 재발송 가능)
+        }
 
         return MemberResponse.from(savedMember);
     }

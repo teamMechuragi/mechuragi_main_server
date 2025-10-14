@@ -47,7 +47,7 @@ mechuragi_main_server/
 │   │   │   │       ├── service/                   # FoodPreferenceService
 │   │   │   │       ├── controller/                # FoodPreferenceController
 │   │   │   │       └── dto/                       # CreatePreferenceRequest 등
-│   │   │   └── auth/                              # 인증/인가 패키지 (예정)
+│   │   │   └── auth/                              # 모든 도메인에 작동하는 전역 인증 인프라
 │   │   │       ├── config/                        # SecurityConfig, JwtConfig
 │   │   │       ├── entity/                        # RefreshToken, EmailVerification
 │   │   │       ├── dto/                           # SignupRequest, LoginRequest/Response

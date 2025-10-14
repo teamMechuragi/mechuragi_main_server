@@ -1,11 +1,8 @@
 package com.mechuragi.mechuragi_server.auth.controller;
 
-import com.mechuragi.mechuragi_server.auth.dto.CustomUserDetails;
-import com.mechuragi.mechuragi_server.auth.dto.LoginRequest;
-import com.mechuragi.mechuragi_server.auth.dto.LoginResponse;
-import com.mechuragi.mechuragi_server.auth.dto.SignupRequest;
-import com.mechuragi.mechuragi_server.auth.dto.TokenResponse;
+import com.mechuragi.mechuragi_server.auth.dto.*;
 import com.mechuragi.mechuragi_server.auth.service.AuthService;
+import com.mechuragi.mechuragi_server.auth.service.EmailService;
 import com.mechuragi.mechuragi_server.domain.member.dto.MemberResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -21,6 +18,7 @@ import org.springframework.web.bind.annotation.*;
 public class AuthController {
 
     private final AuthService authService;
+    private final EmailService emailService;
 
     /**
      * 회원가입
@@ -60,5 +58,25 @@ public class AuthController {
         log.info("토큰 재발급 요청");
         TokenResponse response = authService.refresh(refreshToken);
         return ResponseEntity.ok(response);
+    }
+
+    /**
+     * 이메일 인증 메일 발송/재발송
+     */
+    @PostMapping("/email/send")
+    public ResponseEntity<Void> sendVerificationEmail(@Valid @RequestBody SendVerificationEmailRequest request) {
+        log.info("이메일 인증 메일 발송 요청: email={}", request.getEmail());
+        emailService.sendVerificationEmail(request.getEmail());
+        return ResponseEntity.ok().build();
+    }
+
+    /**
+     * 이메일 인증 코드 확인
+     */
+    @PostMapping("/email/verify")
+    public ResponseEntity<Void> verifyEmail(@Valid @RequestBody VerifyEmailRequest request) {
+        log.info("이메일 인증 요청: email={}", request.getEmail());
+        emailService.verifyEmail(request.getEmail(), request.getVerificationCode());
+        return ResponseEntity.ok().build();
     }
 }
