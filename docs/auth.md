@@ -1,11 +1,58 @@
 # JWT 인증 + Spring Security 회원가입/로그인 구현 계획
 
-## 전체 구현 계획
+## JWT 인증 동작 흐름 (@AuthenticationPrincipal)
+
+```
+1. 클라이언트 요청
+   └─ Authorization: Bearer {JWT_TOKEN}
+
+2. JwtAuthenticationFilter 실행
+   └─ doFilterInternal()
+      ├─ JWT 토큰 추출 (Authorization 헤더에서 "Bearer " 제거)
+      ├─ jwtTokenProvider.validateToken() - 토큰 유효성 검증
+      └─ 검증 성공 시:
+         ├─ jwtTokenProvider.getEmailFromToken() - 이메일 추출
+         ├─ customUserDetailsService.loadUserByUsername(email)
+         │  └─ memberRepository.findByEmail(email)
+         │     └─ Member 조회
+         │        └─ new CustomUserDetails(member) 생성
+         ├─ UsernamePasswordAuthenticationToken 생성
+         │  └─ principal: CustomUserDetails
+         │  └─ authorities: [ROLE_USER] or [ROLE_ADMIN]
+         └─ SecurityContextHolder.getContext().setAuthentication(authentication)
+            └─ SecurityContext에 인증 정보 저장
+
+3. 컨트롤러 메서드 실행
+   └─ @AuthenticationPrincipal CustomUserDetails userDetails
+      └─ Spring Security ArgumentResolver가 SecurityContext에서 자동으로 가져옴
+         ├─ userDetails.getMemberId() - 회원 ID
+         ├─ userDetails.getEmail() - 이메일
+         ├─ userDetails.getNickname() - 닉네임
+         └─ userDetails.getAuthorities() - 권한 목록
+
+4. 응답 반환
+```
+
+### 컨트롤러에서 사용 예시
+```java
+@GetMapping("/me")
+public ResponseEntity<MemberResponse> getMyInfo(
+        @AuthenticationPrincipal CustomUserDetails userDetails) {
+    // SecurityContext에서 자동으로 가져온 인증 정보 사용
+    Long memberId = userDetails.getMemberId();
+    String email = userDetails.getEmail();
+
+    MemberResponse member = memberService.getMember(memberId);
+    return ResponseEntity.ok(member);
+}
+```
+
+## 전체 구현 흐름
 
 ### 1단계: 프로젝트 기반 설정 ✅ 완료
 - **build.gradle 의존성 추가**
-  - ✅ Spring Security (주석 해제)
-  - ✅ Spring OAuth2 Client (주석 해제)
+  - ✅ Spring Security
+  - ✅ Spring OAuth2 Client
   - ✅ JWT (io.jsonwebtoken:jjwt-api:0.12.3, jjwt-impl, jjwt-jackson)
   - ✅ AWS SES (software.amazon.awssdk:ses:2.20.26)
   - ✅ BCrypt (Spring Security에 포함)
@@ -95,17 +142,41 @@
   - ✅ findByToken() - 토큰으로 조회
   - ✅ deleteByMemberId() - 회원 ID로 토큰 삭제 (로그아웃)
 
-### 4단계: auth 패키지 - Spring Security 설정
-- **SecurityConfig**
-  - SecurityFilterChain 설정
-  - JWT 필터 등록
-  - 인증/인가 경로 설정 (permitAll, authenticated)
-  - CORS 설정
-- **JwtAuthenticationFilter**
-  - 요청에서 JWT 추출 및 검증
-  - SecurityContext에 인증 정보 설정
+### 4단계: auth 패키지 - Spring Security 설정 ✅ 완료
+- **CustomUserDetails (UserDetails 구현)**
+  - ✅ Member 엔티티를 감싸는 인증 정보 클래스
+  - ✅ getMemberId(), getEmail(), getNickname() - 편의 메서드
+  - ✅ getAuthorities() - "ROLE_" + role 반환
+  - ✅ isEnabled() - ACTIVE 상태만 true
+  - ✅ **@AuthenticationPrincipal로 컨트롤러에서 직접 사용 가능**
+
 - **CustomUserDetailsService**
-  - loadUserByUsername 구현 (이메일로 회원 조회)
+  - ✅ loadUserByUsername() 구현 (이메일로 회원 조회)
+  - ✅ Member → CustomUserDetails 변환
+
+- **JwtAuthenticationFilter**
+  - ✅ OncePerRequestFilter 상속
+  - ✅ Authorization 헤더에서 JWT 추출 ("Bearer " 제거)
+  - ✅ JWT 유효성 검증
+  - ✅ 토큰에서 이메일 추출 → UserDetails 조회
+  - ✅ UsernamePasswordAuthenticationToken 생성
+  - ✅ SecurityContext에 Authentication 설정
+
+- **SecurityConfig**
+  - ✅ SecurityFilterChain 설정
+  - ✅ JWT 필터 등록 (UsernamePasswordAuthenticationFilter 앞)
+  - ✅ CSRF 비활성화 (JWT 사용)
+  - ✅ 세션 정책: STATELESS
+  - ✅ 인증/인가 경로 설정:
+    - permitAll: /api/auth/**, /api/test/**, /api/members/check/**, /actuator/**
+    - hasRole("ADMIN"): /api/admin/**
+    - authenticated: 그 외 모든 요청
+  - ✅ CORS 설정 (localhost:3000, localhost:8080)
+  - ✅ PasswordEncoder Bean (BCryptPasswordEncoder)
+
+- **MemberService 업데이트**
+  - ✅ PasswordEncoder 주입
+  - ✅ updatePassword() - 현재 비밀번호 확인 + 새 비밀번호 암호화
 
 ### 5단계: auth 패키지 - 일반 회원가입/로그인
 - **회원가입 (Signup)**

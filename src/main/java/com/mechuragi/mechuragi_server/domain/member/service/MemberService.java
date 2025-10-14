@@ -7,6 +7,7 @@ import com.mechuragi.mechuragi_server.domain.member.entity.Member;
 import com.mechuragi.mechuragi_server.domain.member.entity.type.MemberStatus;
 import com.mechuragi.mechuragi_server.domain.member.repository.MemberRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -16,8 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class MemberService {
 
     private final MemberRepository memberRepository;
-    // TODO: 3단계에서 BCryptPasswordEncoder 주입 예정
-    // private final PasswordEncoder passwordEncoder;
+    private final PasswordEncoder passwordEncoder;
 
     // 회원 조회 (ID)
     public MemberResponse getMember(Long memberId) {
@@ -61,18 +61,14 @@ public class MemberService {
             throw new IllegalArgumentException("소셜 로그인 회원은 비밀번호를 변경할 수 없습니다.");
         }
 
-        // TODO: 3단계에서 구현 예정
         // 현재 비밀번호 확인
-        // if (!passwordEncoder.matches(request.getCurrentPassword(), member.getPassword())) {
-        //     throw new IllegalArgumentException("현재 비밀번호가 일치하지 않습니다.");
-        // }
+        if (!passwordEncoder.matches(request.getCurrentPassword(), member.getPassword())) {
+            throw new IllegalArgumentException("현재 비밀번호가 일치하지 않습니다.");
+        }
 
         // 새 비밀번호 암호화 및 저장
-        // String encodedPassword = passwordEncoder.encode(request.getNewPassword());
-        // member.updatePassword(encodedPassword);
-
-        // 임시: 암호화 없이 저장 (3단계에서 passwordEncoder 추가 후 수정 필요)
-        member.updatePassword(request.getNewPassword());
+        String encodedPassword = passwordEncoder.encode(request.getNewPassword());
+        member.updatePassword(encodedPassword);
     }
 
     // 회원 탈퇴 (소프트 삭제)
