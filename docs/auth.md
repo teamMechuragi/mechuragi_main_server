@@ -62,13 +62,38 @@
   - ✅ 애플리케이션 레벨: existsByEmail/Nickname (빠른 피드백)
   - ✅ 데이터베이스 레벨: unique 제약조건 (동시성 안전, 최종 방어선)
 
-### 3단계: auth 패키지 - JWT 토큰 처리
-- **JWT 유틸리티 클래스**
-  - 토큰 생성 (generateToken)
-  - 토큰 검증 (validateToken)
-  - 토큰에서 정보 추출 (getEmailFromToken)
-- **RefreshToken 엔티티** (선택사항)
-  - Access Token + Refresh Token 구조 사용 시
+### 3단계: auth 패키지 - JWT 토큰 처리 ✅ 완료
+- **auth 패키지 구조**
+  - ✅ config/ - SecurityConfig, JwtConfig (4단계 예정)
+  - ✅ entity/ - RefreshToken
+  - ✅ dto/ - 인증 관련 DTO (5단계 예정)
+  - ✅ service/ - AuthService, JwtService (5단계 예정)
+  - ✅ controller/ - AuthController (5단계 예정)
+  - ✅ filter/ - JwtAuthenticationFilter (4단계 예정)
+  - ✅ util/ - JwtTokenProvider
+  - ✅ repository/ - RefreshTokenRepository
+
+- **JwtTokenProvider (JWT 유틸리티 클래스)**
+  - ✅ generateAccessToken() - Access Token 생성 (24시간)
+  - ✅ generateRefreshToken() - Refresh Token 생성 (7일)
+  - ✅ validateToken() - 토큰 유효성 검증
+  - ✅ getEmailFromToken() - 토큰에서 이메일 추출
+  - ✅ getMemberIdFromToken() - 토큰에서 회원 ID 추출
+  - ✅ getRoleFromToken() - 토큰에서 역할 추출
+  - ✅ getExpirationFromToken() - 토큰 만료 시간 조회
+
+- **RefreshToken 엔티티**
+  - ✅ memberId (unique) - 회원 ID
+  - ✅ token (unique) - Refresh Token 값
+  - ✅ expiryDate - 만료 시간
+  - ✅ createdAt - 생성 시간
+  - ✅ updateToken() - 토큰 갱신
+  - ✅ isExpired() - 만료 여부 확인
+
+- **RefreshTokenRepository**
+  - ✅ findByMemberId() - 회원 ID로 토큰 조회
+  - ✅ findByToken() - 토큰으로 조회
+  - ✅ deleteByMemberId() - 회원 ID로 토큰 삭제 (로그아웃)
 
 ### 4단계: auth 패키지 - Spring Security 설정
 - **SecurityConfig**
