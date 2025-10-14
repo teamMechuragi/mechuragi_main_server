@@ -32,20 +32,14 @@
 
 4. 응답 반환
 ```
+### 현재 프로젝트에 커스텀 필터 체인 보다 컨트롤러 API 방식이 적합한 이유
 
-### 컨트롤러에서 사용 예시
-```java
-@GetMapping("/me")
-public ResponseEntity<MemberResponse> getMyInfo(
-        @AuthenticationPrincipal CustomUserDetails userDetails) {
-    // SecurityContext에서 자동으로 가져온 인증 정보 사용
-    Long memberId = userDetails.getMemberId();
-    String email = userDetails.getEmail();
-
-    MemberResponse member = memberService.getMember(memberId);
-    return ResponseEntity.ok(member);
-}
-```
+  이유:
+  1. ✅ JWT 토큰 기반
+  2. ✅ RESTful API 구조
+  3. ✅ 프론트엔드 분리
+  4. ✅ OAuth2와 통합
+  5. ✅ JwtAuthenticationFilter 사용
 
 ## 전체 구현 흐름
 
@@ -178,22 +172,43 @@ public ResponseEntity<MemberResponse> getMyInfo(
   - ✅ PasswordEncoder 주입
   - ✅ updatePassword() - 현재 비밀번호 확인 + 새 비밀번호 암호화
 
-### 5단계: auth 패키지 - 일반 회원가입/로그인
-- **회원가입 (Signup)**
-  - DTO: SignupRequest (email, password, nickname)
-  - 비밀번호 암호화 (BCryptPasswordEncoder)
-  - 이메일 중복 체크, 닉네임 중복 체크
-  - 회원 저장 + 이메일 인증 메일 발송
-- **로그인 (Login)**
-  - DTO: LoginRequest (email, password)
-  - 비밀번호 검증
-  - JWT 토큰 발급 (Access Token, Refresh Token)
-  - DTO: LoginResponse (tokens, memberInfo)
+### 5단계: auth 패키지 - 일반 회원가입/로그인 ✅ 완료
+- **DTO**
+  - ✅ SignupRequest - 회원가입 요청 (email, password, nickname)
+  - ✅ LoginRequest - 로그인 요청 (email, password)
+  - ✅ LoginResponse - 로그인 응답 (tokens, memberInfo)
+  - ✅ TokenResponse - 토큰 정보 (accessToken, refreshToken, tokenType, expiresIn)
+
+- **JwtService**
+  - ✅ issueTokens() - Access Token, Refresh Token 발급 및 DB 저장
+  - ✅ refreshAccessToken() - Refresh Token으로 Access Token 재발급
+  - ✅ logout() - Refresh Token 삭제
+
+- **AuthService**
+  - ✅ signup() - 일반 회원가입
+    - ✅ 이메일 중복 체크
+    - ✅ 닉네임 중복 체크
+    - ✅ 비밀번호 암호화 (BCryptPasswordEncoder)
+    - ✅ 회원 저장 (provider: NORMAL, role: USER, status: ACTIVE)
+    - ✅ TODO: 이메일 인증 메일 발송 (6단계)
+  - ✅ login() - 일반 로그인
+    - ✅ 이메일로 회원 조회
+    - ✅ 소셜 로그인 계정 체크
+    - ✅ 비밀번호 검증
+    - ✅ 계정 상태 확인 (ACTIVE만 로그인 허용)
+    - ✅ JWT 토큰 발급 (JwtService 사용)
+  - ✅ logout() - 로그아웃 (Refresh Token 삭제)
+  - ✅ refresh() - Access Token 재발급
+
 - **AuthController**
-  - POST /api/auth/signup
-  - POST /api/auth/login
-  - POST /api/auth/logout
-  - POST /api/auth/refresh (토큰 재발급)
+  - ✅ POST /api/auth/signup - 회원가입
+  - ✅ POST /api/auth/login - 로그인
+  - ✅ POST /api/auth/logout - 로그아웃 (@AuthenticationPrincipal 사용)
+  - ✅ POST /api/auth/refresh - Access Token 재발급 (Refresh-Token 헤더)
+
+  - signup, login: 토큰 없음 → @AuthenticationPrincipal 사용 불가
+  - logout: 토큰 있음 → @AuthenticationPrincipal 사용 가능
+  - refresh: 토큰 만료 → Refresh Token만 사용
 
 ### 6단계: 이메일 인증 (AWS SES)
 - **EmailVerification 엔티티**
