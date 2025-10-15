@@ -2,12 +2,15 @@ server:
   port: 8080
 
 spring:
+  config:
+    import: optional:dotenv:.env
   jpa:
     hibernate:
       ddl-auto: update
     properties:
       hibernate:
         dialect: org.hibernate.dialect.MySQLDialect
+
 
   servlet:
     multipart:
