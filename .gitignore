@@ -44,3 +44,15 @@ Thumbs.db
 .env
 .env.local
 .env.production
+
+### JAR files ###
+*.jar
+!gradle/wrapper/gradle-wrapper.jar
+
+### Gradle cache ###
+.gradle/
+gradle/
+
+### Build artifacts ###
+target/
+build/

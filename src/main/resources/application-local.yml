@@ -2,15 +2,15 @@ spring:
   config:
     import: optional:dotenv:.env
   datasource:
-    url: jdbc:mysql://localhost:3306/mechuragi_db
-    username: mechuragi_user
-    password: mechuragi_pass
+    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:mechuragi_db}
+    username: ${DB_USERNAME:mechuragi_user}
+    password: ${DB_PASSWORD:mechuragi_pass}
     driver-class-name: com.mysql.cj.jdbc.Driver
 
   data:
     redis:
-      host: localhost
-      port: 6379
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
 
   jpa:
     hibernate:
@@ -25,30 +25,30 @@ spring:
       client:
         registration:
           kakao:
-            client-id: 56efc6afa5c910f2bf972df5836bf9c9
-            client-secret: qtKFtg4lq0w6JuwCKoyOqlelg4eXR9N9
-            redirect-uri: http://localhost:8080/login/oauth2/code/kakao
+            client-id: ${KAKAO_CLIENT_ID}
+            client-secret: ${KAKAO_CLIENT_SECRET}
+            redirect-uri: ${KAKAO_REDIRECT_URI:http://localhost:8080/login/oauth2/code/kakao}
 
 jwt:
-  secret: mEcHuRaGi2024!sEcReT@kEypR0*jEcT$sPrInG%b00T^sErVeR&s3CuR1ty*
+  secret: ${JWT_SECRET}
 
 oauth2:
-  redirect-uri: http://localhost:3000/oauth2/callback
+  redirect-uri: ${OAUTH2_REDIRECT_URI:http://localhost:3000/oauth2/callback}
 
 cloud:
   aws:
     s3:
-      bucket: mechuragi-dev-images
+      bucket: ${S3_BUCKET:mechuragi-dev-images}
     region:
-      static: ap-northeast-2
+      static: ${AWS_REGION:ap-northeast-2}
     ses:
-      from-email: mechuragi001@gmail.com
-      region: ap-northeast-2
+      from-email: ${SES_FROM_EMAIL:mechuragi001@gmail.com}
+      region: ${AWS_REGION:ap-northeast-2}
 
 aws:
   ses:
-    from-email: mechuragi001@gmail.com
-    domain: mechuragi.kro.kr
+    from-email: ${SES_FROM_EMAIL:mechuragi001@gmail.com}
+    domain: ${SES_DOMAIN:mechuragi.kro.kr}
 
 logging:
   level:
