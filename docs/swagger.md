@@ -6,7 +6,7 @@
 
 ### 로컬 환경
 ```
-http://localhost:8081/swagger-ui/index.html
+http://localhost:8080/swagger-ui/index.html
 ```
 
 ### 프로덕션 환경
