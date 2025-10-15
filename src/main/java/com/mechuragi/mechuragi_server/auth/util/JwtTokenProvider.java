@@ -101,4 +101,9 @@ public class JwtTokenProvider {
         Claims claims = parseClaims(token);
         return claims.getExpiration();
     }
+
+    // Access Token 만료 시간 반환 (밀리초)
+    public long getAccessTokenExpiration() {
+        return accessTokenExpiration;
+    }
 }

@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.Date;
 
 @Slf4j
@@ -39,18 +40,21 @@ public class JwtService {
         // Refresh Token 생성
         String refreshTokenValue = jwtTokenProvider.generateRefreshToken(member.getEmail());
         Date expiryDate = jwtTokenProvider.getExpirationFromToken(refreshTokenValue);
+        LocalDateTime expiryLocalDateTime = expiryDate.toInstant()
+                .atZone(ZoneId.systemDefault())
+                .toLocalDateTime();
 
         // Refresh Token 저장 또는 업데이트
         RefreshToken refreshToken = refreshTokenRepository.findByMemberId(member.getId())
                 .map(token -> {
-                    token.updateToken(refreshTokenValue, expiryDate);
+                    token.updateToken(refreshTokenValue, expiryLocalDateTime);
                     return token;
                 })
                 .orElseGet(() -> {
                     RefreshToken newToken = RefreshToken.builder()
                             .memberId(member.getId())
                             .token(refreshTokenValue)
-                            .expiryDate(expiryDate)
+                            .expiryDate(expiryLocalDateTime)
                             .build();
                     return refreshTokenRepository.save(newToken);
                 });
