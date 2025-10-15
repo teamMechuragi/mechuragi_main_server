@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import software.amazon.awssdk.services.ses.SesClient;
 import software.amazon.awssdk.services.ses.model.*;
@@ -34,7 +35,7 @@ public class EmailService {
     /**
      * 이메일 인증 메일 발송
      */
-    @Transactional
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void sendVerificationEmail(String email) {
         // 회원 조회
         Member member = memberRepository.findByEmail(email)
