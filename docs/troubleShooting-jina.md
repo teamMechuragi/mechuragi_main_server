@@ -189,6 +189,38 @@ AWS_REGION=ap-northeast-2
 
 ---
 
+### 문제 3: Access Token 재발급 API 500 에러 - Refresh Token을 찾을 수 없음
+**발생 일시:** 2025-10-15 14:55
+
+**에러 메시지:**
+```
+java.lang.IllegalArgumentException: Refresh Token을 찾을 수 없습니다.
+at com.mechuragi.mechuragi_server.auth.service.JwtService.lambda$refreshAccessToken$2(JwtService.java:79)
+```
+
+**원인 분석:**
+테스트 순서 문제
+- 로그아웃 API(7번)를 먼저 테스트한 후 Refresh Token API(8번)를 테스트함
+- 로그아웃 시 `JwtService.logout()` 메서드가 `refreshTokenRepository.deleteByMemberId()`를 호출하여 DB에서 Refresh Token 삭제
+- 삭제된 Refresh Token으로 재발급 시도 → "Refresh Token을 찾을 수 없습니다" 에러
+
+**해결 방법:**
+올바른 테스트 순서로 재테스트
+```
+1. 로그인 (POST /api/auth/login) → Refresh Token 받음
+2. Refresh Token 재발급 (POST /api/auth/refresh) 테스트
+3. 로그아웃 (POST /api/auth/logout) 테스트
+```
+
+**결과:**
+로그인 상태에서 재테스트 → ✅ 성공
+
+**교훈:**
+- 로그아웃은 Refresh Token을 삭제하므로 재발급 테스트 후에 실행해야 함
+- API 테스트 시 의존성과 순서를 고려해야 함
+
+---
+
 ## 참고사항
 - JWT 토큰은 "Bearer " 접두사 필요
 - Access Token 유효기간: 24시간
