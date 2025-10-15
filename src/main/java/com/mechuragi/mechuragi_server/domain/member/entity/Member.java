@@ -93,4 +93,14 @@ public class Member {
     public void changeStatus(MemberStatus status) {
         this.status = status;
     }
+
+    /**
+     * 닉네임에 멤버 ID를 추가하여 업데이트
+     * OAuth2 회원가입 시 랜덤 닉네임 + ID 조합을 위해 사용
+     */
+    public void appendIdToNickname(String baseNickname) {
+        if (this.id != null) {
+            this.nickname = baseNickname + this.id.intValue();
+        }
+    }
 }

@@ -4,6 +4,7 @@ import com.mechuragi.mechuragi_server.auth.dto.CustomUserDetails;
 import com.mechuragi.mechuragi_server.auth.dto.OAuth2Attributes;
 import com.mechuragi.mechuragi_server.domain.member.entity.Member;
 import com.mechuragi.mechuragi_server.domain.member.repository.MemberRepository;
+import com.mechuragi.mechuragi_server.global.util.NicknameGenerator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
@@ -25,6 +26,7 @@ import java.util.Optional;
 public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequest, OAuth2User> {
 
     private final MemberRepository memberRepository;
+    private final NicknameGenerator nicknameGenerator;
 
     @Override
     @Transactional
@@ -65,7 +67,7 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
         Optional<Member> existingMember = memberRepository.findByEmail(attributes.getEmail());
 
         if (existingMember.isPresent()) {
-            // 기존 회원이면 정보 업데이트 (프로필 이미지, 닉네임 등)
+            // 기존 회원이면 정보 조회만 수행 (OAuth2 로그인으로는 프로필 업데이트 안함)
             Member member = existingMember.get();
 
             // 소셜 로그인 제공자 확인
@@ -75,38 +77,23 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
                 );
             }
 
-            // 프로필 정보 업데이트
-            member.updateProfile(attributes.getNickname(), attributes.getProfileImageUrl());
-
-            log.info("기존 회원 정보 업데이트: email={}", member.getEmail());
+            log.info("기존 회원 로그인: email={}", member.getEmail());
             return member;
         } else {
             // 신규 회원이면 저장
-            Member newMember = attributes.toEntity();
+            // 1. 랜덤 닉네임 생성 (예: "행복한곰")
+            String randomNickname = nicknameGenerator.generateRandomNickname();
 
-            // 닉네임 중복 체크 및 유니크한 닉네임 생성
-            String uniqueNickname = generateUniqueNickname(attributes.getNickname());
-            newMember.updateProfile(uniqueNickname, attributes.getProfileImageUrl());
-
+            // 2. 임시 닉네임으로 Member 엔티티 생성 및 저장 (ID 발급을 위해)
+            Member newMember = attributes.toEntity(randomNickname);
             Member savedMember = memberRepository.save(newMember);
-            log.info("신규 소셜 회원 가입: email={}, provider={}", savedMember.getEmail(), savedMember.getProvider());
+
+            // 3. ID를 포함한 최종 닉네임으로 업데이트 (예: "행복한곰1")
+            savedMember.appendIdToNickname(randomNickname);
+
+            log.info("신규 소셜 회원 가입: email={}, nickname={}, provider={}",
+                    savedMember.getEmail(), savedMember.getNickname(), savedMember.getProvider());
             return savedMember;
         }
-    }
-
-    /**
-     * 중복되지 않는 유니크한 닉네임 생성
-     */
-    private String generateUniqueNickname(String baseNickname) {
-        String nickname = baseNickname;
-        int suffix = 1;
-
-        // 닉네임이 중복되면 숫자를 붙여서 유니크하게 만듦
-        while (memberRepository.existsByNickname(nickname)) {
-            nickname = baseNickname + suffix;
-            suffix++;
-        }
-
-        return nickname;
     }
 }

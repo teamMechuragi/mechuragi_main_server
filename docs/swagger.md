@@ -316,7 +316,7 @@ http://localhost:8080/oauth2/authorization/kakao
 ```
 또는
 ```
-http://15.165.136.100:8080/oauth2/authorization/kakao
+http://{baseurl}/oauth2/authorization/kakao
 ```
 
 **흐름:**

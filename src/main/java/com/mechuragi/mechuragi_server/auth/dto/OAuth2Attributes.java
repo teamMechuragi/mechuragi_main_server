@@ -19,8 +19,6 @@ public class OAuth2Attributes {
     private Map<String, Object> attributes;
     private String nameAttributeKey;
     private String email;
-    private String nickname;
-    private String profileImageUrl;
     private AuthProvider provider;
 
     /**
@@ -44,12 +42,9 @@ public class OAuth2Attributes {
                                              Map<String, Object> attributes) {
         // 카카오 계정 정보
         Map<String, Object> kakaoAccount = (Map<String, Object>) attributes.get("kakao_account");
-        Map<String, Object> profile = (Map<String, Object>) kakaoAccount.get("profile");
 
         return OAuth2Attributes.builder()
                 .email((String) kakaoAccount.get("email"))
-                .nickname((String) profile.get("nickname"))
-                .profileImageUrl((String) profile.get("profile_image_url"))
                 .attributes(attributes)
                 .nameAttributeKey(userNameAttributeName)
                 .provider(AuthProvider.KAKAO)
@@ -58,12 +53,13 @@ public class OAuth2Attributes {
 
     /**
      * OAuth2Attributes를 Member 엔티티로 변환 (첫 가입 시)
+     * 닉네임은 서비스 레이어에서 랜덤 생성 후 설정
      */
-    public Member toEntity() {
+    public Member toEntity(String nickname) {
         return Member.builder()
                 .email(email)
                 .nickname(nickname)
-                .profileImageUrl(profileImageUrl)
+                .profileImageUrl(null) // 카카오에서 프로필 이미지를 받아오지 않음
                 .password(null) // 소셜 로그인은 비밀번호 없음
                 .emailVerified(true) // 소셜 로그인은 이메일 인증 완료로 간주
                 .provider(provider)
