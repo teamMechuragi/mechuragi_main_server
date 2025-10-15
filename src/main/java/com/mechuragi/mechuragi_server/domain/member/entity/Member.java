@@ -62,7 +62,7 @@ public class Member {
 
     @Builder
     public Member(String email, String nickname, String password, String profileImageUrl,
-                  Boolean emailVerified, AuthProvider provider, Role role) {
+                  Boolean emailVerified, AuthProvider provider, Role role, MemberStatus status) {
         this.email = email;
         this.nickname = nickname;
         this.password = password;
@@ -70,6 +70,7 @@ public class Member {
         this.emailVerified = emailVerified != null ? emailVerified : false;
         this.provider = provider != null ? provider : AuthProvider.NORMAL;
         this.role = role != null ? role : Role.USER;
+        this.status = status != null ? status : MemberStatus.ACTIVE;
     }
 
     public void updateProfile(String nickname, String profileImageUrl) {
