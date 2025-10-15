@@ -11,7 +11,7 @@ http://localhost:8080/swagger-ui/index.html
 
 ### 프로덕션 환경
 ```
-http://15.165.136.100:8081/swagger-ui/index.html
+http://{baseURL}:8080/swagger-ui/index.html
 ```
 
 ## 인증이 필요 없는 API 테스트
@@ -43,8 +43,6 @@ http://15.165.136.100:8081/swagger-ui/index.html
 **참고:**
 - 비밀번호는 8~20자, 영문/숫자/특수문자 포함 필요
 - 닉네임은 2~20자, 한글/영문/숫자만 가능
-- 회원가입 시 이메일 인증 메일 자동 발송
-
 ---
 
 ### 2. 로그인 (POST /api/auth/login)
@@ -89,7 +87,7 @@ http://15.165.136.100:8081/swagger-ui/index.html
 
 **쿼리 파라미터:**
 ```
-email=test@example.com
+test@example.com
 ```
 
 **응답:**
@@ -104,7 +102,7 @@ false // 사용 가능
 
 **쿼리 파라미터:**
 ```
-nickname=테스트유저
+테스트유저
 ```
 
 **응답:**
@@ -341,44 +339,6 @@ http://15.165.136.100:8080/oauth2/authorization/kakao
 - 소셜 로그인 회원은 emailVerified=true로 자동 설정
 
 ---
-
-## 테스트 시나리오
-
-### 시나리오 1: 일반 회원가입 → 이메일 인증 → 로그인
-
-1. **회원가입** (POST /api/auth/signup)
-2. **이메일 인증 메일 확인** (받은 6자리 코드 확인)
-3. **이메일 인증** (POST /api/auth/email/verify)
-4. **로그인** (POST /api/auth/login)
-5. **Access Token 복사 → Authorize 설정**
-6. **회원 정보 조회** (GET /api/members/{memberId})
-
-### 시나리오 2: 회원 정보 수정 → 비밀번호 변경
-
-1. **로그인** (Access Token 발급)
-2. **Authorize 설정**
-3. **회원 정보 수정** (PUT /api/members/{memberId})
-4. **비밀번호 변경** (PUT /api/members/{memberId}/password)
-5. **로그아웃** (POST /api/auth/logout)
-6. **새 비밀번호로 재로그인**
-
-### 시나리오 3: 토큰 재발급
-
-1. **로그인** (Access Token, Refresh Token 발급)
-2. **24시간 후 Access Token 만료**
-3. **토큰 재발급** (POST /api/auth/refresh, Refresh-Token 헤더에 Refresh Token 전달)
-4. **새로운 Access Token으로 API 사용**
-
-### 시나리오 4: 카카오 로그인
-
-1. **브라우저에서 카카오 로그인** (GET /oauth2/authorization/kakao)
-2. **카카오 계정 로그인 및 권한 승인**
-3. **프론트엔드로 리다이렉트되면서 JWT 토큰 수령**
-4. **Access Token을 Swagger Authorize에 설정**
-5. **인증이 필요한 API 테스트**
-
----
-
 ## 에러 코드
 
 ### 400 Bad Request
@@ -396,33 +356,3 @@ http://15.165.136.100:8080/oauth2/authorization/kakao
 - 이메일 또는 닉네임 중복
 
 ---
-
-## 주의사항
-
-### JWT 토큰 설정
-- Swagger UI에서 "Authorize" 버튼으로 JWT 토큰 설정
-- 토큰 앞에 **"Bearer "** 문자열 포함 필수
-- 예: `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...`
-
-### 환경별 서버 URL
-- **로컬:** http://localhost:8080
-- **프로덕션:** http://15.165.136.100:8080
-- Swagger UI 우측 상단에서 서버 선택 가능
-
-### CORS 설정
-- 허용된 Origin:
-  - http://localhost:3000
-  - http://localhost:8080
-  - https://d4pdjk57v9eg4.cloudfront.net
-
-### 카카오 OAuth2 설정
-- **카카오 개발자 콘솔에 Redirect URI 등록 필수:**
-  - http://15.165.136.100:8080/login/oauth2/code/kakao
-
----
-
-## 추가 리소스
-
-- **OpenAPI 문서 JSON:** http://localhost:8080/v3/api-docs
-- **Actuator Health Check:** http://localhost:8080/actuator/health
-- **프로젝트 인증 흐름 문서:** docs/auth.md
