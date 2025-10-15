@@ -49,10 +49,26 @@ Thumbs.db
 *.jar
 !gradle/wrapper/gradle-wrapper.jar
 
-### Gradle cache ###
+### Gradle cache and system files ###
 .gradle/
 gradle/
+*.lck
+*.lock
+*.ok
+*.so
+*.bin
+LICENSE
+NOTICE
+README
+readme.txt
 
 ### Build artifacts ###
 target/
 build/
+
+### System and temporary files ###
+**/daemon/
+**/native/
+**/wrapper/dists/
+**/Program Files/
+C:/
