@@ -4,6 +4,7 @@ import com.mechuragi.mechuragi_server.auth.dto.*;
 import com.mechuragi.mechuragi_server.auth.service.AuthService;
 import com.mechuragi.mechuragi_server.auth.service.EmailService;
 import com.mechuragi.mechuragi_server.domain.member.dto.MemberResponse;
+import com.mechuragi.mechuragi_server.global.util.NicknameGenerator;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -19,6 +20,7 @@ public class AuthController {
 
     private final AuthService authService;
     private final EmailService emailService;
+    private final NicknameGenerator nicknameGenerator;
 
     /**
      * 회원가입
@@ -78,5 +80,15 @@ public class AuthController {
         log.info("이메일 인증 요청: email={}", request.getEmail());
         emailService.verifyEmail(request.getEmail(), request.getVerificationCode());
         return ResponseEntity.ok().build();
+    }
+
+    /**
+     * 랜덤 닉네임 생성 (일반 로그인용)
+     */
+    @GetMapping("/nickname/generate")
+    public ResponseEntity<NicknameResponse> generateNickname() {
+        log.info("랜덤 닉네임 생성 요청");
+        String nickname = nicknameGenerator.generateRandomNickname();
+        return ResponseEntity.ok(new NicknameResponse(nickname));
     }
 }
