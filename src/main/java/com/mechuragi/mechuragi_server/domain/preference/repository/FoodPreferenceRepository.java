@@ -10,12 +10,12 @@ import java.util.Optional;
 
 public interface FoodPreferenceRepository extends JpaRepository<FoodPreference, Long> {
 
-    List<FoodPreference> findByUserIdOrderByCreatedAtDesc(Long userId);
+    List<FoodPreference> findByMemberIdOrderByCreatedAtDesc(Long memberId);
 
-    Optional<FoodPreference> findByIdAndUserId(Long id, Long userId);
+    Optional<FoodPreference> findByIdAndMemberId(Long id, Long memberId);
 
-    @Query("SELECT COUNT(fp) FROM FoodPreference fp WHERE fp.user.id = :userId")
-    int countByUserId(@Param("userId") Long userId);
+    @Query("SELECT COUNT(fp) FROM FoodPreference fp WHERE fp.member.id = :memberId")
+    int countByMemberId(@Param("memberId") Long memberId);
 
-    void deleteByIdAndUserId(Long id, Long userId);
+    void deleteByIdAndMemberId(Long id, Long memberId);
 }

@@ -34,19 +34,26 @@ mechuragi_main_server/
 │   │   ├── java/com/mechuragi/mechuragi_server/
 │   │   │   ├── MechuragiServerApplication.java    # 메인 애플리케이션
 │   │   │   ├── TestController.java                # 테스트 API 컨트롤러
-│   │   │   ├── auth/                              # 인증/인가 패키지
-│   │   │   │   ├── config/                        # SecurityConfig, JwtConfig
-│   │   │   │   ├── entity/                        # RefreshToken, EmailVerification
-│   │   │   │   ├── dto/                           # SignupRequest, LoginRequest/Response
-│   │   │   │   ├── service/                       # AuthService, EmailService, JwtService
-│   │   │   │   ├── controller/                    # AuthController
-│   │   │   │   └── filter/                        # JwtAuthenticationFilter
-│   │   │   └── member/                            # 회원 도메인 패키지
-│   │   │       ├── entity/                        # Member (회원 엔티티)
-│   │   │       ├── dto/                           # MemberRequest, MemberResponse
-│   │   │       ├── repository/                    # MemberRepository
-│   │   │       ├── service/                       # MemberService
-│   │   │       └── controller/                    # MemberController
+│   │   │   ├── domain/                            # 도메인 패키지
+│   │   │   │   ├── member/                        # 회원 도메인
+│   │   │   │   │   ├── entity/                    # Member (회원 엔티티)
+│   │   │   │   │   ├── repository/                # MemberRepository
+│   │   │   │   │   ├── service/                   # MemberService (예정)
+│   │   │   │   │   ├── controller/                # MemberController (예정)
+│   │   │   │   │   └── dto/                       # MemberRequest, MemberResponse (예정)
+│   │   │   │   └── preference/                    # 음식 취향 도메인
+│   │   │   │       ├── entity/                    # FoodPreference, DislikedFood 등
+│   │   │   │       ├── repository/                # FoodPreferenceRepository 등
+│   │   │   │       ├── service/                   # FoodPreferenceService
+│   │   │   │       ├── controller/                # FoodPreferenceController
+│   │   │   │       └── dto/                       # CreatePreferenceRequest 등
+│   │   │   └── auth/                              # 모든 도메인에 작동하는 전역 인증 인프라
+│   │   │       ├── config/                        # SecurityConfig, JwtConfig
+│   │   │       ├── entity/                        # RefreshToken, EmailVerification
+│   │   │       ├── dto/                           # SignupRequest, LoginRequest/Response
+│   │   │       ├── service/                       # AuthService, EmailService, JwtService
+│   │   │       ├── controller/                    # AuthController
+│   │   │       └── filter/                        # JwtAuthenticationFilter
 │   │   └── resources/
 │   │       ├── application.yml                    # 공통 설정
 │   │       ├── application-local.yml              # 로컬 환경 설정

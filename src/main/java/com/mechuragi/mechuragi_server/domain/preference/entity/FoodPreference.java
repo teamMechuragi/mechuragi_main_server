@@ -1,6 +1,6 @@
 package com.mechuragi.mechuragi_server.domain.preference.entity;
 
-import com.mechuragi.mechuragi_server.domain.user.entity.User;
+import com.mechuragi.mechuragi_server.domain.member.entity.Member;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -24,8 +24,8 @@ public class FoodPreference {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
-    private User user;
+    @JoinColumn(name = "member_id", nullable = false)
+    private Member member;
 
     @Column(nullable = false, length = 100)
     private String preferenceName;
@@ -73,10 +73,10 @@ public class FoodPreference {
     }
 
     @Builder
-    public FoodPreference(User user, String preferenceName, Boolean isActive,
+    public FoodPreference(Member member, String preferenceName, Boolean isActive,
                          Integer numberOfDiners, String allergyInfo,
                          DietStatus isOnDiet, VeganOption veganOption, SpiceLevel spiceLevel) {
-        this.user = user;
+        this.member = member;
         this.preferenceName = preferenceName;
         this.isActive = isActive;
         this.numberOfDiners = numberOfDiners;

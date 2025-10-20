@@ -3,7 +3,7 @@ package com.mechuragi.mechuragi_server.domain.preference.service;
 import com.mechuragi.mechuragi_server.domain.preference.dto.*;
 import com.mechuragi.mechuragi_server.domain.preference.entity.*;
 import com.mechuragi.mechuragi_server.domain.preference.repository.*;
-import com.mechuragi.mechuragi_server.domain.user.entity.User;
+import com.mechuragi.mechuragi_server.domain.member.entity.Member;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,11 +23,11 @@ public class FoodPreferenceService {
 
     // 새로운 음식 취향 등록
     @Transactional
-    public Long createPreference(User user, CreatePreferenceRequest request) {
-        String preferenceName = generatePreferenceName(user, request.getPreferenceName());
+    public Long createPreference(Member member, CreatePreferenceRequest request) {
+        String preferenceName = generatePreferenceName(member, request.getPreferenceName());
 
         FoodPreference preference = FoodPreference.builder()
-                .user(user)
+                .member(member)
                 .preferenceName(preferenceName)
                 .isActive(false)
                 .numberOfDiners(request.getNumberOfDiners())
@@ -47,8 +47,8 @@ public class FoodPreferenceService {
     }
 
     // 모든 음식 취향 목록 조회
-    public List<PreferenceListResponse> getPreferenceList(Long userId) {
-        List<FoodPreference> preferences = foodPreferenceRepository.findByUserIdOrderByCreatedAtDesc(userId);
+    public List<PreferenceListResponse> getPreferenceList(Long memberId) {
+        List<FoodPreference> preferences = foodPreferenceRepository.findByMemberIdOrderByCreatedAtDesc(memberId);
 
         return preferences.stream()
                 .map(preference -> new PreferenceListResponse(
@@ -60,8 +60,8 @@ public class FoodPreferenceService {
     }
 
     // 특정 음식 취향 상세 정보 조회
-    public PreferenceDetailResponse getPreferenceDetail(Long userId, Long preferenceId) {
-        FoodPreference preference = foodPreferenceRepository.findByIdAndUserId(preferenceId, userId)
+    public PreferenceDetailResponse getPreferenceDetail(Long memberId, Long preferenceId) {
+        FoodPreference preference = foodPreferenceRepository.findByIdAndMemberId(preferenceId, memberId)
                 .orElseThrow(() -> new IllegalArgumentException("취향을 찾을 수 없습니다."));
 
         List<String> foodTypes = preferenceFoodTypeRepository.findByPreferenceId(preferenceId)
@@ -97,8 +97,8 @@ public class FoodPreferenceService {
 
     // 음식 취향 정보 수정
     @Transactional
-    public void updatePreference(Long userId, Long preferenceId, UpdatePreferenceRequest request) {
-        FoodPreference preference = foodPreferenceRepository.findByIdAndUserId(preferenceId, userId)
+    public void updatePreference(Long memberId, Long preferenceId, UpdatePreferenceRequest request) {
+        FoodPreference preference = foodPreferenceRepository.findByIdAndMemberId(preferenceId, memberId)
                 .orElseThrow(() -> new IllegalArgumentException("취향을 찾을 수 없습니다."));
 
         preference.updatePreference(
@@ -128,23 +128,23 @@ public class FoodPreferenceService {
 
     // 음식 취향 삭제
     @Transactional
-    public void deletePreference(Long userId, Long preferenceId) {
-        FoodPreference preference = foodPreferenceRepository.findByIdAndUserId(preferenceId, userId)
+    public void deletePreference(Long memberId, Long preferenceId) {
+        FoodPreference preference = foodPreferenceRepository.findByIdAndMemberId(preferenceId, memberId)
                 .orElseThrow(() -> new IllegalArgumentException("취향을 찾을 수 없습니다."));
 
         preferenceFoodTypeRepository.deleteByPreferenceId(preferenceId);
         preferenceTasteRepository.deleteByPreferenceId(preferenceId);
         dislikedFoodRepository.deleteByPreferenceId(preferenceId);
-        foodPreferenceRepository.deleteByIdAndUserId(preferenceId, userId);
+        foodPreferenceRepository.deleteByIdAndMemberId(preferenceId, memberId);
     }
 
     // 취향 이름 자동 생성 or 사용자 입력값 검증
-    private String generatePreferenceName(User user, String requestedName) {
+    private String generatePreferenceName(Member member, String requestedName) {
         if (requestedName != null && !requestedName.trim().isEmpty()) {
             return requestedName.trim();
         }
 
-        int count = foodPreferenceRepository.countByUserId(user.getId()) + 1;
+        int count = foodPreferenceRepository.countByMemberId(member.getId()) + 1;
         return "취향 " + count;
     }
 

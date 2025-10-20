@@ -1,8 +1,10 @@
 spring:
+  config:
+    import: optional:dotenv:.env
   datasource:
-    url: jdbc:mysql://localhost:3306/mechuragi_local
-    username: username
-    password: password
+    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:mechuragi_db}
+    username: ${DB_USERNAME:mechuragi_user}
+    password: ${DB_PASSWORD:mechuragi_pass}
     driver-class-name: com.mysql.cj.jdbc.Driver
 
   data:
@@ -18,8 +20,35 @@ spring:
       hibernate:
         format_sql: true
 
+  security:
+    oauth2:
+      client:
+        registration:
+          kakao:
+            client-id: ${KAKAO_CLIENT_ID}
+            client-secret: ${KAKAO_CLIENT_SECRET}
+            redirect-uri: ${KAKAO_REDIRECT_URI:http://localhost:8080/login/oauth2/code/kakao}
+
 jwt:
-  secret: ${JWT_SECRET:mySecretKey}
+  secret: ${JWT_SECRET}
+
+oauth2:
+  redirect-uri: ${OAUTH2_REDIRECT_URI:http://localhost:3000/oauth2/callback}
+
+cloud:
+  aws:
+    s3:
+      bucket: ${S3_BUCKET:mechuragi-dev-images}
+    region:
+      static: ${AWS_REGION:ap-northeast-2}
+    ses:
+      from-email: ${SES_FROM_EMAIL:mechuragi001@gmail.com}
+      region: ${AWS_REGION:ap-northeast-2}
+
+aws:
+  ses:
+    from-email: ${SES_FROM_EMAIL:mechuragi001@gmail.com}
+    domain: ${SES_DOMAIN:mechuragi.kro.kr}
 
 logging:
   level:
