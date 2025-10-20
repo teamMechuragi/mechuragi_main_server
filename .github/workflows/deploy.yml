@@ -27,6 +27,9 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-gradle-
 
+      - name: Make gradlew executable
+        run: chmod +x gradlew
+
       - name: Run tests
         run: ./gradlew test
 
@@ -45,6 +48,9 @@ jobs:
         with:
           java-version: '17'
           distribution: 'temurin'
+
+      - name: Make gradlew executable
+        run: chmod +x gradlew
 
       - name: Build application
         run: ./gradlew build -x test
