@@ -16,14 +16,95 @@ http://{baseURL}:8080/swagger-ui/index.html
 
 ## 인증이 필요 없는 API 테스트
 
-### 1. 회원가입 (POST /api/auth/signup)
+### 회원가입 플로우
+
+**⚠️ 중요: 회원가입은 반드시 다음 순서로 진행해야 합니다!**
+
+```
+1. 이메일 인증 메일 발송 (POST /api/auth/email/send)
+2. 이메일 인증 코드 확인 (POST /api/auth/email/verify)
+3. 회원가입 (POST /api/auth/signup)
+```
+
+---
+
+### 1. 이메일 인증 메일 발송 (POST /api/auth/email/send)
+
+**요청 본문:**
+```json
+{
+  "email": "test@example.com"
+}
+```
+
+**응답:** 200 OK
+
+**기능:**
+- 이메일 중복 체크
+- 6자리 인증 코드 생성 및 이메일 발송
+- 인증 코드 유효기간: 30분
+
+**참고:**
+- 이미 사용 중인 이메일이면 400 에러 발생
+- AWS SES로 이메일 발송 (Sandbox 모드에서는 인증된 이메일로만 발송 가능)
+
+---
+
+### 2. 이메일 인증 코드 확인 (POST /api/auth/email/verify)
+
+**요청 본문:**
+```json
+{
+  "email": "test@example.com",
+  "verificationCode": "123456"
+}
+```
+
+**응답:** 200 OK
+
+**기능:**
+- 인증 코드 일치 여부 확인
+- 만료 여부 확인
+- 인증 완료 처리
+
+**참고:**
+- 인증 코드가 일치하지 않으면 400 에러 발생
+- 인증 코드가 만료되었으면 400 에러 발생
+- 인증 완료 후에만 회원가입 가능
+
+---
+
+### 3. 랜덤 닉네임 생성 (GET /api/auth/nickname/generate)
+
+**요청:** 없음
+
+**응답:**
+```json
+{
+  "nickname": "행복한곰"
+}
+```
+
+**기능:**
+- 랜덤 닉네임 생성 (형용사 + 명사 조합)
+- 회원가입 시 닉네임 제안용
+
+**참고:**
+- 생성된 닉네임을 그대로 사용하거나 사용자가 수정 가능
+- 최종 닉네임은 회원가입 시 자동으로 "닉네임 + 멤버ID" 형태로 저장됨 (예: "행복한곰1")
+
+---
+
+### 4. 회원가입 (POST /api/auth/signup)
+
+**⚠️ 주의: 이메일 인증 완료 후에만 가능합니다!**
 
 **요청 본문:**
 ```json
 {
   "email": "test@example.com",
   "password": "Test1234!@",
-  "nickname": "테스트유저"
+  "nickname": "행복한곰"
 }
 ```
 
@@ -32,20 +113,29 @@ http://{baseURL}:8080/swagger-ui/index.html
 {
   "id": 1,
   "email": "test@example.com",
-  "nickname": "테스트유저",
-  "emailVerified": false,
+  "nickname": "행복한곰1",
+  "emailVerified": true,
   "provider": "NORMAL",
   "role": "USER",
   "status": "ACTIVE"
 }
 ```
 
+**기능:**
+- 이메일 인증 완료 여부 확인
+- 회원 정보 저장
+- 닉네임 자동 변환 ("행복한곰" → "행복한곰1")
+- 이메일 인증 정보 삭제
+
 **참고:**
 - 비밀번호는 8~20자, 영문/숫자/특수문자 포함 필요
-- 닉네임은 2~20자, 한글/영문/숫자만 가능
+- 닉네임은 자동으로 "입력한닉네임 + 멤버ID" 형태로 저장됨
+- 이메일 인증이 완료되지 않았으면 400 에러 발생
+- 이메일 인증이 만료되었으면 400 에러 발생
+
 ---
 
-### 2. 로그인 (POST /api/auth/login)
+### 5. 로그인 (POST /api/auth/login)
 
 **요청 본문:**
 ```json
@@ -83,7 +173,7 @@ http://{baseURL}:8080/swagger-ui/index.html
 
 ---
 
-### 3. 이메일 중복 체크 (GET /api/members/check/email)
+### 6. 이메일 중복 체크 (GET /api/members/check/email)
 
 **쿼리 파라미터:**
 ```
@@ -96,13 +186,17 @@ true  // 중복됨
 false // 사용 가능
 ```
 
+**참고:**
+- 회원가입 전 이메일 중복 체크용
+- 이메일 인증 API에서도 자동으로 중복 체크를 수행하므로 선택적으로 사용 가능
+
 ---
 
-### 4. 닉네임 중복 체크 (GET /api/members/check/nickname)
+### 7. 닉네임 중복 체크 (GET /api/members/check/nickname)
 
 **쿼리 파라미터:**
 ```
-테스트유저
+테스트유저1
 ```
 
 **응답:**
@@ -111,39 +205,9 @@ true  // 중복됨
 false // 사용 가능
 ```
 
----
-
-### 5. 이메일 인증 메일 발송 (POST /api/auth/email/send)
-
-**요청 본문:**
-```json
-{
-  "email": "test@example.com"
-}
-```
-
-**응답:** 200 OK
-
 **참고:**
-- 6자리 인증 코드가 이메일로 발송됨
-- 인증 코드 유효기간: 30분
-
----
-
-### 6. 이메일 인증 코드 확인 (POST /api/auth/email/verify)
-
-**요청 본문:**
-```json
-{
-  "email": "test@example.com",
-  "verificationCode": "123456"
-}
-```
-
-**응답:** 200 OK
-
-**참고:**
-- 인증 성공 시 Member.emailVerified가 true로 변경됨
+- 회원가입 시 닉네임은 자동으로 "닉네임 + 멤버ID" 형태로 저장되므로 일반적으로 중복되지 않음
+- 프로필 수정 시 닉네임 변경할 때 사용
 
 ---
 
@@ -164,7 +228,7 @@ false // 사용 가능
 
 ---
 
-### 7. 로그아웃 (POST /api/auth/logout)
+### 8. 로그아웃 (POST /api/auth/logout)
 
 **JWT 인증 필요** ✅
 
@@ -178,7 +242,7 @@ false // 사용 가능
 
 ---
 
-### 8. Access Token 재발급 (POST /api/auth/refresh)
+### 9. Access Token 재발급 (POST /api/auth/refresh)
 
 **헤더:**
 ```
@@ -201,7 +265,7 @@ Refresh-Token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 
 ---
 
-### 9. 회원 조회 (GET /api/members/{memberId})
+### 10. 회원 조회 (GET /api/members/{memberId})
 
 **JWT 인증 필요** ✅
 
@@ -227,7 +291,7 @@ memberId=1
 
 ---
 
-### 10. 회원 정보 수정 (PUT /api/members/{memberId})
+### 11. 회원 정보 수정 (PUT /api/members/{memberId})
 
 **JWT 인증 필요** ✅
 
@@ -264,7 +328,7 @@ memberId=1
 
 ---
 
-### 11. 비밀번호 변경 (PUT /api/members/{memberId}/password)
+### 12. 비밀번호 변경 (PUT /api/members/{memberId}/password)
 
 **JWT 인증 필요** ✅
 
@@ -289,7 +353,7 @@ memberId=1
 
 ---
 
-### 12. 회원 탈퇴 (DELETE /api/members/{memberId})
+### 13. 회원 탈퇴 (DELETE /api/members/{memberId})
 
 **JWT 인증 필요** ✅
 
@@ -337,6 +401,8 @@ http://{baseurl}/oauth2/authorization/kakao
 - Swagger UI에서는 직접 테스트 불가 (브라우저 리다이렉트 필요)
 - 카카오 로그인 성공 시 자동으로 회원 가입 또는 로그인 처리
 - 소셜 로그인 회원은 emailVerified=true로 자동 설정
+- **카카오에서 받는 정보:** 이메일만
+- **자동 생성:** 닉네임 (랜덤닉네임 + 멤버ID, 예: "행복한곰1"), 프로필 이미지 (null)
 
 ---
 ## 에러 코드

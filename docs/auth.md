@@ -1,6 +1,6 @@
 # JWT 인증 + Spring Security 회원가입/로그인 구현 계획
 
-## JWT 인증 동작 흐름 (@AuthenticationPrincipal)
+##  JWT 인증 동작 흐름 (@AuthenticationPrincipal)
 
 ```
 1. 클라이언트 요청

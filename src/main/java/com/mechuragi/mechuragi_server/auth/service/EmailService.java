@@ -25,39 +25,32 @@ public class EmailService {
     private final EmailVerificationRepository emailVerificationRepository;
     private final MemberRepository memberRepository;
 
-    @Value("${aws.ses.from-email}")
+    @Value("${cloud.aws.ses.from-email}")
     private String fromEmail;
 
-    @Value("${aws.ses.domain}")
-    private String domain;
-
     /**
-     * 이메일 인증 메일 발송
+     * 이메일 인증 메일 발송 (회원가입 전)
      */
     @Transactional
     public void sendVerificationEmail(String email) {
-        // 회원 조회
-        Member member = memberRepository.findByEmail(email)
-                .orElseThrow(() -> new IllegalArgumentException("회원을 찾을 수 없습니다."));
-
-        // 이미 인증된 회원인지 확인
-        if (member.getEmailVerified()) {
-            throw new IllegalArgumentException("이미 인증된 이메일입니다.");
-        }
+        // 이메일 중복 체크
+//        if (memberRepository.existsByEmail(email)) {
+//            throw new IllegalArgumentException("이미 사용 중인 이메일입니다.");
+//        }
 
         // 인증 코드 생성
         String verificationCode = generateVerificationCode();
 
         // 기존 인증 정보가 있으면 업데이트, 없으면 새로 생성
         LocalDateTime expiresAt = LocalDateTime.now().plusMinutes(30); // 30분 유효
-        EmailVerification emailVerification = emailVerificationRepository.findByMemberId(member.getId())
+        EmailVerification emailVerification = emailVerificationRepository.findByEmail(email)
                 .map(verification -> {
                     verification.updateCode(verificationCode, expiresAt);
                     return verification;
                 })
                 .orElseGet(() -> {
                     EmailVerification newVerification = EmailVerification.builder()
-                            .memberId(member.getId())
+                            .email(email)
                             .verificationCode(verificationCode)
                             .expiresAt(expiresAt)
                             .verified(false)
@@ -67,26 +60,23 @@ public class EmailService {
 
         // 이메일 발송
         try {
+            log.info("이메일 발송 시도: email={}, code={}, fromEmail={}", email, verificationCode, fromEmail);
             sendEmail(email, verificationCode);
             log.info("이메일 인증 메일 발송 완료: email={}, code={}", email, verificationCode);
         } catch (Exception e) {
-            log.error("이메일 발송 실패: email={}, error={}", email, e.getMessage());
+            log.error("이메일 발송 실패: email={}, error={}", email, e.getMessage(), e);
             throw new RuntimeException("이메일 발송에 실패했습니다.");
         }
     }
 
     /**
-     * 이메일 인증 코드 확인
+     * 이메일 인증 코드 확인 (회원가입 전)
      */
     @Transactional
     public void verifyEmail(String email, String verificationCode) {
-        // 회원 조회
-        Member member = memberRepository.findByEmail(email)
-                .orElseThrow(() -> new IllegalArgumentException("회원을 찾을 수 없습니다."));
-
         // 인증 정보 조회
         EmailVerification emailVerification = emailVerificationRepository
-                .findByMemberIdAndVerificationCode(member.getId(), verificationCode)
+                .findByEmailAndVerificationCode(email, verificationCode)
                 .orElseThrow(() -> new IllegalArgumentException("인증 코드가 일치하지 않습니다."));
 
         // 만료 여부 확인
@@ -101,7 +91,6 @@ public class EmailService {
 
         // 인증 완료 처리
         emailVerification.verify();
-        member.verifyEmail();
 
         log.info("이메일 인증 완료: email={}", email);
     }
