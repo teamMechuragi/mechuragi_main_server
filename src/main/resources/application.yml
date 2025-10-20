@@ -64,4 +64,3 @@ cloud:
       bucket: ${S3_BUCKET}
     ses:
       from-email: ${SES_FROM_EMAIL}
-      domain: ${SES_DOMAIN}

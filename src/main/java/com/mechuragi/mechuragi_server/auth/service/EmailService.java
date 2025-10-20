@@ -28,18 +28,15 @@ public class EmailService {
     @Value("${cloud.aws.ses.from-email}")
     private String fromEmail;
 
-    @Value("${cloud.aws.ses.domain}")
-    private String domain;
-
     /**
      * 이메일 인증 메일 발송 (회원가입 전)
      */
     @Transactional
     public void sendVerificationEmail(String email) {
         // 이메일 중복 체크
-        if (memberRepository.existsByEmail(email)) {
-            throw new IllegalArgumentException("이미 사용 중인 이메일입니다.");
-        }
+//        if (memberRepository.existsByEmail(email)) {
+//            throw new IllegalArgumentException("이미 사용 중인 이메일입니다.");
+//        }
 
         // 인증 코드 생성
         String verificationCode = generateVerificationCode();
@@ -63,10 +60,11 @@ public class EmailService {
 
         // 이메일 발송
         try {
+            log.info("이메일 발송 시도: email={}, code={}, fromEmail={}", email, verificationCode, fromEmail);
             sendEmail(email, verificationCode);
             log.info("이메일 인증 메일 발송 완료: email={}, code={}", email, verificationCode);
         } catch (Exception e) {
-            log.error("이메일 발송 실패: email={}, error={}", email, e.getMessage());
+            log.error("이메일 발송 실패: email={}, error={}", email, e.getMessage(), e);
             throw new RuntimeException("이메일 발송에 실패했습니다.");
         }
     }
