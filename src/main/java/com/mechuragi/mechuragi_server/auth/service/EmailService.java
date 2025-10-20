@@ -25,10 +25,10 @@ public class EmailService {
     private final EmailVerificationRepository emailVerificationRepository;
     private final MemberRepository memberRepository;
 
-    @Value("${aws.ses.from-email}")
+    @Value("${cloud.aws.ses.from-email}")
     private String fromEmail;
 
-    @Value("${aws.ses.domain}")
+    @Value("${cloud.aws.ses.domain}")
     private String domain;
 
     /**

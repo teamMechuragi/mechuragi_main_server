@@ -24,7 +24,7 @@ spring:
           kakao:
             client-id: ${KAKAO_CLIENT_ID}
             client-secret: ${KAKAO_CLIENT_SECRET}
-            redirect-uri: ${KAKAO_REDIRECT_URI:http://localhost:8080/login/oauth2/code/kakao} # 카카오 → 백엔드
+            redirect-uri: ${KAKAO_REDIRECT_URI} # 카카오 → 백엔드
             authorization-grant-type: authorization_code
             client-authentication-method: client_secret_post
             client-name: Kakao
@@ -42,7 +42,7 @@ jwt:
   expiration: 86400000  # 24시간 (밀리초)
 
 oauth2:
-  redirect-uri: ${OAUTH2_REDIRECT_URI:http://localhost:3000/oauth2/callback} #백엔드에서 프론트엔드로 토큰 전달
+  redirect-uri: ${OAUTH2_REDIRECT_URI} #백엔드에서 프론트엔드로 토큰 전달
 
 management:
   endpoints:
@@ -55,10 +55,13 @@ management:
 
 cloud:
   aws:
-    s3:
-      bucket: ${S3_BUCKET:mechuragi-dev-images}
+    credentials:
+      access-key: ${AWS_ACCESS_KEY_ID}
+      secret-key: ${AWS_SECRET_ACCESS_KEY}
     region:
-      static: ${AWS_REGION:ap-northeast-2}
+      static: ${AWS_REGION}
+    s3:
+      bucket: ${S3_BUCKET}
     ses:
-      from-email: ${SES_FROM_EMAIL:noreply@mechuragi.com}
-      region: ${AWS_REGION:ap-northeast-2}
+      from-email: ${SES_FROM_EMAIL}
+      domain: ${SES_DOMAIN}
