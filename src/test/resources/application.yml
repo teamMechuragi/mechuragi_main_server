@@ -45,20 +45,17 @@ jwt:
 oauth2:
   redirect-uri: http://localhost:3000/oauth2/callback
 
-aws:
-  ses:
-    from-email: test@example.com
-    domain: test.com
-
 cloud:
   aws:
-    s3:
-      bucket: test-bucket
-    region:
-      static: ap-northeast-2
     credentials:
       access-key: test-access-key
       secret-key: test-secret-key
+    region:
+      static: ap-northeast-2
+    s3:
+      bucket: test-bucket
+    ses:
+      from-email: test@example.com
 
 logging:
   level:
