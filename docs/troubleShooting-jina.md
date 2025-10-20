@@ -227,3 +227,162 @@ at com.mechuragi.mechuragi_server.auth.service.JwtService.lambda$refreshAccessTo
 - Refresh Token 유효기간: 7일
 - 비밀번호 규칙: 8~20자, 영문/숫자/특수문자 포함
 - 닉네임 규칙: 2~20자, 한글/영문/숫자만 가능
+
+---
+
+## 테스트 일자: 2025-10-19
+
+---
+
+## 개선 작업 내역
+
+### 작업 1: OAuth2 카카오 로그인 - 이메일만 받아오도록 수정
+**작업 일시:** 2025-10-19
+
+**변경 사항:**
+카카오 OAuth2 로그인 시 이메일 정보만 받아오고, 닉네임과 프로필 이미지는 서버에서 자동 생성하도록 변경
+
+**수정 파일:**
+
+1. **OAuth2Attributes.java** (`src/main/java/com/mechuragi/mechuragi_server/auth/dto/OAuth2Attributes.java`)
+   - `nickname`, `profileImageUrl` 필드 제거
+   - `ofKakao()` 메서드에서 이메일만 받아오도록 수정
+   - `toEntity()` 메서드에 `nickname` 파라미터 추가
+
+2. **Member.java** (`src/main/java/com/mechuragi/mechuragi_server/domain/member/entity/Member.java:101-105`)
+   - `appendIdToNickname()` 메서드 추가
+   - 랜덤 닉네임 + 멤버 ID(Long → int 변환)를 조합하여 최종 닉네임 생성
+
+3. **CustomOAuth2UserService.java** (`src/main/java/com/mechuragi/mechuragi_server/auth/service/CustomOAuth2UserService.java`)
+   - `NicknameGenerator` 의존성 주입 추가
+   - `saveOrUpdate()` 메서드 수정:
+     - 신규 회원: 랜덤 닉네임 생성 → 임시 저장 → ID 발급 → 닉네임+ID 조합
+     - 기존 회원: 프로필 업데이트 로직 제거 (조회만 수행)
+
+**결과:**
+- 카카오에서 이메일만 받아옴
+- 닉네임: `NicknameGenerator`로 생성된 랜덤값 + 멤버 ID (예: "행복한곰1")
+- 프로필 이미지: null
+
+---
+
+### 작업 2: 닉네임 자동생성 API 추가 (일반 로그인용)
+**작업 일시:** 2025-10-19
+
+**변경 사항:**
+일반 회원가입 시 사용할 수 있는 랜덤 닉네임 생성 API 추가
+
+**생성/수정 파일:**
+
+1. **NicknameResponse.java** (신규 생성)
+   - 경로: `src/main/java/com/mechuragi/mechuragi_server/auth/dto/NicknameResponse.java`
+   - 닉네임을 반환하는 응답 DTO
+
+2. **AuthController.java** (`src/main/java/com/mechuragi/mechuragi_server/auth/controller/AuthController.java:88-93`)
+   - `NicknameGenerator` 의존성 주입 추가
+   - **GET `/api/auth/nickname/generate`** API 추가
+
+**API 사용 예시:**
+```bash
+GET /api/auth/nickname/generate
+
+# 응답
+{
+  "nickname": "행복한곰"
+}
+```
+
+**사용 시나리오:**
+프론트엔드에서 회원가입 화면에 랜덤 닉네임을 제안하고, 사용자가 원하면 그대로 사용하거나 수정 가능
+
+---
+
+### 작업 3: 이메일 인증 로직 개선 - 회원가입 전 인증으로 변경
+**작업 일시:** 2025-10-19
+
+**변경 사항:**
+기존: 회원가입 → 이메일 인증
+개선: 이메일 인증 → 회원가입
+
+**수정 파일:**
+
+1. **EmailService.java** (`src/main/java/com/mechuragi/mechuragi_server/auth/service/EmailService.java`)
+   - **sendVerificationEmail()** (38-72줄):
+     - 회원 조회 로직 제거
+     - 이메일 중복 체크 추가
+     - `memberId` 대신 `email`로 인증 정보 관리
+   - **verifyEmail()** (78-98줄):
+     - 회원 조회 로직 제거
+     - `email`로 인증 정보 조회
+     - 회원 이메일 인증 처리 제거 (회원가입 전이므로)
+
+2. **EmailVerification.java** (`src/main/java/com/mechuragi/mechuragi_server/auth/entity/EmailVerification.java:26-27`)
+   - `memberId` 필드를 `email` 필드로 변경
+   - 회원가입 전에 이메일만으로 인증 관리 가능
+
+3. **EmailVerificationRepository.java** (`src/main/java/com/mechuragi/mechuragi_server/auth/repository/EmailVerificationRepository.java`)
+   - `findByMemberId()` → `findByEmail()` 변경
+   - `findByMemberIdAndVerificationCode()` → `findByEmailAndVerificationCode()` 변경
+   - `deleteByMemberId()` → `deleteByEmail()` 변경
+
+4. **AuthService.java** (`src/main/java/com/mechuragi/mechuragi_server/auth/service/AuthService.java:36-80`)
+   - **signup()** 메서드 수정:
+     - 이메일 인증 여부 확인 로직 추가 (43-52줄)
+     - 임시 닉네임으로 Member 저장 (69줄)
+     - `appendIdToNickname()`로 최종 닉네임 생성 (72줄)
+     - 회원가입 완료 후 이메일 인증 정보 삭제 (75줄)
+
+**개선된 회원가입 플로우:**
+```
+1. 이메일 인증 메일 발송: POST /api/auth/email/send
+   - 이메일 중복 확인 → 인증 코드 생성 → 이메일 발송
+
+2. 이메일 인증 코드 확인: POST /api/auth/email/verify
+   - 인증 코드 확인 → 인증 완료 처리
+
+3. 회원가입: POST /api/auth/signup
+   - 이메일 인증 완료 여부 확인
+   - 임시 닉네임으로 저장 → 닉네임 + ID 조합 (예: "행복한곰1")
+   - 이메일 인증 정보 삭제
+```
+
+**장점:**
+- 이메일 중복을 회원가입 전에 확인 가능
+- 인증되지 않은 이메일로 회원가입 불가
+- 트랜잭션 경계가 명확해짐
+- 이메일 인증 정보가 회원 테이블과 독립적으로 관리됨
+
+**주의사항:**
+- 이메일 인증은 30분 유효
+- 회원가입 시 반드시 이메일 인증이 완료되어야 함
+- 닉네임은 자동으로 "랜덤닉네임 + 멤버ID" 형태로 생성됨
+
+---
+
+### 작업 4: 닉네임 생성 규칙 통일
+**작업 일시:** 2025-10-19
+
+**변경 사항:**
+일반 회원가입과 OAuth2 로그인 모두 동일한 닉네임 생성 규칙 적용
+
+**닉네임 생성 규칙:**
+- 형식: `{랜덤닉네임}{멤버ID}`
+- 예시: "행복한곰1", "맛있는피자123"
+- 랜덤닉네임: `NicknameGenerator`에서 형용사 + 명사 조합으로 생성
+- 멤버ID: Long 타입의 기본키를 int로 변환하여 사용
+
+**적용 위치:**
+1. **일반 회원가입** (`AuthService.signup()`):
+   - 프론트엔드에서 받은 닉네임 + 멤버ID 조합
+   - 사용자가 API로 받은 랜덤 닉네임을 그대로 사용하거나 수정 가능
+
+2. **OAuth2 로그인** (`CustomOAuth2UserService.saveOrUpdate()`):
+   - 서버에서 자동으로 랜덤 닉네임 생성 + 멤버ID 조합
+   - 카카오에서 받은 닉네임 사용 안 함
+
+**참고:**
+- `NicknameGenerator`는 형용사 20개, 명사 20개를 조합하여 총 400가지 닉네임 생성 가능
+- 멤버ID를 붙여서 유니크함을 보장
+- 닉네임은 가입 후 프로필 수정 API로 변경 가능
+
+---

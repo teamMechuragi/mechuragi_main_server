@@ -10,17 +10,17 @@ import java.util.Optional;
 public interface EmailVerificationRepository extends JpaRepository<EmailVerification, Long> {
 
     /**
-     * 회원 ID로 이메일 인증 정보 조회
+     * 이메일로 인증 정보 조회
      */
-    Optional<EmailVerification> findByMemberId(Long memberId);
+    Optional<EmailVerification> findByEmail(String email);
 
     /**
-     * 회원 ID와 인증 코드로 조회
+     * 이메일과 인증 코드로 조회
      */
-    Optional<EmailVerification> findByMemberIdAndVerificationCode(Long memberId, String verificationCode);
+    Optional<EmailVerification> findByEmailAndVerificationCode(String email, String verificationCode);
 
     /**
-     * 회원 ID로 이메일 인증 정보 삭제
+     * 이메일로 인증 정보 삭제
      */
-    void deleteByMemberId(Long memberId);
+    void deleteByEmail(String email);
 }
