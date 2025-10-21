@@ -186,4 +186,10 @@ public class FoodPreferenceService {
             dislikedFoodRepository.saveAll(entities);
         }
     }
+
+    // 활성화된 음식 취향 조회 (AI 추천용)
+    public FoodPreference findActivePreference(Member member) {
+        return foodPreferenceRepository.findByMemberAndIsActiveTrue(member)
+                .orElseThrow(() -> new IllegalArgumentException("활성화된 음식 취향이 없습니다"));
+    }
 }
