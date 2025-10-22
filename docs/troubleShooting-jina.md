@@ -167,7 +167,7 @@ AWS SES 이메일 발송 실패. 가능한 원인:
 
 #### 방법 3: AWS 자격 증명 확인
 ```bash
-# .env 파일 확인
+# dev.env 파일 확인
 AWS_ACCESS_KEY_ID=your-access-key
 AWS_SECRET_ACCESS_KEY=your-secret-key
 AWS_REGION=ap-northeast-2

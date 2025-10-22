@@ -18,7 +18,7 @@
           <option value="bootRun" />
         </list>
       </option>
-      <option name="vmOptions" value="-Dfile.encoding=UTF-8" />
+      <option name="vmOptions" value="-Dspring.profiles.active=local" />
     </ExternalSystemSettings>
     <ExternalSystemDebugServerProcess>true</ExternalSystemDebugServerProcess>
     <ExternalSystemReattachDebugProcess>true</ExternalSystemReattachDebugProcess>
@@ -31,7 +31,7 @@
         <option name="IS_ENABLE_EXPERIMENTAL_INTEGRATIONS" value="false" />
         <ENTRIES>
           <ENTRY IS_ENABLED="true" PARSER="runconfig" IS_EXECUTABLE="false" />
-          <ENTRY IS_ENABLED="true" PARSER="env" IS_EXECUTABLE="false" PATH="$PROJECT_DIR$/.env.local" />
+          <ENTRY IS_ENABLED="true" PARSER="env" IS_EXECUTABLE="false" PATH=".env" />
         </ENTRIES>
       </extension>
     </EXTENSION>

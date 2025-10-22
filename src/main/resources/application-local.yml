@@ -1,6 +1,11 @@
+server:
+  port: 8080
+
 spring:
   config:
-    import: optional:dotenv:.env
+    activate:
+      on-profile: local
+
   datasource:
     url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:mechuragi_db}
     username: ${DB_USERNAME:mechuragi_user}
@@ -27,28 +32,38 @@ spring:
           kakao:
             client-id: ${KAKAO_CLIENT_ID}
             client-secret: ${KAKAO_CLIENT_SECRET}
-            redirect-uri: ${KAKAO_REDIRECT_URI:http://localhost:8080/login/oauth2/code/kakao}
+            redirect-uri: ${KAKAO_REDIRECT_URI} # 카카오 → 백엔드
+            authorization-grant-type: authorization_code # OAuth2 인증 방식 지정
+            client-authentication-method: client_secret_post # 클라이언트 인증 방식
+            client-name: Kakao
+            scope:
+              - account_email
+        provider:
+          kakao:
+            authorization-uri: https://kauth.kakao.com/oauth/authorize
+            token-uri: https://kauth.kakao.com/oauth/token
+            user-info-uri: https://kapi.kakao.com/v2/user/me
+            user-name-attribute: id
 
 jwt:
   secret: ${JWT_SECRET}
+  expiration: ${JWT_EXPIRATION:86400000}
+
 
 oauth2:
   redirect-uri: ${OAUTH2_REDIRECT_URI:http://localhost:3000/oauth2/callback}
 
 cloud:
   aws:
-    s3:
-      bucket: ${S3_BUCKET:mechuragi-dev-images}
+    credentials:
+      access-key: ${AWS_ACCESS_KEY_ID}
+      secret-key: ${AWS_SECRET_ACCESS_KEY}
     region:
       static: ${AWS_REGION:ap-northeast-2}
+    s3:
+      bucket: ${S3_BUCKET:mechuragi-dev-images}
     ses:
       from-email: ${SES_FROM_EMAIL:mechuragi001@gmail.com}
-      region: ${AWS_REGION:ap-northeast-2}
-
-aws:
-  ses:
-    from-email: ${SES_FROM_EMAIL:mechuragi001@gmail.com}
-    domain: ${SES_DOMAIN:mechuragi.kro.kr}
 
 logging:
   level:

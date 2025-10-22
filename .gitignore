@@ -42,8 +42,6 @@ Thumbs.db
 
 ### Environment files ###
 .env
-.env.local
-.env.production
 
 ### JAR files ###
 *.jar
