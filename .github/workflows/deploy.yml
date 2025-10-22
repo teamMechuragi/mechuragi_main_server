@@ -96,6 +96,7 @@ jobs:
               -p 8080:8080 \
               --name mechuragi-server \
               --restart unless-stopped \
+              -e "SPRING_PROFILES_ACTIVE=dev" \
               -e "DB_HOST=${{ secrets.DB_HOST }}" \
               -e "DB_PORT=${{ secrets.DB_PORT }}" \
               -e "DB_NAME=${{ secrets.DB_NAME }}" \
