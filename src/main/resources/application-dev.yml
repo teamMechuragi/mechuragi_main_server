@@ -1,19 +1,23 @@
 server:
   port: 8080
+  address: 0.0.0.0  # 모든 네트워크 인터페이스에서 접속 허용
 
 spring:
   config:
     activate:
-      on-profile: local
+      on-profile: dev
+    import: optional:file:.env.dev
   datasource:
-    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:mechuragi_db}
+    url: jdbc:mysql://${DB_HOST}:${DB_PORT}/${DB_NAME}
     username: ${DB_USERNAME:mechuragi_user}
     password: ${DB_PASSWORD:mechuragi_pass}
     driver-class-name: com.mysql.cj.jdbc.Driver
+
   data:
     redis:
-      host: ${REDIS_HOST:localhost}
-      port: ${REDIS_PORT:6379}
+      host: ${REDIS_HOST}
+      port: ${REDIS_PORT}
+
   jpa:
     hibernate:
       ddl-auto: update
@@ -21,6 +25,7 @@ spring:
     properties:
       hibernate:
         format_sql: true
+
   security:
     oauth2:
       client:
@@ -47,24 +52,25 @@ spring:
 
 jwt:
   secret: ${JWT_SECRET}
-  expiration: ${JWT_EXPIRATION:86400000}
-
+  expiration: ${JWT_EXPIRATION:86400000}  # 24시간 (밀리초)
 
 oauth2:
-  redirect-uri: ${OAUTH2_REDIRECT_URI:http://localhost:3000/oauth2/callback}
+  redirect-uri: ${OAUTH2_REDIRECT_URI} #백엔드에서 프론트엔드로 토큰 전달
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: always
 
 cloud:
   aws:
-    credentials:
-      access-key: ${AWS_ACCESS_KEY_ID}
-      secret-key: ${AWS_SECRET_ACCESS_KEY}
     region:
       static: ${AWS_REGION:ap-northeast-2}
     s3:
-      bucket: ${S3_BUCKET:mechuragi-dev-images}
+      bucket: ${S3_BUCKET}
     ses:
-      from-email: ${SES_FROM_EMAIL:mechuragi001@gmail.com}
-
-logging:
-  level:
-    com.mechuragi.mechuragi_server: DEBUG
+      from-email: ${SES_FROM_EMAIL}
