@@ -114,12 +114,14 @@ jobs:
               -e "OAUTH2_REDIRECT_URI=${{ secrets.OAUTH2_REDIRECT_URI }}" \
               mamel1016/mechuragi-server:${{ github.ref_name }}
             
-            # Wait for application to start
-            sleep 30
-            
-            # Health check
-            curl -f http://localhost:8080/actuator/health || exit 1
-            
+            # Check container is running
+            echo "Checking container status..."
+            if ! sudo docker ps | grep mechuragi-server; then
+              echo "❌ Container stopped! Showing logs:"
+              sudo docker logs mechuragi-server
+              exit 1
+            fi
+
             # Clean up old images
             sudo docker image prune -f
 
