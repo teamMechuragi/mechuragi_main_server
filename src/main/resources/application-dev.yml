@@ -1,10 +1,12 @@
 server:
   port: 8080
+  address: 0.0.0.0  # 모든 네트워크 인터페이스에서 접속 허용
 
 spring:
   config:
     activate:
       on-profile: dev
+    import: optional:file:.env.dev
   datasource:
     url: jdbc:mysql://${DB_HOST}:${DB_PORT}/${DB_NAME}
     username: ${DB_USERNAME:mechuragi_user}
