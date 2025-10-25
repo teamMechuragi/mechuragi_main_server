@@ -10,6 +10,8 @@ import com.mechuragi.mechuragi_server.domain.preference.repository.PreferenceTas
 import com.mechuragi.mechuragi_server.domain.preference.service.FoodPreferenceService;
 import com.mechuragi.mechuragi_server.domain.member.entity.Member;
 import com.mechuragi.mechuragi_server.domain.member.repository.MemberRepository;
+import com.mechuragi.mechuragi_server.global.exception.BusinessException;
+import com.mechuragi.mechuragi_server.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -33,7 +35,7 @@ public class AiRecommendationService {
 
     public FoodRecommendationResponse getWeatherBasedRecommendation(Long memberId, List<String> weatherConditions) {
         Member member = memberRepository.findById(memberId)
-                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다"));
+                .orElseThrow(() -> new BusinessException(ErrorCode.MEMBER_NOT_FOUND));
         FoodPreference activePreference = foodPreferenceService.findActivePreference(member);
 
         FoodRecommendationRequest request = buildRequest(
@@ -49,7 +51,7 @@ public class AiRecommendationService {
 
     public FoodRecommendationResponse getTimeBasedRecommendation(Long memberId, String timeOfDay) {
         Member member = memberRepository.findById(memberId)
-                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다"));
+                .orElseThrow(() -> new BusinessException(ErrorCode.MEMBER_NOT_FOUND));
         FoodPreference activePreference = foodPreferenceService.findActivePreference(member);
 
         FoodRecommendationRequest request = buildRequest(
@@ -65,7 +67,7 @@ public class AiRecommendationService {
 
     public FoodRecommendationResponse getConversationBasedRecommendation(Long memberId, String message) {
         Member member = memberRepository.findById(memberId)
-                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다"));
+                .orElseThrow(() -> new BusinessException(ErrorCode.MEMBER_NOT_FOUND));
         FoodPreference activePreference = foodPreferenceService.findActivePreference(member);
 
         FoodRecommendationRequest request = buildRequest(
