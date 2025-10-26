@@ -25,6 +25,13 @@ public enum ErrorCode {
     VOTE_NOT_FOUND(HttpStatus.NOT_FOUND, "V001", "투표를 찾을 수 없습니다."),
     VOTE_ALREADY_COMPLETED(HttpStatus.BAD_REQUEST, "V002", "이미 완료된 투표입니다."),
 
+    // File
+    FILE_NOT_FOUND(HttpStatus.BAD_REQUEST, "F001", "파일을 찾을 수 없습니다."),
+    FILE_SIZE_EXCEEDED(HttpStatus.BAD_REQUEST, "F002", "파일 크기가 너무 큽니다. (최대 5MB)"),
+    INVALID_FILE_FORMAT(HttpStatus.BAD_REQUEST, "F003", "지원하지 않는 파일 형식입니다."),
+    FILE_UPLOAD_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "F004", "파일 업로드에 실패했습니다."),
+    INVALID_FILE_URL(HttpStatus.BAD_REQUEST, "F005", "유효하지 않은 파일 URL입니다."),
+
     // Common
     INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "C001", "서버 내부 오류가 발생했습니다");
 

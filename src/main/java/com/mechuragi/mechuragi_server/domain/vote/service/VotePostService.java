@@ -34,11 +34,16 @@ public class VotePostService {
         Member author = memberRepository.findById(authorId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.MEMBER_NOT_FOUND));
 
+        // 이미지가 있는 옵션이 하나라도 있으면 IMAGE 타입으로 설정
+        boolean hasImage = request.options().stream()
+                .anyMatch(option -> option.imageUrl() != null && !option.imageUrl().trim().isEmpty());
+
         VotePost votePost = VotePost.builder()
                 .title(request.title())
                 .description(request.description())
                 .deadline(request.deadline())
                 .author(author)
+                .voteType(hasImage ? VotePost.VoteType.IMAGE : VotePost.VoteType.TEXT)
                 .build();
 
         List<VoteOption> voteOptions = new ArrayList<>();
