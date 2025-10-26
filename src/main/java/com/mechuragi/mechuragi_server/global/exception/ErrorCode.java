@@ -24,6 +24,11 @@ public enum ErrorCode {
     // Vote
     VOTE_NOT_FOUND(HttpStatus.NOT_FOUND, "V001", "투표를 찾을 수 없습니다."),
     VOTE_ALREADY_COMPLETED(HttpStatus.BAD_REQUEST, "V002", "이미 완료된 투표입니다."),
+    VOTE_OPTION_NOT_FOUND(HttpStatus.NOT_FOUND, "V003", "투표 옵션을 찾을 수 없습니다."),
+    VOTE_ALREADY_PARTICIPATED(HttpStatus.BAD_REQUEST, "V004", "이미 투표에 참여했습니다."),
+    VOTE_EXPIRED(HttpStatus.BAD_REQUEST, "V005", "투표 기간이 만료되었습니다."),
+    MULTIPLE_CHOICE_NOT_ALLOWED(HttpStatus.BAD_REQUEST, "V006", "복수 선택이 허용되지 않는 투표입니다."),
+    VOTE_PARTICIPATION_NOT_FOUND(HttpStatus.NOT_FOUND, "V007", "투표 참여 기록을 찾을 수 없습니다."),
 
     // File
     FILE_NOT_FOUND(HttpStatus.BAD_REQUEST, "F001", "파일을 찾을 수 없습니다."),

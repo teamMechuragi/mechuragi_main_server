@@ -42,6 +42,7 @@ public class VotePostService {
                 .title(request.title())
                 .description(request.description())
                 .deadline(request.deadline())
+                .allowMultipleChoice(request.allowMultipleChoice())
                 .author(author)
                 .voteType(hasImage ? VotePost.VoteType.IMAGE : VotePost.VoteType.TEXT)
                 .build();

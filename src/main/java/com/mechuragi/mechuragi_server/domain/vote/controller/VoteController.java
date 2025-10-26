@@ -1,8 +1,11 @@
 package com.mechuragi.mechuragi_server.domain.vote.controller;
 
 import com.mechuragi.mechuragi_server.domain.vote.dto.VoteCreateRequestDTO;
+import com.mechuragi.mechuragi_server.domain.vote.dto.VoteParticipationRequestDTO;
+import com.mechuragi.mechuragi_server.domain.vote.dto.VoteParticipationResponseDTO;
 import com.mechuragi.mechuragi_server.domain.vote.dto.VoteResponseDTO;
 import com.mechuragi.mechuragi_server.domain.vote.dto.VoteUpdateRequestDTO;
+import com.mechuragi.mechuragi_server.domain.vote.service.VoteParticipationService;
 import com.mechuragi.mechuragi_server.domain.vote.service.VotePostService;
 import com.mechuragi.mechuragi_server.global.service.S3Service;
 import jakarta.validation.Valid;
@@ -26,6 +29,7 @@ import java.util.Map;
 public class VoteController {
 
     private final VotePostService votePostService;
+    private final VoteParticipationService voteParticipationService;
     private final S3Service s3Service;
 
     @PostMapping
@@ -86,5 +90,40 @@ public class VoteController {
             @RequestParam("file") MultipartFile file) {
         String imageUrl = s3Service.uploadImage(file, "vote-images");
         return ResponseEntity.ok(Map.of("imageUrl", imageUrl));
+    }
+
+    @PostMapping("/participate")
+    public ResponseEntity<VoteParticipationResponseDTO> participateVote(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @Valid @RequestBody VoteParticipationRequestDTO request) {
+        VoteParticipationResponseDTO response = voteParticipationService.participateVote(
+                userDetails.getMemberId(), request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    @DeleteMapping("/{voteId}/participate")
+    public ResponseEntity<Void> cancelParticipation(
+            @PathVariable Long voteId,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        voteParticipationService.cancelParticipation(userDetails.getMemberId(), voteId);
+        return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/{voteId}/my-participation")
+    public ResponseEntity<VoteParticipationResponseDTO> getMyParticipation(
+            @PathVariable Long voteId,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        VoteParticipationResponseDTO response = voteParticipationService.getMyParticipation(
+                userDetails.getMemberId(), voteId);
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/{voteId}/participated")
+    public ResponseEntity<Map<String, Boolean>> hasParticipated(
+            @PathVariable Long voteId,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        boolean participated = voteParticipationService.hasParticipated(
+                userDetails.getMemberId(), voteId);
+        return ResponseEntity.ok(Map.of("participated", participated));
     }
 }

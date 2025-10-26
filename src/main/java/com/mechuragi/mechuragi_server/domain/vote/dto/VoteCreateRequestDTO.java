@@ -20,6 +20,8 @@ public record VoteCreateRequestDTO(
         @NotNull(message = "마감일은 필수입니다")
         LocalDateTime deadline,
 
+        Boolean allowMultipleChoice,
+
         @NotEmpty(message = "투표 선택지는 최소 2개 이상이어야 합니다")
         @Size(min = 2, max = 10, message = "투표 선택지는 2개 이상 10개 이하여야 합니다")
         @Valid
