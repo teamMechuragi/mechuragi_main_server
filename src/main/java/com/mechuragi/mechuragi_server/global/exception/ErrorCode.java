@@ -21,6 +21,10 @@ public enum ErrorCode {
     // AI
     AI_SERVICE_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "AI001", "AI 서비스 통신 중 오류가 발생했습니다"),
 
+    // Vote
+    VOTE_NOT_FOUND(HttpStatus.NOT_FOUND, "V001", "투표를 찾을 수 없습니다."),
+    VOTE_ALREADY_COMPLETED(HttpStatus.BAD_REQUEST, "V002", "이미 완료된 투표입니다."),
+
     // Common
     INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "C001", "서버 내부 오류가 발생했습니다");
 
