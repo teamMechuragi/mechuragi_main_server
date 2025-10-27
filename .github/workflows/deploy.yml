@@ -1,4 +1,4 @@
-wname: Deploy Main Service to EC2
+name: Deploy Main Service to EC2
 on:
   push:
     branches: [ main, dev ]
