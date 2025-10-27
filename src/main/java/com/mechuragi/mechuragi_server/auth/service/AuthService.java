@@ -39,7 +39,9 @@ public class AuthService {
             throw new IllegalArgumentException("이미 사용 중인 이메일입니다.");
         }
 
+        // TODO: AWS SES production 승인 대기 중 - 이메일 인증 로직 임시 비활성화
         // 이메일 인증 여부 확인
+        /*
         EmailVerification emailVerification = emailVerificationRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new IllegalArgumentException("이메일 인증이 필요합니다."));
 
@@ -50,6 +52,7 @@ public class AuthService {
         if (emailVerification.isExpired()) {
             throw new IllegalArgumentException("이메일 인증이 만료되었습니다. 다시 인증해주세요.");
         }
+        */
 
         // 비밀번호 암호화
         String encodedPassword = passwordEncoder.encode(request.getPassword());
@@ -71,8 +74,9 @@ public class AuthService {
         // 닉네임 + ID 조합으로 최종 닉네임 업데이트 (예: "행복한곰1")
         savedMember.appendIdToNickname(request.getNickname());
 
+        // TODO: AWS SES production 승인 대기 중 - 이메일 인증 정보 삭제 로직 임시 비활성화
         // 이메일 인증 정보 삭제 (회원가입 완료 후)
-        emailVerificationRepository.delete(emailVerification);
+        // emailVerificationRepository.delete(emailVerification);
 
         log.info("회원가입 완료: email={}, nickname={}", request.getEmail(), savedMember.getNickname());
 
