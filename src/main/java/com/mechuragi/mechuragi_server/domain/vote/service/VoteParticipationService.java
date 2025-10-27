@@ -14,9 +14,12 @@ import com.mechuragi.mechuragi_server.global.exception.BusinessException;
 import com.mechuragi.mechuragi_server.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -30,42 +33,41 @@ public class VoteParticipationService {
     private final VotePostRepository votePostRepository;
     private final VoteOptionRepository voteOptionRepository;
     private final MemberRepository memberRepository;
+    private final RedisTemplate<String, String> redisTemplate;
+
+    private static final String HOT_VOTE_SORTED_SET_KEY = "vote:hot";
 
     @Transactional
     public VoteParticipationResponseDTO participateVote(Long memberId, VoteParticipationRequestDTO request) {
-        // 사용자 조회
         Member member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.MEMBER_NOT_FOUND));
 
-        // 투표 조회
         VotePost votePost = votePostRepository.findById(request.voteId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.VOTE_NOT_FOUND));
 
-        // 투표 상태 검증
         validateVoteStatus(votePost);
 
-        // 기존 참여 확인 - 있으면 삭제 (다시 투표하기)
+        // 기존 참여 삭제 (재투표)
         List<VoteParticipation> existingParticipations =
                 voteParticipationRepository.findByMemberIdAndVotePostId(memberId, request.voteId());
 
         if (!existingParticipations.isEmpty()) {
             voteParticipationRepository.deleteByMemberIdAndVotePostId(memberId, request.voteId());
-            log.info("Member {} re-voting, deleted existing participations for vote {}",
-                    memberId, request.voteId());
+            // Redis에서도 기존 투표 수 반영 제거
+            existingParticipations.forEach(p -> decrementOptionCount(votePost.getId(), p.getVoteOption().getId()));
+            decrementParticipantCount(votePost.getId());
+            log.info("사용자 {}가 재투표하여 기존 참여 기록 삭제, Redis 값 갱신 완료: 투표 {}", memberId, request.voteId());
         }
 
-        // 복수 선택 검증
         if (!votePost.getAllowMultipleChoice() && request.optionIds().size() > 1) {
             throw new BusinessException(ErrorCode.MULTIPLE_CHOICE_NOT_ALLOWED);
         }
 
-        // 옵션 조회 및 검증
         List<VoteOption> voteOptions = new ArrayList<>();
         for (Long optionId : request.optionIds()) {
             VoteOption voteOption = voteOptionRepository.findById(optionId)
                     .orElseThrow(() -> new BusinessException(ErrorCode.VOTE_OPTION_NOT_FOUND));
 
-            // 투표 옵션이 해당 투표에 속하는지 검증
             if (!voteOption.getVotePost().getId().equals(request.voteId())) {
                 throw new BusinessException(ErrorCode.VOTE_OPTION_NOT_FOUND);
             }
@@ -73,7 +75,6 @@ public class VoteParticipationService {
             voteOptions.add(voteOption);
         }
 
-        // 참여 기록 생성
         List<VoteParticipation> participations = new ArrayList<>();
         for (VoteOption voteOption : voteOptions) {
             VoteParticipation participation = VoteParticipation.builder()
@@ -82,28 +83,25 @@ public class VoteParticipationService {
                     .voteOption(voteOption)
                     .build();
             participations.add(voteParticipationRepository.save(participation));
+            incrementOptionCount(votePost.getId(), voteOption.getId());
         }
 
-        log.info("Member {} participated in vote {} with options {}",
+        incrementParticipantCount(votePost.getId());
+        updateHotVoteScore(votePost.getId());
+
+        log.info("사용자 {}가 투표 {}에 참여, 선택 옵션 {} Redis 실시간 반영 완료",
                 memberId, request.voteId(), request.optionIds());
 
-        return VoteParticipationResponseDTO.from(
-                votePost.getId(),
-                votePost.getTitle(),
-                participations
-        );
+        return VoteParticipationResponseDTO.from(votePost.getId(), votePost.getTitle(), participations);
     }
 
     @Transactional
     public void cancelParticipation(Long memberId, Long voteId) {
-        // 투표 조회
         VotePost votePost = votePostRepository.findById(voteId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.VOTE_NOT_FOUND));
 
-        // 투표 상태 검증
         validateVoteStatus(votePost);
 
-        // 참여 기록 조회
         List<VoteParticipation> participations =
                 voteParticipationRepository.findByMemberIdAndVotePostId(memberId, voteId);
 
@@ -111,18 +109,19 @@ public class VoteParticipationService {
             throw new BusinessException(ErrorCode.VOTE_PARTICIPATION_NOT_FOUND);
         }
 
-        // 참여 기록 삭제
         voteParticipationRepository.deleteByMemberIdAndVotePostId(memberId, voteId);
 
-        log.info("Member {} cancelled participation in vote {}", memberId, voteId);
+        participations.forEach(p -> decrementOptionCount(votePost.getId(), p.getVoteOption().getId()));
+        decrementParticipantCount(votePost.getId());
+        updateHotVoteScore(votePost.getId());
+
+        log.info("사용자 {}가 투표 {} 참여 취소, Redis 실시간 반영 완료", memberId, voteId);
     }
 
     public VoteParticipationResponseDTO getMyParticipation(Long memberId, Long voteId) {
-        // 투표 조회
         VotePost votePost = votePostRepository.findById(voteId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.VOTE_NOT_FOUND));
 
-        // 참여 기록 조회
         List<VoteParticipation> participations =
                 voteParticipationRepository.findByMemberIdAndVotePostId(memberId, voteId);
 
@@ -130,11 +129,7 @@ public class VoteParticipationService {
             throw new BusinessException(ErrorCode.VOTE_PARTICIPATION_NOT_FOUND);
         }
 
-        return VoteParticipationResponseDTO.from(
-                votePost.getId(),
-                votePost.getTitle(),
-                participations
-        );
+        return VoteParticipationResponseDTO.from(votePost.getId(), votePost.getTitle(), participations);
     }
 
     public boolean hasParticipated(Long memberId, Long voteId) {
@@ -144,14 +139,56 @@ public class VoteParticipationService {
     }
 
     private void validateVoteStatus(VotePost votePost) {
-        // 완료된 투표인지 확인
         if (votePost.getStatus() == VotePost.VoteStatus.COMPLETED) {
             throw new BusinessException(ErrorCode.VOTE_ALREADY_COMPLETED);
         }
-
-        // 마감 시간이 지났는지 확인
         if (votePost.isExpired()) {
             throw new BusinessException(ErrorCode.VOTE_EXPIRED);
         }
+    }
+
+    // helper
+    private void incrementParticipantCount(Long voteId) {
+        String key = "vote:" + voteId + ":participants";
+        redisTemplate.opsForValue().increment(key);
+    }
+
+    private void decrementParticipantCount(Long voteId) {
+        String key = "vote:" + voteId + ":participants";
+        redisTemplate.opsForValue().decrement(key);
+    }
+
+    private void incrementOptionCount(Long voteId, Long optionId) {
+        String key = "vote:" + voteId + ":option:" + optionId + ":count";
+        redisTemplate.opsForValue().increment(key);
+    }
+
+    private void decrementOptionCount(Long voteId, Long optionId) {
+        String key = "vote:" + voteId + ":option:" + optionId + ":count";
+        redisTemplate.opsForValue().decrement(key);
+    }
+
+    private void updateHotVoteScore(Long voteId) {
+        String participantsKey = "vote:" + voteId + ":participants";
+        String likesKey = "vote:" + voteId + ":likes";
+
+        String participantsStr = redisTemplate.opsForValue().get(participantsKey);
+        String likesStr = redisTemplate.opsForValue().get(likesKey);
+
+        int participants = participantsStr != null ? Integer.parseInt(participantsStr) : 0;
+        int likes = likesStr != null ? Integer.parseInt(likesStr) : 0;
+
+        double score = participants + likes * 0.5;
+
+        // 마감 시간 가중치 추가 (48시간 이내면 보너스)
+        VotePost votePost = votePostRepository.findById(voteId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.VOTE_NOT_FOUND));
+        long hoursRemaining = Duration.between(LocalDateTime.now(), votePost.getDeadline()).toHours();
+        if (hoursRemaining > 0 && hoursRemaining <= 48) {
+            double deadlineBonus = (48 - hoursRemaining) / 20.0;
+            score += deadlineBonus;
+        }
+
+        redisTemplate.opsForZSet().add(HOT_VOTE_SORTED_SET_KEY, voteId.toString(), score);
     }
 }

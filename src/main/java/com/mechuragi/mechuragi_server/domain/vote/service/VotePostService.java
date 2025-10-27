@@ -12,14 +12,17 @@ import com.mechuragi.mechuragi_server.domain.vote.repository.VotePostRepository;
 import com.mechuragi.mechuragi_server.global.exception.BusinessException;
 import com.mechuragi.mechuragi_server.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -28,13 +31,13 @@ public class VotePostService {
 
     private final VotePostRepository votePostRepository;
     private final MemberRepository memberRepository;
+    private final RedisTemplate<String, String> redisTemplate;
 
     @Transactional
     public VoteResponseDTO createVote(Long authorId, VoteCreateRequestDTO request) {
         Member author = memberRepository.findById(authorId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.MEMBER_NOT_FOUND));
 
-        // 이미지가 있는 옵션이 하나라도 있으면 IMAGE 타입으로 설정
         boolean hasImage = request.options().stream()
                 .anyMatch(option -> option.imageUrl() != null && !option.imageUrl().trim().isEmpty());
 
@@ -61,31 +64,59 @@ public class VotePostService {
         votePost.getVoteOptions().addAll(voteOptions);
         VotePost savedVotePost = votePostRepository.save(votePost);
 
-        return VoteResponseDTO.from(savedVotePost);
+        return VoteResponseDTO.from(savedVotePost, redisTemplate);
     }
 
     public VoteResponseDTO getVote(Long voteId) {
         VotePost votePost = votePostRepository.findById(voteId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.VOTE_NOT_FOUND));
 
-        return VoteResponseDTO.from(votePost);
+        return VoteResponseDTO.from(votePost, redisTemplate);
     }
 
     public Page<VoteResponseDTO> getActiveVotes(Pageable pageable) {
         LocalDateTime now = LocalDateTime.now();
         Page<VotePost> votePosts = votePostRepository.findActiveVotes(now, pageable);
-        return votePosts.map(VoteResponseDTO::from);
+        return votePosts.map(v -> VoteResponseDTO.from(v, redisTemplate));
     }
 
     public Page<VoteResponseDTO> getCompletedVotes(Pageable pageable) {
         LocalDateTime now = LocalDateTime.now();
         Page<VotePost> votePosts = votePostRepository.findCompletedVotes(now, pageable);
-        return votePosts.map(VoteResponseDTO::from);
+        return votePosts.map(v -> VoteResponseDTO.from(v, redisTemplate));
     }
 
     public Page<VoteResponseDTO> getUserVotes(Long userId, Pageable pageable) {
         Page<VotePost> votePosts = votePostRepository.findByAuthorIdOrderByCreatedAtDesc(userId, pageable);
-        return votePosts.map(VoteResponseDTO::from);
+        return votePosts.map(v -> VoteResponseDTO.from(v, redisTemplate));
+    }
+
+    @Cacheable(value = "hotVotes", key = "'list:' + #size")
+    public List<VoteResponseDTO> getHotVotes(int size) {
+        // Redis Sorted Set에서 상위 N개의 투표 ID 조회 (점수 높은 순)
+        Set<String> topVoteIds = redisTemplate.opsForZSet()
+                .reverseRange("vote:hot", 0, size - 1);
+
+        if (topVoteIds == null || topVoteIds.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        // VotePost 조회
+        List<Long> voteIds = topVoteIds.stream()
+                .map(Long::valueOf)
+                .collect(Collectors.toList());
+
+        List<VotePost> hotVotes = votePostRepository.findAllById(voteIds);
+
+        // Redis에서 가져온 순서대로 정렬
+        Map<Long, VotePost> voteMap = hotVotes.stream()
+                .collect(Collectors.toMap(VotePost::getId, v -> v));
+
+        return voteIds.stream()
+                .map(voteMap::get)
+                .filter(Objects::nonNull)
+                .map(v -> VoteResponseDTO.from(v, redisTemplate))
+                .collect(Collectors.toList());
     }
 
     @Transactional
@@ -98,7 +129,7 @@ public class VotePostService {
         }
 
         votePost.updateVote(request.title(), request.description(), request.deadline());
-        return VoteResponseDTO.from(votePost);
+        return VoteResponseDTO.from(votePost, redisTemplate);
     }
 
     @Transactional
@@ -109,12 +140,10 @@ public class VotePostService {
         votePostRepository.delete(votePost);
     }
 
-    // 스케줄러 호출용 - deadline 지난 투표 COMPLETED로 변경
     @Transactional
     public void completeExpiredVotes() {
         LocalDateTime now = LocalDateTime.now();
         List<VotePost> expiredVotes = votePostRepository.findExpiredActiveVotes(now);
-
         expiredVotes.forEach(VotePost::complete);
     }
 }

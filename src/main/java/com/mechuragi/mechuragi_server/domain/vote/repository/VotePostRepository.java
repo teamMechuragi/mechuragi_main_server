@@ -26,11 +26,6 @@ public interface VotePostRepository extends JpaRepository<VotePost, Long> {
     // 사용자별 투표 게시물 조회
     Page<VotePost> findByAuthorIdOrderByCreatedAtDesc(Long authorId, Pageable pageable);
 
-    // 핫한 투표 조회용 (1순위: 마감 임박, 2순위: 참여자 많은 순)
-    @Query("SELECT v FROM VotePost v WHERE v.status = 'ACTIVE' AND v.deadline > :now " +
-           "ORDER BY v.deadline ASC, SIZE(v.participations) DESC")
-    List<VotePost> findHotVotes(@Param("now") LocalDateTime now, Pageable pageable);
-
     // 마감 시간이 지난 ACTIVE 상태 투표들 조회 (배치 처리용)
     @Query("SELECT v FROM VotePost v WHERE v.status = 'ACTIVE' AND v.deadline <= :now")
     List<VotePost> findExpiredActiveVotes(@Param("now") LocalDateTime now);

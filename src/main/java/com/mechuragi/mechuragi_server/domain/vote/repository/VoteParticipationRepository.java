@@ -28,4 +28,7 @@ public interface VoteParticipationRepository extends JpaRepository<VoteParticipa
 
     // 특정 투표에 참여한 사용자 수 (중복 제거)
     long countDistinctMemberByVotePostId(Long votePostId);
+
+    // 특정 옵션에 투표한 수
+    int countByVoteOptionId(Long voteOptionId);
 }

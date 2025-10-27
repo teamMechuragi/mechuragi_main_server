@@ -18,7 +18,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import com.mechuragi.mechuragi_server.auth.dto.CustomUserDetails;
-
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -50,6 +50,13 @@ public class VoteController {
     public ResponseEntity<Page<VoteResponseDTO>> getActiveVotes(
             @PageableDefault(size = 10) Pageable pageable) {
         Page<VoteResponseDTO> response = votePostService.getActiveVotes(pageable);
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/hot")
+    public ResponseEntity<List<VoteResponseDTO>> getHotVotes(
+            @RequestParam(defaultValue = "10") int size) {
+        List<VoteResponseDTO> response = votePostService.getHotVotes(size);
         return ResponseEntity.ok(response);
     }
 

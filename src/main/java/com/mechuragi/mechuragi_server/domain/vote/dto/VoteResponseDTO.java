@@ -2,9 +2,11 @@ package com.mechuragi.mechuragi_server.domain.vote.dto;
 
 import com.mechuragi.mechuragi_server.domain.vote.entity.VotePost;
 import com.mechuragi.mechuragi_server.domain.vote.entity.VotePost.VoteStatus;
+import org.springframework.data.redis.core.RedisTemplate;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 public record VoteResponseDTO(
         Long id,
@@ -19,7 +21,31 @@ public record VoteResponseDTO(
         LocalDateTime createdAt,
         List<VoteOptionResponseDTO> options
 ) {
-    public static VoteResponseDTO from(VotePost votePost) {
+    public static VoteResponseDTO from(VotePost votePost, RedisTemplate<String, String> redisTemplate) {
+        String participantsKey = "vote:" + votePost.getId() + ":participants";
+        int participants = Optional.ofNullable(redisTemplate.opsForValue().get(participantsKey))
+                .map(Integer::parseInt).orElse(votePost.getTotalParticipants());
+
+        String likesKey = "vote:" + votePost.getId() + ":likes";
+        int likes = Optional.ofNullable(redisTemplate.opsForValue().get(likesKey))
+                .map(Integer::parseInt).orElse(votePost.getTotalLikes());
+
+        List<VoteOptionResponseDTO> options = votePost.getVoteOptions().stream()
+                .map(opt -> {
+                    String optionKey = "vote:" + votePost.getId() + ":option:" + opt.getId() + ":count";
+                    int count = Optional.ofNullable(redisTemplate.opsForValue().get(optionKey))
+                            .map(Integer::parseInt).orElse(opt.getVoteCount());
+                    return new VoteOptionResponseDTO(
+                            opt.getId(),
+                            opt.getOptionText(),
+                            opt.getImageUrl(),
+                            count,
+                            opt.getVotePercentage(),
+                            opt.getDisplayOrder()
+                    );
+                })
+                .toList();
+
         return new VoteResponseDTO(
                 votePost.getId(),
                 votePost.getTitle(),
@@ -27,13 +53,11 @@ public record VoteResponseDTO(
                 votePost.getDeadline(),
                 votePost.getStatus(),
                 votePost.getAllowMultipleChoice(),
-                votePost.getTotalParticipants(),
-                votePost.getTotalLikes(),
+                participants,
+                likes,
                 votePost.getAuthor().getNickname(),
                 votePost.getCreatedAt(),
-                votePost.getVoteOptions().stream()
-                        .map(VoteOptionResponseDTO::from)
-                        .toList()
+                options
         );
     }
 
@@ -44,16 +68,5 @@ public record VoteResponseDTO(
             int voteCount,
             double votePercentage,
             int displayOrder
-    ) {
-        public static VoteOptionResponseDTO from(com.mechuragi.mechuragi_server.domain.vote.entity.VoteOption voteOption) {
-            return new VoteOptionResponseDTO(
-                    voteOption.getId(),
-                    voteOption.getOptionText(),
-                    voteOption.getImageUrl(),
-                    voteOption.getVoteCount(),
-                    voteOption.getVotePercentage(),
-                    voteOption.getDisplayOrder()
-            );
-        }
-    }
+    ) {}
 }
