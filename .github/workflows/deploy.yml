@@ -89,7 +89,7 @@ jobs:
 
             # Stop and remove existing container (ignore errors if not exists)
             sudo docker stop mechuragi-server 2>/dev/null || echo "Container not running, skipping stop"
-            sudo docker rm mechuragi-server 2>/dev/null || echo "Container not found, skipping removal"
+            sudo docker rm -f mechuragi-server 2>/dev/null || echo "Container not found, skipping removal"
 
             # Run new container with environment variables and IAM role access
             sudo docker run -d \
