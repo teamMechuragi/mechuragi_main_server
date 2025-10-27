@@ -92,9 +92,22 @@ jobs:
             # Pull latest image
             sudo docker pull ${{ secrets.DOCKERHUB_USERNAME }}/mechuragi-main-server:latest
 
-            # Stop and remove existing container (ignore errors if not exists)
-            sudo docker stop mechuragi-main-server 2>/dev/null || echo "Container not running, skipping stop"
-            sudo docker rm mechuragi-main-server 2>/dev/null || echo "Container not found, skipping removal"
+            # Stop and remove all containers using port 8080
+            echo "Checking for containers using port 8080..."
+            CONTAINER_IDS=$(sudo docker ps -q --filter "publish=8080")
+            if [ -n "$CONTAINER_IDS" ]; then
+              echo "Stopping containers using port 8080: $CONTAINER_IDS"
+              sudo docker stop $CONTAINER_IDS
+              sudo docker rm $CONTAINER_IDS
+            else
+              echo "No containers using port 8080 found"
+            fi
+
+            # Also clean up by name (legacy support)
+            sudo docker stop mechuragi-main-server 2>/dev/null || true
+            sudo docker rm mechuragi-main-server 2>/dev/null || true
+            sudo docker stop mechuragi-server 2>/dev/null || true
+            sudo docker rm mechuragi-server 2>/dev/null || true
 
             # Run new container with environment variables and IAM role access
             sudo docker run -d \
