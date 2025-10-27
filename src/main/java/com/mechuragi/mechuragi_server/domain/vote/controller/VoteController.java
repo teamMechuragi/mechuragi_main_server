@@ -2,6 +2,7 @@ package com.mechuragi.mechuragi_server.domain.vote.controller;
 
 import com.mechuragi.mechuragi_server.domain.vote.dto.*;
 import com.mechuragi.mechuragi_server.domain.vote.service.VoteCommentService;
+import com.mechuragi.mechuragi_server.domain.vote.service.VoteLikeService;
 import com.mechuragi.mechuragi_server.domain.vote.service.VoteParticipationService;
 import com.mechuragi.mechuragi_server.domain.vote.service.VotePostService;
 import com.mechuragi.mechuragi_server.global.service.S3Service;
@@ -28,6 +29,7 @@ public class VoteController {
     private final VotePostService votePostService;
     private final VoteParticipationService voteParticipationService;
     private final VoteCommentService voteCommentService;
+    private final VoteLikeService voteLikeService;
     private final S3Service s3Service;
 
     @PostMapping
@@ -125,6 +127,8 @@ public class VoteController {
         return ResponseEntity.ok(Map.of("participated", participated));
     }
 
+    // 투표 댓글
+
     @PostMapping("/comments")
     public ResponseEntity<VoteCommentResponseDTO> createComment(
             @AuthenticationPrincipal CustomUserDetails userDetails,
@@ -164,6 +168,31 @@ public class VoteController {
     public ResponseEntity<Map<String, Integer>> getCommentCount(
             @PathVariable Long voteId) {
         int count = voteCommentService.getCommentCount(voteId);
+        return ResponseEntity.ok(Map.of("count", count));
+    }
+
+    // 투표 게시물 좋아요
+
+    @PostMapping("/{voteId}/like")
+    public ResponseEntity<Map<String, Boolean>> toggleLike(
+            @PathVariable Long voteId,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        boolean isLiked = voteLikeService.toggleLike(userDetails.getMemberId(), voteId);
+        return ResponseEntity.ok(Map.of("liked", isLiked));
+    }
+
+    @GetMapping("/{voteId}/liked")
+    public ResponseEntity<Map<String, Boolean>> isLiked(
+            @PathVariable Long voteId,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        boolean liked = voteLikeService.isLiked(userDetails.getMemberId(), voteId);
+        return ResponseEntity.ok(Map.of("liked", liked));
+    }
+
+    @GetMapping("/{voteId}/likes/count")
+    public ResponseEntity<Map<String, Integer>> getLikeCount(
+            @PathVariable Long voteId) {
+        int count = voteLikeService.getLikeCount(voteId);
         return ResponseEntity.ok(Map.of("count", count));
     }
 }
