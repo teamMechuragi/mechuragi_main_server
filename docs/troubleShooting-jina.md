@@ -508,3 +508,176 @@ sudo docker logs mechuragi-main-server 2>&1 | grep -i error
 - 애플리케이션 로그 실시간 확인: `sudo docker logs -f mechuragi-main-server`
 
 ---
+
+## 테스트 일자: 2025-10-28
+
+---
+
+## 배포 및 인증 관련 트러블슈팅
+
+### 문제 5: AWS SES Production 승인 대기 - 이메일 인증 로직 임시 비활성화
+**발생 일시:** 2025-10-28
+
+**증상:**
+AWS SES production 요청이 거부되어 이메일 발송이 불가능한 상태
+
+**문제 상황:**
+- SES가 Sandbox 모드에서만 작동
+- Production 모드 승인 대기 중
+- 이메일 인증이 필수인 회원가입 플로우가 작동하지 않음
+
+**해결 방법:**
+회원가입 시 이메일 인증 로직을 임시로 주석처리하여 AWS 승인 전까지 회원가입 가능하도록 조치
+
+**수정 파일:**
+`src/main/java/com/mechuragi/mechuragi_server/auth/service/AuthService.java:36-80`
+
+**수정 내용:**
+
+1. **이메일 인증 확인 로직 주석처리** (42-55줄)
+```java
+// TODO: AWS SES production 승인 대기 중 - 이메일 인증 로직 임시 비활성화
+// 이메일 인증 여부 확인
+/*
+EmailVerification emailVerification = emailVerificationRepository.findByEmail(request.getEmail())
+        .orElseThrow(() -> new IllegalArgumentException("이메일 인증이 필요합니다."));
+
+if (!emailVerification.getVerified()) {
+    throw new IllegalArgumentException("이메일 인증이 완료되지 않았습니다.");
+}
+
+if (emailVerification.isExpired()) {
+    throw new IllegalArgumentException("이메일 인증이 만료되었습니다. 다시 인증해주세요.");
+}
+*/
+```
+
+2. **이메일 인증 정보 삭제 로직 주석처리** (77-79줄)
+```java
+// TODO: AWS SES production 승인 대기 중 - 이메일 인증 정보 삭제 로직 임시 비활성화
+// 이메일 인증 정보 삭제 (회원가입 완료 후)
+// emailVerificationRepository.delete(emailVerification);
+```
+
+**결과:**
+- ✅ 이메일 인증 없이 회원가입 가능
+- ✅ 빌드 성공 (`./gradlew clean build -x test`)
+- ✅ 이메일 인증 API는 유지되어 향후 쉽게 복구 가능
+
+**복구 방법:**
+AWS SES production 승인 후 주석을 제거하면 원래 인증 플로우로 복구 가능
+
+**주의사항:**
+- 이메일 인증 없이 회원가입이 가능하므로 이메일 중복 체크만으로 검증
+- Production 승인 후 반드시 주석 해제 필요
+
+---
+
+### 문제 6: GitHub Actions에서 dev 브랜치 배포 안되는 문제
+**발생 일시:** 2025-10-28
+
+**증상:**
+```
+dev 브랜치에 머지 시:
+✅ test job 실행
+❌ deploy job 스킵됨
+```
+
+**원인 분석:**
+`.github/workflows/deploy.yml:39`의 deploy job 조건이 main 브랜치만 허용
+```yaml
+if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+```
+
+**해결 방법:**
+deploy job의 조건을 dev 브랜치도 포함하도록 수정
+
+**수정 파일:**
+`.github/workflows/deploy.yml:39`
+
+**수정 내용:**
+```yaml
+# 변경 전
+if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+
+# 변경 후
+if: (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/dev') && github.event_name == 'push'
+```
+
+**결과:**
+- ✅ dev 브랜치 푸시 시: test + deploy 모두 실행
+- ✅ main 브랜치 푸시 시: test + deploy 모두 실행
+
+**참고:**
+- 현재 `SPRING_PROFILES_ACTIVE=dev`로 하드코딩되어 있음
+- 필요시 브랜치에 따라 프로파일 분기 가능
+
+---
+
+### 문제 7: Docker 컨테이너 배포 시 포트 충돌 문제
+**발생 일시:** 2025-10-28
+
+**에러 메시지:**
+```
+docker: Error response from daemon: failed to set up container networking:
+driver failed programming external connectivity on endpoint mechuragi-main-server:
+Bind for 0.0.0.0:8080 failed: port is already allocated
+```
+
+**원인 분석:**
+1. 기존 컨테이너 이름: `mechuragi-server:dev`
+2. 새 컨테이너 이름: `mechuragi-main-server`
+3. 배포 스크립트는 `mechuragi-main-server`만 찾아서 삭제 시도
+4. 기존 컨테이너가 삭제되지 않아 8080 포트 충돌 발생
+
+**해결 방법:**
+8080 포트를 사용하는 모든 컨테이너를 자동으로 찾아서 정리하도록 배포 스크립트 개선
+
+**수정 파일:**
+`.github/workflows/deploy.yml:95-110`
+
+**수정 내용:**
+
+**변경 전:**
+```bash
+# Stop and remove existing container (ignore errors if not exists)
+sudo docker stop mechuragi-main-server 2>/dev/null || echo "Container not running, skipping stop"
+sudo docker rm mechuragi-main-server 2>/dev/null || echo "Container not found, skipping removal"
+```
+
+**변경 후:**
+```bash
+# Stop and remove all containers using port 8080
+echo "Checking for containers using port 8080..."
+CONTAINER_IDS=$(sudo docker ps -q --filter "publish=8080")
+if [ -n "$CONTAINER_IDS" ]; then
+  echo "Stopping containers using port 8080: $CONTAINER_IDS"
+  sudo docker stop $CONTAINER_IDS
+  sudo docker rm $CONTAINER_IDS
+else
+  echo "No containers using port 8080 found"
+fi
+
+# Also clean up by name (legacy support)
+sudo docker stop mechuragi-main-server 2>/dev/null || true
+sudo docker rm mechuragi-main-server 2>/dev/null || true
+sudo docker stop mechuragi-server 2>/dev/null || true
+sudo docker rm mechuragi-server 2>/dev/null || true
+```
+
+**개선 효과:**
+1. ✅ 포트 기반 자동 감지: 8080 포트 사용 컨테이너 자동 정리
+2. ✅ 이름 기반 백업: 여러 컨테이너 이름 패턴 대응
+3. ✅ 에러 무시: 컨테이너가 없어도 배포 실패 안 함
+
+**결과:**
+- 기존 `mechuragi-server:dev` 컨테이너 자동 삭제
+- 새 `mechuragi-main-server` 컨테이너 정상 실행
+- 포트 충돌 없이 배포 성공
+
+**교훈:**
+- 컨테이너 이름이 변경될 수 있으므로 포트 기반으로 찾는 것이 더 안전
+- 여러 이름 패턴을 함께 처리하여 호환성 확보
+- 에러 처리를 통해 배포 중단 방지
+
+---
