@@ -5,6 +5,8 @@ import com.mechuragi.mechuragi_server.domain.preference.service.FoodPreferenceSe
 import com.mechuragi.mechuragi_server.domain.member.entity.Member;
 import com.mechuragi.mechuragi_server.domain.member.repository.MemberRepository;
 import com.mechuragi.mechuragi_server.auth.util.JwtTokenProvider;
+import com.mechuragi.mechuragi_server.global.exception.BusinessException;
+import com.mechuragi.mechuragi_server.global.exception.ErrorCode;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -29,7 +31,7 @@ public class FoodPreferenceController {
             String token = authHeader.substring(7);
             return jwtTokenProvider.getMemberIdFromToken(token);
         }
-        throw new IllegalArgumentException("유효한 JWT 토큰이 없습니다");
+        throw new BusinessException(ErrorCode.INVALID_JWT_TOKEN);
     }
 
     // 음식 취향 등록
@@ -40,7 +42,7 @@ public class FoodPreferenceController {
 
         Long memberId = getMemberIdFromRequest(request);
         Member member = memberRepository.findById(memberId)
-                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+                .orElseThrow(() -> new BusinessException(ErrorCode.MEMBER_NOT_FOUND));
 
         Long preferenceId = foodPreferenceService.createPreference(member, preferenceRequest);
         return ResponseEntity.created(URI.create("/api/preferences/" + preferenceId)).build();

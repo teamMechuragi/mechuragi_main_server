@@ -4,6 +4,8 @@ import com.mechuragi.mechuragi_server.domain.ai.dto.FoodRecommendationRequest;
 import com.mechuragi.mechuragi_server.domain.ai.dto.FoodRecommendationResponse;
 import com.mechuragi.mechuragi_server.domain.ai.service.AiRecommendationService;
 import com.mechuragi.mechuragi_server.auth.util.JwtTokenProvider;
+import com.mechuragi.mechuragi_server.global.exception.BusinessException;
+import com.mechuragi.mechuragi_server.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -27,7 +29,7 @@ public class AiRecommendationController {
             String token = authHeader.substring(7);
             return jwtTokenProvider.getMemberIdFromToken(token);
         }
-        throw new IllegalArgumentException("유효한 JWT 토큰이 없습니다");
+        throw new BusinessException(ErrorCode.INVALID_JWT_TOKEN);
     }
 
     @PostMapping("/weather")

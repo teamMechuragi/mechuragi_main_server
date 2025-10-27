@@ -2,6 +2,8 @@ package com.mechuragi.mechuragi_server.domain.ai.client;
 
 import com.mechuragi.mechuragi_server.domain.ai.dto.FoodRecommendationRequest;
 import com.mechuragi.mechuragi_server.domain.ai.dto.FoodRecommendationResponse;
+import com.mechuragi.mechuragi_server.global.exception.BusinessException;
+import com.mechuragi.mechuragi_server.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -36,7 +38,7 @@ public class AiServiceClient {
             return response;
         } catch (Exception e) {
             log.error("AI 서비스 호출 실패", e);
-            throw new RuntimeException("AI 추천 서비스와 통신 중 오류가 발생했습니다", e);
+            throw new BusinessException(ErrorCode.AI_SERVICE_ERROR);
         }
     }
 }

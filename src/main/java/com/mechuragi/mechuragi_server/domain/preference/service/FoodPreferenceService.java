@@ -4,6 +4,8 @@ import com.mechuragi.mechuragi_server.domain.preference.dto.*;
 import com.mechuragi.mechuragi_server.domain.preference.entity.*;
 import com.mechuragi.mechuragi_server.domain.preference.repository.*;
 import com.mechuragi.mechuragi_server.domain.member.entity.Member;
+import com.mechuragi.mechuragi_server.global.exception.BusinessException;
+import com.mechuragi.mechuragi_server.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -62,7 +64,7 @@ public class FoodPreferenceService {
     // 특정 음식 취향 상세 정보 조회
     public PreferenceDetailResponse getPreferenceDetail(Long memberId, Long preferenceId) {
         FoodPreference preference = foodPreferenceRepository.findByIdAndMemberId(preferenceId, memberId)
-                .orElseThrow(() -> new IllegalArgumentException("취향을 찾을 수 없습니다."));
+                .orElseThrow(() -> new BusinessException(ErrorCode.PREFERENCE_NOT_FOUND));
 
         List<String> foodTypes = preferenceFoodTypeRepository.findByPreferenceId(preferenceId)
                 .stream()
@@ -99,7 +101,7 @@ public class FoodPreferenceService {
     @Transactional
     public void updatePreference(Long memberId, Long preferenceId, UpdatePreferenceRequest request) {
         FoodPreference preference = foodPreferenceRepository.findByIdAndMemberId(preferenceId, memberId)
-                .orElseThrow(() -> new IllegalArgumentException("취향을 찾을 수 없습니다."));
+                .orElseThrow(() -> new BusinessException(ErrorCode.PREFERENCE_NOT_FOUND));
 
         preference.updatePreference(
                 request.getPreferenceName(),
@@ -130,7 +132,7 @@ public class FoodPreferenceService {
     @Transactional
     public void deletePreference(Long memberId, Long preferenceId) {
         FoodPreference preference = foodPreferenceRepository.findByIdAndMemberId(preferenceId, memberId)
-                .orElseThrow(() -> new IllegalArgumentException("취향을 찾을 수 없습니다."));
+                .orElseThrow(() -> new BusinessException(ErrorCode.PREFERENCE_NOT_FOUND));
 
         preferenceFoodTypeRepository.deleteByPreferenceId(preferenceId);
         preferenceTasteRepository.deleteByPreferenceId(preferenceId);
@@ -190,6 +192,6 @@ public class FoodPreferenceService {
     // 활성화된 음식 취향 조회 (AI 추천용)
     public FoodPreference findActivePreference(Member member) {
         return foodPreferenceRepository.findByMemberAndIsActiveTrue(member)
-                .orElseThrow(() -> new IllegalArgumentException("활성화된 음식 취향이 없습니다"));
+                .orElseThrow(() -> new BusinessException(ErrorCode.PREFERENCE_NOT_FOUND));
     }
 }
