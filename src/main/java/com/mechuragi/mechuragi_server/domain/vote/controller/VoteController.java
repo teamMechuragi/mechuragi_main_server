@@ -1,10 +1,7 @@
 package com.mechuragi.mechuragi_server.domain.vote.controller;
 
-import com.mechuragi.mechuragi_server.domain.vote.dto.VoteCreateRequestDTO;
-import com.mechuragi.mechuragi_server.domain.vote.dto.VoteParticipationRequestDTO;
-import com.mechuragi.mechuragi_server.domain.vote.dto.VoteParticipationResponseDTO;
-import com.mechuragi.mechuragi_server.domain.vote.dto.VoteResponseDTO;
-import com.mechuragi.mechuragi_server.domain.vote.dto.VoteUpdateRequestDTO;
+import com.mechuragi.mechuragi_server.domain.vote.dto.*;
+import com.mechuragi.mechuragi_server.domain.vote.service.VoteCommentService;
 import com.mechuragi.mechuragi_server.domain.vote.service.VoteParticipationService;
 import com.mechuragi.mechuragi_server.domain.vote.service.VotePostService;
 import com.mechuragi.mechuragi_server.global.service.S3Service;
@@ -30,6 +27,7 @@ public class VoteController {
 
     private final VotePostService votePostService;
     private final VoteParticipationService voteParticipationService;
+    private final VoteCommentService voteCommentService;
     private final S3Service s3Service;
 
     @PostMapping
@@ -125,5 +123,47 @@ public class VoteController {
         boolean participated = voteParticipationService.hasParticipated(
                 userDetails.getMemberId(), voteId);
         return ResponseEntity.ok(Map.of("participated", participated));
+    }
+
+    @PostMapping("/comments")
+    public ResponseEntity<VoteCommentResponseDTO> createComment(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @Valid @RequestBody VoteCommentCreateRequestDTO request) {
+        VoteCommentResponseDTO response = voteCommentService.createComment(
+                userDetails.getMemberId(), request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    @GetMapping("/{voteId}/comments")
+    public ResponseEntity<Page<VoteCommentResponseDTO>> getComments(
+            @PathVariable Long voteId,
+            @PageableDefault(size = 20) Pageable pageable) {
+        Page<VoteCommentResponseDTO> response = voteCommentService.getComments(voteId, pageable);
+        return ResponseEntity.ok(response);
+    }
+
+    @PutMapping("/comments/{commentId}")
+    public ResponseEntity<VoteCommentResponseDTO> updateComment(
+            @PathVariable Long commentId,
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @Valid @RequestBody VoteCommentUpdateRequestDTO request) {
+        VoteCommentResponseDTO response = voteCommentService.updateComment(
+                commentId, userDetails.getMemberId(), request);
+        return ResponseEntity.ok(response);
+    }
+
+    @DeleteMapping("/comments/{commentId}")
+    public ResponseEntity<Void> deleteComment(
+            @PathVariable Long commentId,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        voteCommentService.deleteComment(commentId, userDetails.getMemberId());
+        return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/{voteId}/comments/count")
+    public ResponseEntity<Map<String, Integer>> getCommentCount(
+            @PathVariable Long voteId) {
+        int count = voteCommentService.getCommentCount(voteId);
+        return ResponseEntity.ok(Map.of("count", count));
     }
 }
