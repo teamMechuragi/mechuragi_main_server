@@ -386,3 +386,125 @@ GET /api/auth/nickname/generate
 - 닉네임은 가입 후 프로필 수정 API로 변경 가능
 
 ---
+
+## 테스트 일자: 2025-10-27
+
+---
+
+## 배포 관련 트러블슈팅
+
+### 문제 4: Swagger UI 접속 불가 - EC2 배포 후 외부 접속 실패
+**발생 일시:** 2025-10-27
+
+**증상:**
+```
+EC2 인스턴스 실행 후 http://15.165.136.100:8080/swagger-ui/index.html 접속 불가
+```
+
+**원인 분석:**
+Swagger 설정은 정상이지만, 인프라 설정 문제로 외부에서 접근할 수 없는 경우
+
+**가능한 원인 및 해결 방법:**
+
+#### 1. EC2 Security Group 설정 (가장 가능성 높음)
+**원인:** 8080 포트가 외부에서 접근 가능하도록 열려있지 않음
+
+**확인 방법:**
+- AWS Console → EC2 → 해당 인스턴스 선택 → Security 탭 → Security Groups 클릭
+- Inbound rules에 8080 포트가 있는지 확인
+
+**해결 방법:**
+```
+Type: Custom TCP
+Port: 8080
+Source: 0.0.0.0/0 (모든 IP 허용)
+또는
+Source: [특정 IP 범위] (보안을 위해 특정 IP만 허용)
+```
+
+#### 2. Docker 컨테이너 상태 확인
+**원인:** 컨테이너가 실제로 실행되지 않거나 중단됨
+
+**확인 방법:**
+```bash
+# EC2 인스턴스에 SSH 접속
+ssh ubuntu@15.165.136.100
+
+# 컨테이너 실행 상태 확인
+sudo docker ps | grep mechuragi-main-server
+
+# 만약 컨테이너가 없다면 중단된 컨테이너 확인
+sudo docker ps -a | grep mechuragi-main-server
+```
+
+**해결 방법:**
+```bash
+# 컨테이너 로그 확인
+sudo docker logs mechuragi-main-server
+
+# 최근 로그만 보기
+sudo docker logs --tail 100 mechuragi-main-server
+
+# 컨테이너가 중단되었다면 재시작
+sudo docker start mechuragi-main-server
+
+# 재시작해도 안 되면 새로 실행
+sudo docker run -d -p 8080:8080 --name mechuragi-main-server [이미지명]
+```
+
+#### 3. 애플리케이션 Health Check
+**원인:** 컨테이너는 실행 중이지만 애플리케이션이 정상적으로 시작되지 않음
+
+**확인 방법:**
+```bash
+# EC2 내부에서 테스트
+curl http://localhost:8080/actuator/health
+
+# Swagger 경로 직접 확인
+curl http://localhost:8080/swagger-ui/index.html
+
+# 응답이 없거나 에러가 나면 로그 확인
+sudo docker logs mechuragi-main-server 2>&1 | grep -i error
+```
+
+**주요 확인 사항:**
+- DB 연결 실패 여부
+- Redis 연결 실패 여부
+- 환경 변수 누락 여부
+- 포트 바인딩 충돌 여부
+
+#### 4. 배포 상태 확인
+**원인:** GitHub Actions 배포가 실패했거나 완료되지 않음
+
+**확인 방법:**
+- GitHub Repository → Actions 탭
+- 최근 deploy workflow 상태 확인
+- 실패한 단계가 있는지 확인
+
+**해결 방법:**
+- 배포 실패 시: 에러 로그 확인 후 수정하고 재배포
+- 배포 대기 중: 완료될 때까지 대기
+
+#### 5. 애플리케이션 설정 확인
+**현재 설정 (정상):**
+- `application-dev.yml:2-3` - `port: 8080`, `address: 0.0.0.0` (모든 인터페이스 허용)
+- `.github/workflows/deploy.yml:101` - `-p 8080:8080` (포트 매핑 정상)
+
+**문제 해결 체크리스트:**
+```
+✅ 1. EC2 Security Group에 8080 포트 Inbound rule 추가
+✅ 2. Docker 컨테이너 실행 상태 확인
+✅ 3. EC2 내부에서 localhost:8080 접속 확인
+✅ 4. 컨테이너 로그에서 에러 확인
+✅ 5. GitHub Actions 배포 상태 확인
+```
+
+**가장 먼저 확인해야 할 것:**
+👉 **EC2 Security Group의 8080 포트 Inbound rule 설정**
+
+**참고:**
+- Swagger UI 경로: `/swagger-ui/index.html`
+- Health Check 경로: `/actuator/health`
+- 애플리케이션 로그 실시간 확인: `sudo docker logs -f mechuragi-main-server`
+
+---

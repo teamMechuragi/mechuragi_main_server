@@ -1,8 +1,6 @@
-name: Deploy to EC2
+wname: Deploy Main Service to EC2
 on:
   push:
-    branches: [ main, dev ]
-  pull_request:
     branches: [ main, dev ]
 jobs:
   test:
@@ -38,9 +36,22 @@ jobs:
   deploy:
     needs: test
     runs-on: ubuntu-latest
-    if: (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/dev') && github.event_name == 'push'
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
 
     steps:
+      - name: Send Discord Notification - Deploy Start
+        uses: sarisia/actions-status-discord@v1
+        with:
+          webhook: ${{ secrets.DISCORD_WEBHOOK }}
+          status: ${{ job.status }}
+          title: "🚀 메인 서비스 배포 시작"
+          description: |
+            **메인 서비스 배포가 시작되었습니다**
+            • 커밋: `${{ github.event.head_commit.message }}`
+            • 브랜치: `${{ github.ref_name }}`
+            • 작성자: ${{ github.event.head_commit.author.name }}
+          color: 0xffaa00
+
       - uses: actions/checkout@v3
 
       - name: Set up JDK 17
@@ -48,9 +59,6 @@ jobs:
         with:
           java-version: '17'
           distribution: 'temurin'
-
-      - name: Make gradlew executable
-        run: chmod +x gradlew
 
       - name: Build application
         run: ./gradlew build -x test
@@ -61,7 +69,7 @@ jobs:
       - name: Login to DockerHub
         uses: docker/login-action@v2
         with:
-          username: mamel1016
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Build and push Docker image
@@ -70,31 +78,28 @@ jobs:
           context: .
           platforms: linux/amd64,linux/arm64
           push: true
-          tags: |
-            mamel1016/mechuragi-server:latest
-            mamel1016/mechuragi-server:${{ github.ref_name }}
-            mamel1016/mechuragi-server:${{ github.sha }}
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/mechuragi-main-server:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: Deploy to EC2
+      - name: Deploy to Main Server
         uses: appleboy/ssh-action@v0.1.5
         with:
-          host: 15.165.136.100
+          host: ${{ secrets.MAIN_SERVER_HOST }}
           username: ubuntu
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
             # Pull latest image
-            sudo docker pull mamel1016/mechuragi-server:${{ github.ref_name }}
+            sudo docker pull ${{ secrets.DOCKERHUB_USERNAME }}/mechuragi-main-server:latest
 
             # Stop and remove existing container (ignore errors if not exists)
-            sudo docker stop mechuragi-server 2>/dev/null || echo "Container not running, skipping stop"
-            sudo docker rm -f mechuragi-server 2>/dev/null || echo "Container not found, skipping removal"
+            sudo docker stop mechuragi-main-server 2>/dev/null || echo "Container not running, skipping stop"
+            sudo docker rm mechuragi-main-server 2>/dev/null || echo "Container not found, skipping removal"
 
             # Run new container with environment variables and IAM role access
             sudo docker run -d \
               -p 8080:8080 \
-              --name mechuragi-server \
+              --name mechuragi-main-server \
               --restart unless-stopped \
               -e "SPRING_PROFILES_ACTIVE=dev" \
               -e "DB_HOST=${{ secrets.DB_HOST }}" \
@@ -112,15 +117,26 @@ jobs:
               -e "KAKAO_CLIENT_SECRET=${{ secrets.KAKAO_CLIENT_SECRET }}" \
               -e "KAKAO_REDIRECT_URI=${{ secrets.KAKAO_REDIRECT_URI }}" \
               -e "OAUTH2_REDIRECT_URI=${{ secrets.OAUTH2_REDIRECT_URI }}" \
-              mamel1016/mechuragi-server:${{ github.ref_name }}
-            
-            # Check container is running
-            echo "Checking container status..."
-            if ! sudo docker ps | grep mechuragi-server; then
-              echo "❌ Container stopped! Showing logs:"
-              sudo docker logs mechuragi-server
-              exit 1
-            fi
+              ${{ secrets.DOCKERHUB_USERNAME }}/mechuragi-main-server:latest
+
+            # Wait for application to start
+            sleep 45
+
+            # Health check (up to 5 attempts)
+            for i in {1..5}; do
+              if curl -f http://localhost:8080/actuator/health; then
+                echo "Health check passed"
+                break
+              else
+                echo "Health check failed ($i/5), retrying in 10 seconds..."
+                sleep 10
+                if [ $i -eq 5 ]; then
+                  echo "Health check final failure, showing logs:"
+                  sudo docker logs mechuragi-main-server
+                  exit 1
+                fi
+              fi
+            done
 
             # Clean up old images
             sudo docker image prune -f
@@ -138,7 +154,7 @@ jobs:
             • 배포 방식: Docker 컨테이너 배포
             • 커밋: `${{ github.event.head_commit.message }}`
             • 작성자: ${{ github.event.head_commit.author.name }}
-            • 브랜치: ${{ github.ref_name }}
+            • 브랜치: `${{ github.ref_name }}`
           color: 0x00ff00
 
       - name: Send Discord Notification - Deploy Failure

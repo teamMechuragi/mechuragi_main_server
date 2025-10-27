@@ -37,7 +37,7 @@ public class Member {
     @Column(length = 500)
     private String profileImageUrl;
 
-    @Column(nullable = false)
+    @Column
     private Boolean emailVerified = false;
 
     @Enumerated(EnumType.STRING)
