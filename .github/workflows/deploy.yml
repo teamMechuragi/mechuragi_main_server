@@ -89,6 +89,9 @@ jobs:
           username: ubuntu
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
+            # Create shared network for service communication (ignore if exists)
+            sudo docker network create mechuragi-network 2>/dev/null || true
+
             # Pull latest image
             sudo docker pull ${{ secrets.DOCKERHUB_USERNAME }}/mechuragi-main-server:latest
 
@@ -113,6 +116,7 @@ jobs:
             sudo docker run -d \
               -p 8080:8080 \
               --name mechuragi-main-server \
+              --network mechuragi-network \
               --restart unless-stopped \
               -e "SPRING_PROFILES_ACTIVE=dev" \
               -e "DB_HOST=${{ secrets.DB_HOST }}" \
