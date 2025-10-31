@@ -86,6 +86,7 @@ public class AiRecommendationService {
 
         return aiServiceClient.getFoodRecommendation(request);
     }
+
      // 헬퍼 메서드: 멤버 ID로 회원 조회 → 활성화된 음식 취향 조회 → DTO 변환
     private FoodPreferenceDto getMemberFoodPreferenceDto(Long memberId) {
         Member member = memberRepository.findById(memberId)

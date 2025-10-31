@@ -20,6 +20,8 @@ public enum ErrorCode {
 
     // AI
     AI_SERVICE_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "AI001", "AI 서비스 통신 중 오류가 발생했습니다"),
+    RECOMMENDATION_NOT_FOUND(HttpStatus.NOT_FOUND, "AI002", "추천 결과를 찾을 수 없습니다."),
+    SCRAP_FORBIDDEN(HttpStatus.FORBIDDEN, "AI003", "해당 스크랩에 접근할 권한이 없습니다."),
 
     // Vote
     VOTE_NOT_FOUND(HttpStatus.NOT_FOUND, "V001", "투표를 찾을 수 없습니다."),
