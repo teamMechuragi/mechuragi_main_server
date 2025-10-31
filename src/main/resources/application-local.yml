@@ -69,6 +69,9 @@ cloud:
     ses:
       from-email: ${SES_FROM_EMAIL:mechuragi001@gmail.com}
 
+ai-service:
+  url: ${AI_SERVICE_URL:http://localhost:8082}
+
 logging:
   level:
     com.mechuragi.mechuragi_server: DEBUG
