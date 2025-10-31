@@ -1,4 +1,4 @@
-package com.mechuragi.mechuragi_server.domain.ai.dto.response;
+package com.mechuragi.mechuragi_server.domain.ai.dto.common.response;
 
 import lombok.*;
 

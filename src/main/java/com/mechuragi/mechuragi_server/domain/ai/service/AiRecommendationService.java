@@ -1,9 +1,9 @@
 package com.mechuragi.mechuragi_server.domain.ai.service;
 
 import com.mechuragi.mechuragi_server.domain.ai.client.AiServiceClient;
-import com.mechuragi.mechuragi_server.domain.ai.dto.request.FoodPreferenceDto;
-import com.mechuragi.mechuragi_server.domain.ai.dto.request.FoodRecommendationRequest;
-import com.mechuragi.mechuragi_server.domain.ai.dto.response.FoodRecommendationResponse;
+import com.mechuragi.mechuragi_server.domain.ai.dto.external.request.FoodPreferenceDto;
+import com.mechuragi.mechuragi_server.domain.ai.dto.external.request.FoodRecommendationRequest;
+import com.mechuragi.mechuragi_server.domain.ai.dto.common.response.FoodRecommendationResponse;
 import com.mechuragi.mechuragi_server.domain.ai.service.mapper.FoodRecommendationMapper;
 import com.mechuragi.mechuragi_server.domain.preference.entity.FoodPreference;
 import com.mechuragi.mechuragi_server.domain.preference.repository.DislikedFoodRepository;
@@ -37,11 +37,7 @@ public class AiRecommendationService {
     private final FoodRecommendationMapper foodRecommendationMapper;
 
     public FoodRecommendationResponse getWeatherBasedRecommendation(Long memberId, List<String> weatherConditions) {
-        Member member = memberRepository.findById(memberId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.MEMBER_NOT_FOUND));
-        FoodPreference activePreference = foodPreferenceService.findActivePreference(member);
-
-        FoodPreferenceDto preferenceDto = toFoodPreferenceDto(activePreference);
+        FoodPreferenceDto preferenceDto = getMemberFoodPreferenceDto(memberId);
         FoodRecommendationRequest request = foodRecommendationMapper.createWeatherBasedRequest(
                 preferenceDto,
                 weatherConditions
@@ -51,11 +47,7 @@ public class AiRecommendationService {
     }
 
     public FoodRecommendationResponse getTimeBasedRecommendation(Long memberId, String timeOfDay) {
-        Member member = memberRepository.findById(memberId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.MEMBER_NOT_FOUND));
-        FoodPreference activePreference = foodPreferenceService.findActivePreference(member);
-
-        FoodPreferenceDto preferenceDto = toFoodPreferenceDto(activePreference);
+        FoodPreferenceDto preferenceDto = getMemberFoodPreferenceDto(memberId);
         FoodRecommendationRequest request = foodRecommendationMapper.createTimeBasedRequest(
                 preferenceDto,
                 timeOfDay
@@ -65,11 +57,7 @@ public class AiRecommendationService {
     }
 
     public FoodRecommendationResponse getIngredientsBasedRecommendation(Long memberId, List<String> ingredients) {
-        Member member = memberRepository.findById(memberId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.MEMBER_NOT_FOUND));
-        FoodPreference activePreference = foodPreferenceService.findActivePreference(member);
-
-        FoodPreferenceDto preferenceDto = toFoodPreferenceDto(activePreference);
+        FoodPreferenceDto preferenceDto = getMemberFoodPreferenceDto(memberId);
         FoodRecommendationRequest request = foodRecommendationMapper.createIngredientsBasedRequest(
                 preferenceDto,
                 ingredients
@@ -79,11 +67,7 @@ public class AiRecommendationService {
     }
 
     public FoodRecommendationResponse getFeelingBasedRecommendation(Long memberId, String feeling) {
-        Member member = memberRepository.findById(memberId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.MEMBER_NOT_FOUND));
-        FoodPreference activePreference = foodPreferenceService.findActivePreference(member);
-
-        FoodPreferenceDto preferenceDto = toFoodPreferenceDto(activePreference);
+        FoodPreferenceDto preferenceDto = getMemberFoodPreferenceDto(memberId);
         FoodRecommendationRequest request = foodRecommendationMapper.createFeelingBasedRequest(
                 preferenceDto,
                 feeling
@@ -94,11 +78,7 @@ public class AiRecommendationService {
 
 
     public FoodRecommendationResponse getConversationBasedRecommendation(Long memberId, String message) {
-        Member member = memberRepository.findById(memberId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.MEMBER_NOT_FOUND));
-        FoodPreference activePreference = foodPreferenceService.findActivePreference(member);
-
-        FoodPreferenceDto preferenceDto = toFoodPreferenceDto(activePreference);
+        FoodPreferenceDto preferenceDto = getMemberFoodPreferenceDto(memberId);
         FoodRecommendationRequest request = foodRecommendationMapper.createConversationBasedRequest(
                 preferenceDto,
                 message
@@ -106,7 +86,16 @@ public class AiRecommendationService {
 
         return aiServiceClient.getFoodRecommendation(request);
     }
+     // 헬퍼 메서드: 멤버 ID로 회원 조회 → 활성화된 음식 취향 조회 → DTO 변환
+    private FoodPreferenceDto getMemberFoodPreferenceDto(Long memberId) {
+        Member member = memberRepository.findById(memberId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.MEMBER_NOT_FOUND));
+        FoodPreference activePreference = foodPreferenceService.findActivePreference(member);
+        return toFoodPreferenceDto(activePreference);
+    }
 
+
+     // 헬퍼 메서드: 음식 타입, 맛, 싫어하는 음식 목록 조회 -> FoodPreference 엔티티를 FoodPreferenceDto로 변환
     private FoodPreferenceDto toFoodPreferenceDto(FoodPreference preference) {
         List<String> foodTypes = preferenceFoodTypeRepository.findByPreferenceId(preference.getId())
                 .stream()
@@ -123,13 +112,13 @@ public class AiRecommendationService {
                 .map(disliked -> disliked.getFoodName())
                 .collect(Collectors.toList());
 
-        return foodRecommendationMapper.toFoodPreferenceDto(
-                preference.getIsOnDiet().name(),
-                preference.getVeganOption().name(),
-                preference.getSpiceLevel().name(),
-                foodTypes,
-                tastes,
-                dislikedFoods
-        );
+        return FoodPreferenceDto.builder()
+                .dietStatus(preference.getIsOnDiet().name())
+                .veganOption(preference.getVeganOption().name())
+                .spiceLevel(preference.getSpiceLevel().name())
+                .foodTypes(foodTypes)
+                .tastes(tastes)
+                .dislikedFoods(dislikedFoods)
+                .build();
     }
 }

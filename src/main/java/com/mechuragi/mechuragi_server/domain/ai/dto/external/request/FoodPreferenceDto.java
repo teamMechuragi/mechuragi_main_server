@@ -1,4 +1,4 @@
-package com.mechuragi.mechuragi_server.domain.ai.dto.request;
+package com.mechuragi.mechuragi_server.domain.ai.dto.external.request;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

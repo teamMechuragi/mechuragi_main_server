@@ -1,18 +1,14 @@
 package com.mechuragi.mechuragi_server.domain.ai.controller;
 
-import com.mechuragi.mechuragi_server.domain.ai.dto.request.FoodRecommendationRequest;
-import com.mechuragi.mechuragi_server.domain.ai.dto.response.FoodRecommendationResponse;
+import com.mechuragi.mechuragi_server.auth.dto.CustomUserDetails;
+import com.mechuragi.mechuragi_server.domain.ai.dto.common.response.FoodRecommendationResponse;
+import com.mechuragi.mechuragi_server.domain.ai.dto.internal.request.*;
 import com.mechuragi.mechuragi_server.domain.ai.service.AiRecommendationService;
-import com.mechuragi.mechuragi_server.auth.util.JwtTokenProvider;
-import com.mechuragi.mechuragi_server.global.exception.BusinessException;
-import com.mechuragi.mechuragi_server.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
-
-import jakarta.servlet.http.HttpServletRequest;
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/ai-recommendations")
@@ -21,96 +17,74 @@ import java.util.List;
 public class AiRecommendationController {
 
     private final AiRecommendationService aiRecommendationService;
-    private final JwtTokenProvider jwtTokenProvider;
-
-    private Long getMemberIdFromRequest(HttpServletRequest request) {
-        String authHeader = request.getHeader("Authorization");
-        if (authHeader != null && authHeader.startsWith("Bearer ")) {
-            String token = authHeader.substring(7);
-            return jwtTokenProvider.getMemberIdFromToken(token);
-        }
-        throw new BusinessException(ErrorCode.INVALID_JWT_TOKEN);
-    }
 
     @PostMapping("/weather")
     public ResponseEntity<FoodRecommendationResponse> getWeatherBasedRecommendation(
-            HttpServletRequest request,
-            @RequestBody WeatherRequest weatherRequest) {
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @RequestBody WeatherRecommendationRequest request) {
 
-        Long memberId = getMemberIdFromRequest(request);
-        log.info("날씨 기반 추천 요청 - 사용자: {}, 날씨: {}", memberId, weatherRequest.getWeatherConditions());
+        Long memberId = userDetails.getMemberId();
+        log.info("날씨 기반 추천 요청 - 사용자: {}, 날씨: {}", memberId, request.getWeatherConditions());
 
         FoodRecommendationResponse response = aiRecommendationService.getWeatherBasedRecommendation(
-            memberId, weatherRequest.getWeatherConditions());
+                memberId, request.getWeatherConditions());
 
         return ResponseEntity.ok(response);
     }
 
     @PostMapping("/time")
     public ResponseEntity<FoodRecommendationResponse> getTimeBasedRecommendation(
-            HttpServletRequest request,
-            @RequestBody TimeRequest timeRequest) {
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @RequestBody TimeRecommendationRequest request) {
 
-        Long memberId = getMemberIdFromRequest(request);
-        log.info("시간 기반 추천 요청 - 사용자: {}, 시간: {}", memberId, timeRequest.getTimeOfDay());
+        Long memberId = userDetails.getMemberId();
+        log.info("시간 기반 추천 요청 - 사용자: {}, 시간: {}", memberId, request.getTimeOfDay());
 
         FoodRecommendationResponse response = aiRecommendationService.getTimeBasedRecommendation(
-            memberId, timeRequest.getTimeOfDay());
+                memberId, request.getTimeOfDay());
 
         return ResponseEntity.ok(response);
     }
 
     @PostMapping("/ingredients")
     public ResponseEntity<FoodRecommendationResponse> getIngredientsBasedRecommendation(
-            FoodRecommendationRequest foodRecommendationRequest) {
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @RequestBody IngredientsRecommendationRequest request) {
 
-        log.info("시간 기반 추천 요청 - 재료: {}", foodRecommendationRequest.getContext().getIngredients());
+        Long memberId = userDetails.getMemberId();
+        log.info("재료 기반 추천 요청 - 사용자: {}, 재료: {}", memberId, request.getIngredients());
 
-        FoodRecommendationResponse response = aiRecommendationService.getTimeBasedRecommendation(
-                memberId, timeRequest.getTimeOfDay());
+        FoodRecommendationResponse response = aiRecommendationService.getIngredientsBasedRecommendation(
+                memberId, request.getIngredients());
+
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/feeling")
+    public ResponseEntity<FoodRecommendationResponse> getFeelingBasedRecommendation(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @RequestBody FeelingRecommendationRequest request) {
+
+        Long memberId = userDetails.getMemberId();
+        log.info("기분 기반 추천 요청 - 사용자: {}, 기분: {}", memberId, request.getFeeling());
+
+        FoodRecommendationResponse response = aiRecommendationService.getFeelingBasedRecommendation(
+                memberId, request.getFeeling());
 
         return ResponseEntity.ok(response);
     }
 
     @PostMapping("/conversation")
     public ResponseEntity<FoodRecommendationResponse> getConversationBasedRecommendation(
-            HttpServletRequest request,
-            @RequestBody ConversationRequest conversationRequest) {
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @RequestBody ConversationRecommendationRequest request) {
 
-        Long memberId = getMemberIdFromRequest(request);
-        log.info("대화 기반 추천 요청 - 사용자: {}, 메시지: {}", memberId, conversationRequest.getMessage());
+        Long memberId = userDetails.getMemberId();
+        log.info("대화 기반 추천 요청 - 사용자: {}, 메시지: {}", memberId, request.getMessage());
 
         FoodRecommendationResponse response = aiRecommendationService.getConversationBasedRecommendation(
-            memberId, conversationRequest.getMessage());
+                memberId, request.getMessage());
 
         return ResponseEntity.ok(response);
-    }
-
-    public static class WeatherRequest {
-        private List<String> weatherConditions;
-
-        public List<String> getWeatherConditions() { return weatherConditions; }
-        public void setWeatherConditions(List<String> weatherConditions) { this.weatherConditions = weatherConditions; }
-    }
-
-    public static class TimeRequest {
-        private String timeOfDay;
-
-        public String getTimeOfDay() { return timeOfDay; }
-        public void setTimeOfDay(String timeOfDay) { this.timeOfDay = timeOfDay; }
-    }
-
-    public static class ingredientRequest {
-        private ;
-
-        public String getTimeOfDay() { return timeOfDay; }
-        public void setTimeOfDay(String timeOfDay) { this.timeOfDay = timeOfDay; }
-    }
-
-    public static class ConversationRequest {
-        private String message;
-
-        public String getMessage() { return message; }
-        public void setMessage(String message) { this.message = message; }
     }
 }
