@@ -1,7 +1,7 @@
 package com.mechuragi.mechuragi_server.domain.ai.client;
 
-import com.mechuragi.mechuragi_server.domain.ai.dto.FoodRecommendationRequest;
-import com.mechuragi.mechuragi_server.domain.ai.dto.FoodRecommendationResponse;
+import com.mechuragi.mechuragi_server.domain.ai.dto.request.FoodRecommendationRequest;
+import com.mechuragi.mechuragi_server.domain.ai.dto.response.FoodRecommendationResponse;
 import com.mechuragi.mechuragi_server.global.exception.BusinessException;
 import com.mechuragi.mechuragi_server.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;

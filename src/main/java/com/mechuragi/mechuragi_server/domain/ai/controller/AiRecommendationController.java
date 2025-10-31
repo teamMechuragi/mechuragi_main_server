@@ -1,7 +1,7 @@
 package com.mechuragi.mechuragi_server.domain.ai.controller;
 
-import com.mechuragi.mechuragi_server.domain.ai.dto.FoodRecommendationRequest;
-import com.mechuragi.mechuragi_server.domain.ai.dto.FoodRecommendationResponse;
+import com.mechuragi.mechuragi_server.domain.ai.dto.request.FoodRecommendationRequest;
+import com.mechuragi.mechuragi_server.domain.ai.dto.response.FoodRecommendationResponse;
 import com.mechuragi.mechuragi_server.domain.ai.service.AiRecommendationService;
 import com.mechuragi.mechuragi_server.auth.util.JwtTokenProvider;
 import com.mechuragi.mechuragi_server.global.exception.BusinessException;
@@ -60,6 +60,18 @@ public class AiRecommendationController {
         return ResponseEntity.ok(response);
     }
 
+    @PostMapping("/ingredients")
+    public ResponseEntity<FoodRecommendationResponse> getIngredientsBasedRecommendation(
+            FoodRecommendationRequest foodRecommendationRequest) {
+
+        log.info("시간 기반 추천 요청 - 재료: {}", foodRecommendationRequest.getContext().getIngredients());
+
+        FoodRecommendationResponse response = aiRecommendationService.getTimeBasedRecommendation(
+                memberId, timeRequest.getTimeOfDay());
+
+        return ResponseEntity.ok(response);
+    }
+
     @PostMapping("/conversation")
     public ResponseEntity<FoodRecommendationResponse> getConversationBasedRecommendation(
             HttpServletRequest request,
@@ -83,6 +95,13 @@ public class AiRecommendationController {
 
     public static class TimeRequest {
         private String timeOfDay;
+
+        public String getTimeOfDay() { return timeOfDay; }
+        public void setTimeOfDay(String timeOfDay) { this.timeOfDay = timeOfDay; }
+    }
+
+    public static class ingredientRequest {
+        private ;
 
         public String getTimeOfDay() { return timeOfDay; }
         public void setTimeOfDay(String timeOfDay) { this.timeOfDay = timeOfDay; }
