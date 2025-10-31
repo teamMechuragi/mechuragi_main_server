@@ -31,13 +31,21 @@ public class AiServiceClient {
                 FoodRecommendationResponse.class
             );
 
+            if (response == null) {
+                log.error("AI 서비스로부터 null 응답 수신");
+                throw new BusinessException(ErrorCode.AI_SERVICE_ERROR);
+            }
+
             log.info("AI 서비스 응답 수신: {} 개 추천",
-                response != null && response.getRecommendations() != null ?
+                response.getRecommendations() != null ?
                 response.getRecommendations().size() : 0);
 
             return response;
+        } catch (BusinessException e) {
+            throw e;
         } catch (Exception e) {
             log.error("AI 서비스 호출 실패", e);
+            e.printStackTrace();
             throw new BusinessException(ErrorCode.AI_SERVICE_ERROR);
         }
     }

@@ -1,4 +1,5 @@
 package com.mechuragi.mechuragi_server.domain.ai.dto.common.response;
+
 import lombok.*;
 
 import java.util.List;
@@ -10,7 +11,7 @@ import java.util.List;
 public class FoodRecommendationResponse {
 
     private String message;
-    private List<ScrapedFoodResponse> recommendations;
+    private List<FoodRecommendationDto> recommendations;
     private String model;
 
 }
