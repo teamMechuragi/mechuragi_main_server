@@ -4,9 +4,11 @@ import com.mechuragi.mechuragi_server.domain.ai.dto.request.FoodPreferenceDto;
 import com.mechuragi.mechuragi_server.domain.ai.dto.request.FoodRecommendationRequest;
 import com.mechuragi.mechuragi_server.domain.ai.dto.request.RecommendationContextDto;
 import com.mechuragi.mechuragi_server.domain.ai.dto.request.RecommendationType;
+import org.springframework.stereotype.Component;
 
 import java.util.List;
 
+@Component
 public class FoodRecommendationMapper {
     /**
      * FoodPreference 생성
