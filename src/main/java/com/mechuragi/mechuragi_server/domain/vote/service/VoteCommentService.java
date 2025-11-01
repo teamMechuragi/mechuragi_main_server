@@ -35,20 +35,20 @@ public class VoteCommentService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.MEMBER_NOT_FOUND));
 
         // 투표 조회
-        VotePost votePost = votePostRepository.findById(request.voteId())
+        VotePost votePost = votePostRepository.findById(request.getVoteId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.VOTE_NOT_FOUND));
 
         // 댓글 생성
         VoteComment comment = VoteComment.builder()
                 .author(member)
                 .votePost(votePost)
-                .content(request.content())
+                .content(request.getContent())
                 .build();
 
         VoteComment savedComment = voteCommentRepository.save(comment);
 
         log.info("Comment created: id={}, voteId={}, authorId={}",
-                savedComment.getId(), request.voteId(), memberId);
+                savedComment.getId(), request.getVoteId(), memberId);
 
         return VoteCommentResponseDTO.from(savedComment);
     }
@@ -70,7 +70,7 @@ public class VoteCommentService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.VOTE_COMMENT_NOT_FOUND));
 
         // 댓글 수정
-        comment.updateContent(request.content());
+        comment.updateContent(request.getContent());
 
         log.info("Comment updated: id={}, authorId={}", commentId, memberId);
 

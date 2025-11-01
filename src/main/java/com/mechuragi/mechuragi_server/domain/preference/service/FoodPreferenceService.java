@@ -25,7 +25,7 @@ public class FoodPreferenceService {
 
     // 새로운 음식 취향 등록
     @Transactional
-    public Long createPreference(Member member, CreatePreferenceRequest request) {
+    public Long createPreference(Member member, CreatePreferenceRequestDTO request) {
         String preferenceName = generatePreferenceName(member, request.getPreferenceName());
 
         // 첫 번째 취향이면 자동 활성화
@@ -52,20 +52,20 @@ public class FoodPreferenceService {
     }
 
     // 모든 음식 취향 목록 조회
-    public List<PreferenceListResponse> getPreferenceList(Long memberId) {
+    public List<PreferenceListResponseDTO> getPreferenceList(Long memberId) {
         List<FoodPreference> preferences = foodPreferenceRepository.findByMemberIdOrderByCreatedAtDesc(memberId);
 
         return preferences.stream()
-                .map(preference -> new PreferenceListResponse(
-                        preference.getId(),
-                        preference.getPreferenceName(),
-                        preference.getIsActive()
-                ))
+                .map(preference -> PreferenceListResponseDTO.builder()
+                        .id(preference.getId())
+                        .preferenceName(preference.getPreferenceName())
+                        .isActive(preference.getIsActive())
+                        .build())
                 .collect(Collectors.toList());
     }
 
     // 특정 음식 취향 상세 정보 조회
-    public PreferenceDetailResponse getPreferenceDetail(Long memberId, Long preferenceId) {
+    public PreferenceDetailResponseDTO getPreferenceDetail(Long memberId, Long preferenceId) {
         FoodPreference preference = foodPreferenceRepository.findByIdAndMemberId(preferenceId, memberId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.PREFERENCE_NOT_FOUND));
 
@@ -84,25 +84,25 @@ public class FoodPreferenceService {
                 .map(DislikedFood::getFoodName)
                 .collect(Collectors.toList());
 
-        return new PreferenceDetailResponse(
-                preference.getId(),
-                preference.getPreferenceName(),
-                preference.getNumberOfDiners(),
-                preference.getAllergyInfo(),
-                preference.getIsOnDiet(),
-                preference.getVeganOption(),
-                preference.getSpiceLevel(),
-                foodTypes,
-                tastes,
-                dislikedFoods,
-                preference.getCreatedAt(),
-                preference.getUpdatedAt()
-        );
+        return PreferenceDetailResponseDTO.builder()
+                .id(preference.getId())
+                .preferenceName(preference.getPreferenceName())
+                .numberOfDiners(preference.getNumberOfDiners())
+                .allergyInfo(preference.getAllergyInfo())
+                .isOnDiet(preference.getIsOnDiet())
+                .veganOption(preference.getVeganOption())
+                .spiceLevel(preference.getSpiceLevel())
+                .preferredFoodTypes(foodTypes)
+                .preferredTastes(tastes)
+                .dislikedFoods(dislikedFoods)
+                .createdAt(preference.getCreatedAt())
+                .updatedAt(preference.getUpdatedAt())
+                .build();
     }
 
     // 음식 취향 정보 수정
     @Transactional
-    public void updatePreference(Long memberId, Long preferenceId, UpdatePreferenceRequest request) {
+    public void updatePreference(Long memberId, Long preferenceId, UpdatePreferenceRequestDTO request) {
         FoodPreference preference = foodPreferenceRepository.findByIdAndMemberId(preferenceId, memberId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.PREFERENCE_NOT_FOUND));
 

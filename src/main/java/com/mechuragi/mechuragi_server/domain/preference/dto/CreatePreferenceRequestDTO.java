@@ -4,14 +4,18 @@ import com.mechuragi.mechuragi_server.domain.preference.entity.FoodPreference;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.util.List;
 
 @Getter
+@Builder
 @NoArgsConstructor
-public class CreatePreferenceRequest {
+@AllArgsConstructor
+public class CreatePreferenceRequestDTO {
 
     private String preferenceName;
 
@@ -37,19 +41,4 @@ public class CreatePreferenceRequest {
     private List<String> preferredTastes;
 
     private List<String> dislikedFoods;
-
-    public CreatePreferenceRequest(String preferenceName, Integer numberOfDiners, String allergyInfo,
-                                 FoodPreference.DietStatus isOnDiet, FoodPreference.VeganOption veganOption,
-                                 FoodPreference.SpiceLevel spiceLevel, List<String> preferredFoodTypes,
-                                 List<String> preferredTastes, List<String> dislikedFoods) {
-        this.preferenceName = preferenceName;
-        this.numberOfDiners = numberOfDiners;
-        this.allergyInfo = allergyInfo;
-        this.isOnDiet = isOnDiet;
-        this.veganOption = veganOption;
-        this.spiceLevel = spiceLevel;
-        this.preferredFoodTypes = preferredFoodTypes;
-        this.preferredTastes = preferredTastes;
-        this.dislikedFoods = dislikedFoods;
-    }
 }
