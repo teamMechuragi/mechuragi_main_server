@@ -28,10 +28,13 @@ public class FoodPreferenceService {
     public Long createPreference(Member member, CreatePreferenceRequest request) {
         String preferenceName = generatePreferenceName(member, request.getPreferenceName());
 
+        // 첫 번째 취향이면 자동 활성화
+        boolean isFirstPreference = foodPreferenceRepository.countByMemberId(member.getId()) == 0;
+
         FoodPreference preference = FoodPreference.builder()
                 .member(member)
                 .preferenceName(preferenceName)
-                .isActive(false)
+                .isActive(isFirstPreference)
                 .numberOfDiners(request.getNumberOfDiners())
                 .allergyInfo(request.getAllergyInfo())
                 .isOnDiet(request.getIsOnDiet())
@@ -193,5 +196,25 @@ public class FoodPreferenceService {
     public FoodPreference findActivePreference(Member member) {
         return foodPreferenceRepository.findByMemberAndIsActiveTrue(member)
                 .orElseThrow(() -> new BusinessException(ErrorCode.PREFERENCE_NOT_FOUND));
+    }
+
+    // 음식 취향 활성화 토글 (한 번에 하나만 활성화)
+    @Transactional
+    public void toggleActivePreference(Long memberId, Long preferenceId) {
+        // 해당 취향이 사용자 소유인지 확인
+        FoodPreference targetPreference = foodPreferenceRepository.findByIdAndMemberId(preferenceId, memberId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.PREFERENCE_NOT_FOUND));
+
+        // 사용자의 모든 취향 조회
+        List<FoodPreference> allPreferences = foodPreferenceRepository.findByMemberIdOrderByCreatedAtDesc(memberId);
+
+        // 선택한 취향만 활성화, 나머지는 비활성화
+        allPreferences.forEach(preference -> {
+            if (preference.getId().equals(preferenceId)) {
+                preference.activate();
+            } else {
+                preference.deactivate();
+            }
+        });
     }
 }
