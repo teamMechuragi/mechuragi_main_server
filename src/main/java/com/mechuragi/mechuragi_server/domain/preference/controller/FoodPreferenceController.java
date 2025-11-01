@@ -91,4 +91,15 @@ public class FoodPreferenceController {
         foodPreferenceService.deletePreference(memberId, preferenceId);
         return ResponseEntity.noContent().build();
     }
+
+    // 음식 취향 활성화 토글
+    @PatchMapping("/{preferenceId}/toggle-active")
+    public ResponseEntity<Void> toggleActivePreference(
+            HttpServletRequest request,
+            @PathVariable Long preferenceId) {
+
+        Long memberId = getMemberIdFromRequest(request);
+        foodPreferenceService.toggleActivePreference(memberId, preferenceId);
+        return ResponseEntity.ok().build();
+    }
 }
