@@ -78,6 +78,11 @@ cloud:
 ai-service:
   url: ${AI_SERVICE_URL:http://localhost:8082}
 
+http:
+  client:
+    connection-timeout: 5000  # 5초
+    read-timeout: 60000       # 60초
+
 logging:
   level:
     root: INFO

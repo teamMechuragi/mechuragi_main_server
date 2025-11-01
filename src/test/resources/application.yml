@@ -57,6 +57,14 @@ cloud:
     ses:
       from-email: test@example.com
 
+ai-service:
+  url: http://localhost:8082
+
+http:
+  client:
+    connection-timeout: 5000  # 5초
+    read-timeout: 60000       # 60초
+
 logging:
   level:
     com.mechuragi.mechuragi_server: DEBUG
