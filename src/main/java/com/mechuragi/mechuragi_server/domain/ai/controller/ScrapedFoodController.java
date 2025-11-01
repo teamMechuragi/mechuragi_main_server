@@ -4,6 +4,7 @@ import com.mechuragi.mechuragi_server.auth.dto.CustomUserDetails;
 import com.mechuragi.mechuragi_server.domain.ai.dto.internal.request.ScrapeFoodRequest;
 import com.mechuragi.mechuragi_server.domain.ai.dto.common.response.ScrapedFoodResponse;
 import com.mechuragi.mechuragi_server.domain.ai.service.ScrapFoodService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -27,7 +28,7 @@ public class ScrapedFoodController {
     @PostMapping
     public ResponseEntity<ScrapedFoodResponse> saveScrap(
             @AuthenticationPrincipal CustomUserDetails userDetails,
-            @RequestBody ScrapeFoodRequest request) {
+            @Valid @RequestBody ScrapeFoodRequest request) {
 
         Long memberId = userDetails.getMemberId();
         log.info("스크랩 저장 요청 - 사용자: {}, 음식명: {}", memberId, request.getName());

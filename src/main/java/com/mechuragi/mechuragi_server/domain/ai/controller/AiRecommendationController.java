@@ -4,6 +4,7 @@ import com.mechuragi.mechuragi_server.auth.dto.CustomUserDetails;
 import com.mechuragi.mechuragi_server.domain.ai.dto.common.response.FoodRecommendationResponse;
 import com.mechuragi.mechuragi_server.domain.ai.dto.internal.request.*;
 import com.mechuragi.mechuragi_server.domain.ai.service.AiRecommendationService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -21,7 +22,7 @@ public class AiRecommendationController {
     @PostMapping("/weather")
     public ResponseEntity<FoodRecommendationResponse> getWeatherBasedRecommendation(
             @AuthenticationPrincipal CustomUserDetails userDetails,
-            @RequestBody WeatherRecommendationRequest request) {
+            @Valid @RequestBody WeatherRecommendationRequest request) {
 
         Long memberId = userDetails.getMemberId();
         log.info("날씨 기반 추천 요청 - 사용자: {}, 날씨: {}", memberId, request.getWeatherConditions());
@@ -35,7 +36,7 @@ public class AiRecommendationController {
     @PostMapping("/time")
     public ResponseEntity<FoodRecommendationResponse> getTimeBasedRecommendation(
             @AuthenticationPrincipal CustomUserDetails userDetails,
-            @RequestBody TimeRecommendationRequest request) {
+            @Valid @RequestBody TimeRecommendationRequest request) {
 
         Long memberId = userDetails.getMemberId();
         log.info("시간 기반 추천 요청 - 사용자: {}, 시간: {}", memberId, request.getTimeOfDay());
@@ -49,7 +50,7 @@ public class AiRecommendationController {
     @PostMapping("/ingredients")
     public ResponseEntity<FoodRecommendationResponse> getIngredientsBasedRecommendation(
             @AuthenticationPrincipal CustomUserDetails userDetails,
-            @RequestBody IngredientsRecommendationRequest request) {
+            @Valid @RequestBody IngredientsRecommendationRequest request) {
 
         Long memberId = userDetails.getMemberId();
         log.info("재료 기반 추천 요청 - 사용자: {}, 재료: {}", memberId, request.getIngredients());
@@ -63,7 +64,7 @@ public class AiRecommendationController {
     @PostMapping("/feeling")
     public ResponseEntity<FoodRecommendationResponse> getFeelingBasedRecommendation(
             @AuthenticationPrincipal CustomUserDetails userDetails,
-            @RequestBody FeelingRecommendationRequest request) {
+            @Valid @RequestBody FeelingRecommendationRequest request) {
 
         Long memberId = userDetails.getMemberId();
         log.info("기분 기반 추천 요청 - 사용자: {}, 기분: {}", memberId, request.getFeeling());
@@ -77,7 +78,7 @@ public class AiRecommendationController {
     @PostMapping("/conversation")
     public ResponseEntity<FoodRecommendationResponse> getConversationBasedRecommendation(
             @AuthenticationPrincipal CustomUserDetails userDetails,
-            @RequestBody ConversationRecommendationRequest request) {
+            @Valid @RequestBody ConversationRecommendationRequest request) {
 
         Long memberId = userDetails.getMemberId();
         log.info("대화 기반 추천 요청 - 사용자: {}, 메시지: {}", memberId, request.getMessage());
