@@ -15,7 +15,7 @@ import org.springframework.web.client.RestTemplate;
 @Slf4j
 public class AiServiceClient {
 
-    @Value("${ai-service.url:http://localhost:8082}")
+    @Value("${ai-service.url")
     private String aiServiceUrl;
 
     private final RestTemplate restTemplate;

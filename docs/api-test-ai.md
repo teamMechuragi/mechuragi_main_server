@@ -49,10 +49,7 @@ http://{baseURL}:8080/swagger-ui/index.html
 
 **요청 본문:**
 ```json
-{
-  "weatherConditions": ["맑음", "따뜻함"]
-}
-```
+1```
 
 **응답:**
 ```json
