@@ -102,9 +102,9 @@ http://{baseURL}:8080/swagger-ui/index.html
 **요청 본문:**
 ```json
 {
-  "email": "test@example.com",
-  "password": "Test1234!@",
-  "nickname": "행복한곰"
+   "email": "twrp3301@gmail.com",
+   "password": "abc123456!",
+   "nickname": "행복한곰"
 }
 ```
 
@@ -140,8 +140,8 @@ http://{baseURL}:8080/swagger-ui/index.html
 **요청 본문:**
 ```json
 {
-  "email": "test@example.com",
-  "password": "Test1234!@"
+   "email": "twrp3301@gmail.com",
+   "password": "abc123456!"
 }
 ```
 

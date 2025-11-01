@@ -1,8 +1,10 @@
 package com.mechuragi.mechuragi_server.domain.ai.service;
 
 import com.mechuragi.mechuragi_server.domain.ai.client.AiServiceClient;
-import com.mechuragi.mechuragi_server.domain.ai.dto.FoodRecommendationRequest;
-import com.mechuragi.mechuragi_server.domain.ai.dto.FoodRecommendationResponse;
+import com.mechuragi.mechuragi_server.domain.ai.dto.external.request.FoodPreferenceDto;
+import com.mechuragi.mechuragi_server.domain.ai.dto.external.request.FoodRecommendationRequest;
+import com.mechuragi.mechuragi_server.domain.ai.dto.common.response.FoodRecommendationResponse;
+import com.mechuragi.mechuragi_server.domain.ai.service.mapper.FoodRecommendationMapper;
 import com.mechuragi.mechuragi_server.domain.preference.entity.FoodPreference;
 import com.mechuragi.mechuragi_server.domain.preference.repository.DislikedFoodRepository;
 import com.mechuragi.mechuragi_server.domain.preference.repository.PreferenceFoodTypeRepository;
@@ -32,67 +34,70 @@ public class AiRecommendationService {
     private final PreferenceFoodTypeRepository preferenceFoodTypeRepository;
     private final PreferenceTasteRepository preferenceTasteRepository;
     private final DislikedFoodRepository dislikedFoodRepository;
+    private final FoodRecommendationMapper foodRecommendationMapper;
 
     public FoodRecommendationResponse getWeatherBasedRecommendation(Long memberId, List<String> weatherConditions) {
-        Member member = memberRepository.findById(memberId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.MEMBER_NOT_FOUND));
-        FoodPreference activePreference = foodPreferenceService.findActivePreference(member);
-
-        FoodRecommendationRequest request = buildRequest(
-            FoodRecommendationRequest.RecommendationType.WEATHER,
-            activePreference,
-            weatherConditions,
-            null,
-            null
+        FoodPreferenceDto preferenceDto = getMemberFoodPreferenceDto(memberId);
+        FoodRecommendationRequest request = foodRecommendationMapper.createWeatherBasedRequest(
+                preferenceDto,
+                weatherConditions
         );
 
         return aiServiceClient.getFoodRecommendation(request);
     }
 
     public FoodRecommendationResponse getTimeBasedRecommendation(Long memberId, String timeOfDay) {
-        Member member = memberRepository.findById(memberId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.MEMBER_NOT_FOUND));
-        FoodPreference activePreference = foodPreferenceService.findActivePreference(member);
-
-        FoodRecommendationRequest request = buildRequest(
-            FoodRecommendationRequest.RecommendationType.TIME_BASED,
-            activePreference,
-            null,
-            timeOfDay,
-            null
+        FoodPreferenceDto preferenceDto = getMemberFoodPreferenceDto(memberId);
+        FoodRecommendationRequest request = foodRecommendationMapper.createTimeBasedRequest(
+                preferenceDto,
+                timeOfDay
         );
 
         return aiServiceClient.getFoodRecommendation(request);
     }
+
+    public FoodRecommendationResponse getIngredientsBasedRecommendation(Long memberId, List<String> ingredients) {
+        FoodPreferenceDto preferenceDto = getMemberFoodPreferenceDto(memberId);
+        FoodRecommendationRequest request = foodRecommendationMapper.createIngredientsBasedRequest(
+                preferenceDto,
+                ingredients
+        );
+
+        return aiServiceClient.getFoodRecommendation(request);
+    }
+
+    public FoodRecommendationResponse getFeelingBasedRecommendation(Long memberId, String feeling) {
+        FoodPreferenceDto preferenceDto = getMemberFoodPreferenceDto(memberId);
+        FoodRecommendationRequest request = foodRecommendationMapper.createFeelingBasedRequest(
+                preferenceDto,
+                feeling
+        );
+
+        return aiServiceClient.getFoodRecommendation(request);
+    }
+
 
     public FoodRecommendationResponse getConversationBasedRecommendation(Long memberId, String message) {
-        Member member = memberRepository.findById(memberId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.MEMBER_NOT_FOUND));
-        FoodPreference activePreference = foodPreferenceService.findActivePreference(member);
-
-        FoodRecommendationRequest request = buildRequest(
-            FoodRecommendationRequest.RecommendationType.CONVERSATION,
-            activePreference,
-            null,
-            null,
-            message
+        FoodPreferenceDto preferenceDto = getMemberFoodPreferenceDto(memberId);
+        FoodRecommendationRequest request = foodRecommendationMapper.createConversationBasedRequest(
+                preferenceDto,
+                message
         );
 
         return aiServiceClient.getFoodRecommendation(request);
     }
 
-    private FoodRecommendationRequest buildRequest(
-            FoodRecommendationRequest.RecommendationType type,
-            FoodPreference preference,
-            List<String> weatherConditions,
-            String timeOfDay,
-            String message) {
+     // 헬퍼 메서드: 멤버 ID로 회원 조회 → 활성화된 음식 취향 조회 → DTO 변환
+    private FoodPreferenceDto getMemberFoodPreferenceDto(Long memberId) {
+        Member member = memberRepository.findById(memberId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.MEMBER_NOT_FOUND));
+        FoodPreference activePreference = foodPreferenceService.findActivePreference(member);
+        return toFoodPreferenceDto(activePreference);
+    }
 
-        FoodRecommendationRequest.UserPreference userPref = new FoodRecommendationRequest.UserPreference();
-        userPref.setDietStatus(preference.getIsOnDiet().name());
-        userPref.setVeganOption(preference.getVeganOption().name());
-        userPref.setSpiceLevel(preference.getSpiceLevel().name());
 
+     // 헬퍼 메서드: 음식 타입, 맛, 싫어하는 음식 목록 조회 -> FoodPreference 엔티티를 FoodPreferenceDto로 변환
+    private FoodPreferenceDto toFoodPreferenceDto(FoodPreference preference) {
         List<String> foodTypes = preferenceFoodTypeRepository.findByPreferenceId(preference.getId())
                 .stream()
                 .map(foodType -> foodType.getFoodType().name())
@@ -108,20 +113,13 @@ public class AiRecommendationService {
                 .map(disliked -> disliked.getFoodName())
                 .collect(Collectors.toList());
 
-        userPref.setFoodTypes(foodTypes);
-        userPref.setTastes(tastes);
-        userPref.setDislikedFoods(dislikedFoods);
-
-        FoodRecommendationRequest.ContextInfo context = new FoodRecommendationRequest.ContextInfo();
-        context.setWeatherConditions(weatherConditions);
-        context.setTimeOfDay(timeOfDay);
-
-        FoodRecommendationRequest request = new FoodRecommendationRequest();
-        request.setType(type);
-        request.setUserPreference(userPref);
-        request.setContext(context);
-        request.setUserMessage(message);
-
-        return request;
+        return FoodPreferenceDto.builder()
+                .dietStatus(preference.getIsOnDiet().name())
+                .veganOption(preference.getVeganOption().name())
+                .spiceLevel(preference.getSpiceLevel().name())
+                .foodTypes(foodTypes)
+                .tastes(tastes)
+                .dislikedFoods(dislikedFoods)
+                .build();
     }
 }

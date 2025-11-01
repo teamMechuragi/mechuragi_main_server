@@ -1,7 +1,7 @@
 package com.mechuragi.mechuragi_server.domain.ai.client;
 
-import com.mechuragi.mechuragi_server.domain.ai.dto.FoodRecommendationRequest;
-import com.mechuragi.mechuragi_server.domain.ai.dto.FoodRecommendationResponse;
+import com.mechuragi.mechuragi_server.domain.ai.dto.external.request.FoodRecommendationRequest;
+import com.mechuragi.mechuragi_server.domain.ai.dto.common.response.FoodRecommendationResponse;
 import com.mechuragi.mechuragi_server.global.exception.BusinessException;
 import com.mechuragi.mechuragi_server.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
@@ -31,13 +31,21 @@ public class AiServiceClient {
                 FoodRecommendationResponse.class
             );
 
+            if (response == null) {
+                log.error("AI 서비스로부터 null 응답 수신");
+                throw new BusinessException(ErrorCode.AI_SERVICE_ERROR);
+            }
+
             log.info("AI 서비스 응답 수신: {} 개 추천",
-                response != null && response.getRecommendations() != null ?
+                response.getRecommendations() != null ?
                 response.getRecommendations().size() : 0);
 
             return response;
+        } catch (BusinessException e) {
+            throw e;
         } catch (Exception e) {
             log.error("AI 서비스 호출 실패", e);
+            e.printStackTrace();
             throw new BusinessException(ErrorCode.AI_SERVICE_ERROR);
         }
     }

@@ -103,7 +103,7 @@
 - **엔티티 수정 메소드는 엔티티 내부에 정의** (예: `updateName()`, `updatePassword()`)
 
 ### Validation
-- Request DTO에는 적절한 검증 어노테이션 사용
+- Request DTO에는 적절한 검증 어노테이션 사용 + 컨트롤러단
 - `@NotBlank`, `@Email`, `@Size`, `@Pattern` 등 활용
 
 ### Repository 명명
