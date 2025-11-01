@@ -38,24 +38,24 @@ public class VotePostService {
         Member author = memberRepository.findById(authorId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.MEMBER_NOT_FOUND));
 
-        boolean hasImage = request.options().stream()
-                .anyMatch(option -> option.imageUrl() != null && !option.imageUrl().trim().isEmpty());
+        boolean hasImage = request.getOptions().stream()
+                .anyMatch(option -> option.getImageUrl() != null && !option.getImageUrl().trim().isEmpty());
 
         VotePost votePost = VotePost.builder()
-                .title(request.title())
-                .description(request.description())
-                .deadline(request.deadline())
-                .allowMultipleChoice(request.allowMultipleChoice())
+                .title(request.getTitle())
+                .description(request.getDescription())
+                .deadline(request.getDeadline())
+                .allowMultipleChoice(request.getAllowMultipleChoice())
                 .author(author)
                 .voteType(hasImage ? VotePost.VoteType.IMAGE : VotePost.VoteType.TEXT)
                 .build();
 
         List<VoteOption> voteOptions = new ArrayList<>();
-        for (int i = 0; i < request.options().size(); i++) {
-            VoteCreateRequestDTO.VoteOptionRequestDTO option = request.options().get(i);
+        for (int i = 0; i < request.getOptions().size(); i++) {
+            VoteCreateRequestDTO.VoteOptionRequestDTO option = request.getOptions().get(i);
             voteOptions.add(VoteOption.builder()
-                    .optionText(option.optionText())
-                    .imageUrl(option.imageUrl())
+                    .optionText(option.getOptionText())
+                    .imageUrl(option.getImageUrl())
                     .displayOrder(i + 1)
                     .votePost(votePost)
                     .build());
@@ -128,7 +128,7 @@ public class VotePostService {
             throw new BusinessException(ErrorCode.VOTE_ALREADY_COMPLETED);
         }
 
-        votePost.updateVote(request.title(), request.description(), request.deadline());
+        votePost.updateVote(request.getTitle(), request.getDescription(), request.getDeadline());
         return VoteResponseDTO.from(votePost, redisTemplate);
     }
 

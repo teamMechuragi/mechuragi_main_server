@@ -2,25 +2,35 @@ package com.mechuragi.mechuragi_server.domain.vote.dto;
 
 import com.mechuragi.mechuragi_server.domain.vote.entity.VotePost;
 import com.mechuragi.mechuragi_server.domain.vote.entity.VotePost.VoteStatus;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 import org.springframework.data.redis.core.RedisTemplate;
 
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
-public record VoteResponseDTO(
-        Long id,
-        String title,
-        String description,
-        LocalDateTime deadline,
-        VoteStatus status,
-        Boolean allowMultipleChoice,
-        int totalParticipants,
-        int totalLikes,
-        String authorName,
-        LocalDateTime createdAt,
-        List<VoteOptionResponseDTO> options
-) {
+@Getter
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class VoteResponseDTO {
+
+    private Long id;
+    private String title;
+    private String description;
+    private LocalDateTime deadline;
+    private VoteStatus status;
+    private Boolean allowMultipleChoice;
+    private int totalParticipants;
+    private int totalLikes;
+    private String authorName;
+    private LocalDateTime createdAt;
+    private List<VoteOptionResponseDTO> options;
+
     public static VoteResponseDTO from(VotePost votePost, RedisTemplate<String, String> redisTemplate) {
         String participantsKey = "vote:" + votePost.getId() + ":participants";
         int participants = Optional.ofNullable(redisTemplate.opsForValue().get(participantsKey))
@@ -35,38 +45,43 @@ public record VoteResponseDTO(
                     String optionKey = "vote:" + votePost.getId() + ":option:" + opt.getId() + ":count";
                     int count = Optional.ofNullable(redisTemplate.opsForValue().get(optionKey))
                             .map(Integer::parseInt).orElse(opt.getVoteCount());
-                    return new VoteOptionResponseDTO(
-                            opt.getId(),
-                            opt.getOptionText(),
-                            opt.getImageUrl(),
-                            count,
-                            opt.getVotePercentage(),
-                            opt.getDisplayOrder()
-                    );
+                    return VoteOptionResponseDTO.builder()
+                            .id(opt.getId())
+                            .optionText(opt.getOptionText())
+                            .imageUrl(opt.getImageUrl())
+                            .voteCount(count)
+                            .votePercentage(opt.getVotePercentage())
+                            .displayOrder(opt.getDisplayOrder())
+                            .build();
                 })
-                .toList();
+                .collect(Collectors.toList());
 
-        return new VoteResponseDTO(
-                votePost.getId(),
-                votePost.getTitle(),
-                votePost.getDescription(),
-                votePost.getDeadline(),
-                votePost.getStatus(),
-                votePost.getAllowMultipleChoice(),
-                participants,
-                likes,
-                votePost.getAuthor().getNickname(),
-                votePost.getCreatedAt(),
-                options
-        );
+        return VoteResponseDTO.builder()
+                .id(votePost.getId())
+                .title(votePost.getTitle())
+                .description(votePost.getDescription())
+                .deadline(votePost.getDeadline())
+                .status(votePost.getStatus())
+                .allowMultipleChoice(votePost.getAllowMultipleChoice())
+                .totalParticipants(participants)
+                .totalLikes(likes)
+                .authorName(votePost.getAuthor().getNickname())
+                .createdAt(votePost.getCreatedAt())
+                .options(options)
+                .build();
     }
 
-    public record VoteOptionResponseDTO(
-            Long id,
-            String optionText,
-            String imageUrl,
-            int voteCount,
-            double votePercentage,
-            int displayOrder
-    ) {}
+    @Getter
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class VoteOptionResponseDTO {
+
+        private Long id;
+        private String optionText;
+        private String imageUrl;
+        private int voteCount;
+        private double votePercentage;
+        private int displayOrder;
+    }
 }

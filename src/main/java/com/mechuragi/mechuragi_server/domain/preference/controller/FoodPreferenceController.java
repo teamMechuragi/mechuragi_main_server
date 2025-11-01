@@ -38,7 +38,7 @@ public class FoodPreferenceController {
     @PostMapping
     public ResponseEntity<Void> createPreference(
             HttpServletRequest request,
-            @Valid @RequestBody CreatePreferenceRequest preferenceRequest) {
+            @Valid @RequestBody CreatePreferenceRequestDTO preferenceRequest) {
 
         Long memberId = getMemberIdFromRequest(request);
         Member member = memberRepository.findById(memberId)
@@ -50,22 +50,22 @@ public class FoodPreferenceController {
 
     // 음식 취향 목록 조회
     @GetMapping
-    public ResponseEntity<List<PreferenceListResponse>> getPreferenceList(
+    public ResponseEntity<List<PreferenceListResponseDTO>> getPreferenceList(
             HttpServletRequest request) {
 
         Long memberId = getMemberIdFromRequest(request);
-        List<PreferenceListResponse> preferences = foodPreferenceService.getPreferenceList(memberId);
+        List<PreferenceListResponseDTO> preferences = foodPreferenceService.getPreferenceList(memberId);
         return ResponseEntity.ok(preferences);
     }
 
     // 음식 취향 상세 조회
     @GetMapping("/{preferenceId}")
-    public ResponseEntity<PreferenceDetailResponse> getPreferenceDetail(
+    public ResponseEntity<PreferenceDetailResponseDTO> getPreferenceDetail(
             HttpServletRequest request,
             @PathVariable Long preferenceId) {
 
         Long memberId = getMemberIdFromRequest(request);
-        PreferenceDetailResponse preference = foodPreferenceService.getPreferenceDetail(memberId, preferenceId);
+        PreferenceDetailResponseDTO preference = foodPreferenceService.getPreferenceDetail(memberId, preferenceId);
         return ResponseEntity.ok(preference);
     }
 
@@ -74,7 +74,7 @@ public class FoodPreferenceController {
     public ResponseEntity<Void> updatePreference(
             HttpServletRequest request,
             @PathVariable Long preferenceId,
-            @Valid @RequestBody UpdatePreferenceRequest updateRequest) {
+            @Valid @RequestBody UpdatePreferenceRequestDTO updateRequest) {
 
         Long memberId = getMemberIdFromRequest(request);
         foodPreferenceService.updatePreference(memberId, preferenceId, updateRequest);
