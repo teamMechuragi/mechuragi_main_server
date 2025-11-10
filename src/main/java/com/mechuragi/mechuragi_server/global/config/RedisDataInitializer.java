@@ -1,10 +1,12 @@
 package com.mechuragi.mechuragi_server.global.config;
 
+import com.mechuragi.mechuragi_server.domain.vote.dto.PopularMenuResponseDTO;
 import com.mechuragi.mechuragi_server.domain.vote.entity.VoteOption;
 import com.mechuragi.mechuragi_server.domain.vote.entity.VotePost;
 import com.mechuragi.mechuragi_server.domain.vote.repository.VoteLikeRepository;
 import com.mechuragi.mechuragi_server.domain.vote.repository.VoteParticipationRepository;
 import com.mechuragi.mechuragi_server.domain.vote.repository.VotePostRepository;
+import com.mechuragi.mechuragi_server.domain.vote.service.PopularMenuService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
@@ -26,6 +28,7 @@ public class RedisDataInitializer {
     private final VoteParticipationRepository voteParticipationRepository;
     private final VoteLikeRepository voteLikeRepository;
     private final RedisTemplate<String, String> redisTemplate;
+    private final PopularMenuService popularMenuService;
 
     private static final String HOT_VOTE_SORTED_SET_KEY = "vote:hot";
 
@@ -70,5 +73,17 @@ public class RedisDataInitializer {
         }
 
         log.info("Redis 데이터 초기화 완료: 총 {}개 투표 동기화", allVotes.size());
+
+        // 5. 실시간 인기 메뉴 캐시 초기화 (warm-up)
+        try {
+            Long hotVoteCount = redisTemplate.opsForZSet().zCard(HOT_VOTE_SORTED_SET_KEY);
+            List<PopularMenuResponseDTO> popularMenus = popularMenuService.getPopularMenus();
+
+            // PopularMenuService 내부에서 이미 상세 로그 출력
+            log.info("인기 메뉴 Top 10 초기화 완료: Hot 투표 {}개, 총 Top {}개 메뉴 생성됨",
+                    hotVoteCount != null ? hotVoteCount : 0, popularMenus.size());
+        } catch (Exception e) {
+            log.warn("인기 메뉴 초기화 실패: {}", e.getMessage());
+        }
     }
 }
