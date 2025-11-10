@@ -16,6 +16,8 @@ import org.springframework.data.redis.serializer.RedisSerializationContext;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 
 import java.time.Duration;
+import java.util.HashMap;
+import java.util.Map;
 
 @Configuration
 @EnableCaching
@@ -29,7 +31,7 @@ public class RedisCacheConfig {
         objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
 
         // Redis 캐시 기본 설정: Key는 String, Value는 JSON으로 직렬화
-        RedisCacheConfiguration cacheConfig = RedisCacheConfiguration.defaultCacheConfig()
+        RedisCacheConfiguration defaultCacheConfig = RedisCacheConfiguration.defaultCacheConfig()
                 .serializeKeysWith(
                         RedisSerializationContext.SerializationPair.fromSerializer(new StringRedisSerializer())
                 )
@@ -38,10 +40,18 @@ public class RedisCacheConfig {
                                 new GenericJackson2JsonRedisSerializer(objectMapper)
                         )
                 )
-                .entryTtl(Duration.ofMinutes(5)); // TTL: 5분
+                .entryTtl(Duration.ofMinutes(5)); // 기본 TTL: 5분
+
+        // 캐시별 커스텀 설정
+        Map<String, RedisCacheConfiguration> cacheConfigurations = new HashMap<>();
+
+        // popularMenus 캐시: 1분 TTL (실시간성 확보)
+        cacheConfigurations.put("popularMenus",
+                defaultCacheConfig.entryTtl(Duration.ofMinutes(1)));
 
         return RedisCacheManager.builder(connectionFactory)
-                .cacheDefaults(cacheConfig)
+                .cacheDefaults(defaultCacheConfig)
+                .withInitialCacheConfigurations(cacheConfigurations)
                 .build();
     }
 
