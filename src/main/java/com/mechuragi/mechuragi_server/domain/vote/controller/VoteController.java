@@ -1,6 +1,7 @@
 package com.mechuragi.mechuragi_server.domain.vote.controller;
 
 import com.mechuragi.mechuragi_server.domain.vote.dto.*;
+import com.mechuragi.mechuragi_server.domain.vote.service.PopularMenuService;
 import com.mechuragi.mechuragi_server.domain.vote.service.VoteCommentService;
 import com.mechuragi.mechuragi_server.domain.vote.service.VoteLikeService;
 import com.mechuragi.mechuragi_server.domain.vote.service.VoteParticipationService;
@@ -31,6 +32,7 @@ public class VoteController {
     private final VoteCommentService voteCommentService;
     private final VoteLikeService voteLikeService;
     private final S3Service s3Service;
+    private final PopularMenuService popularMenuService;
 
     @PostMapping
     public ResponseEntity<VoteResponseDTO> createVote(
@@ -57,6 +59,12 @@ public class VoteController {
     public ResponseEntity<List<VoteResponseDTO>> getHotVotes(
             @RequestParam(defaultValue = "10") int size) {
         List<VoteResponseDTO> response = votePostService.getHotVotes(size);
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/popular-menus")
+    public ResponseEntity<List<PopularMenuResponseDTO>> getPopularMenus() {
+        List<PopularMenuResponseDTO> response = popularMenuService.getPopularMenus();
         return ResponseEntity.ok(response);
     }
 
