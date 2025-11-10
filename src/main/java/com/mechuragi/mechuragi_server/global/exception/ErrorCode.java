@@ -41,6 +41,14 @@ public enum ErrorCode {
     FILE_UPLOAD_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "F004", "파일 업로드에 실패했습니다."),
     INVALID_FILE_URL(HttpStatus.BAD_REQUEST, "F005", "유효하지 않은 파일 URL입니다."),
 
+    // Diary
+    DIARY_NOT_FOUND(HttpStatus.NOT_FOUND, "D001", "일기를 찾을 수 없습니다."),
+    DIARY_ACCESS_DENIED(HttpStatus.FORBIDDEN, "D002", "해당 일기에 접근할 권한이 없습니다."),
+    INVALID_RATING(HttpStatus.BAD_REQUEST, "D003", "별점은 0.0에서 5.0 사이여야 하며, 0.5 단위로만 입력 가능합니다."),
+    DUPLICATE_DIARY_DATE(HttpStatus.BAD_REQUEST, "D004", "해당 날짜에 이미 일기가 존재합니다."),
+    TOO_MANY_IMAGES(HttpStatus.BAD_REQUEST, "D005", "이미지는 최대 4장까지 첨부 가능합니다."),
+    FUTURE_DATE_NOT_ALLOWED(HttpStatus.BAD_REQUEST, "D006", "미래 날짜에는 일기를 작성할 수 없습니다."),
+
     // Common
     INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "C001", "서버 내부 오류가 발생했습니다");
 
