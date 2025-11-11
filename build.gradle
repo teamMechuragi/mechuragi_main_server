@@ -59,6 +59,29 @@ dependencies {
 
 tasks.named('test') {
     useJUnitPlatform()
+
+    // 테스트 로깅 설정
+    testLogging {
+        events "passed", "skipped", "failed", "standardOut", "standardError"
+
+        // 각 테스트 메서드 이름 출력
+        showStandardStreams = false
+
+        // 예외 전체 스택 트레이스 출력
+        exceptionFormat = 'full'
+
+        // 테스트 결과 요약 출력
+        afterSuite { desc, result ->
+            if (!desc.parent) {
+                println "\n테스트 결과: ${result.resultType}"
+                println "성공: ${result.successfulTestCount}개"
+                println "실패: ${result.failedTestCount}개"
+                println "건너뜀: ${result.skippedTestCount}개"
+                println "총 실행: ${result.testCount}개"
+                println "실행 시간: ${result.endTime - result.startTime}ms"
+            }
+        }
+    }
 }
 
 tasks.named('bootRun') {

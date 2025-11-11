@@ -49,12 +49,14 @@ spring:
 
 # JWT 테스트 설정
 jwt:
-  secret: testSecretKey
+  secret: testSecretKeyForIntegrationTestPleaseIgnoreThisValueItIsJustForTestingPurposes1234567890
   expiration: 86400000
 
 # 로깅 설정 (테스트용)
 logging:
   level:
-    com.example.foodrecommendation: WARN
+    com.mechuragi.mechuragi_server: DEBUG
+    com.mechuragi.mechuragi_server.global.redis.subscriber: DEBUG
+    com.mechuragi.mechuragi_server.domain.notification: DEBUG
     org.springframework.security: WARN
     org.springframework.web: WARN
