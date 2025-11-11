@@ -20,6 +20,8 @@ spring:
     properties:
       hibernate:
         dialect: org.hibernate.dialect.H2Dialect
+        jdbc:
+          time_zone: Asia/Seoul
 
   # Redis 테스트 설정 (임베디드 Redis 또는 비활성화)
   data:
