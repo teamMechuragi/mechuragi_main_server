@@ -55,6 +55,9 @@ public class VotePost {
     @Column(nullable = false)
     private Boolean isAnonymous = false;
 
+    @Column(nullable = false)
+    private Boolean notified10MinBefore = false;
+
     @OneToMany(mappedBy = "votePost", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<VoteOption> voteOptions = new ArrayList<>();
 
@@ -128,6 +131,10 @@ public class VotePost {
 
     public void complete() {
         this.status = VoteStatus.COMPLETED;
+    }
+
+    public void markNotified10MinBefore() {
+        this.notified10MinBefore = true;
     }
 
     public boolean isExpired() {

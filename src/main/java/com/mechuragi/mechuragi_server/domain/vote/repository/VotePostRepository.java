@@ -32,6 +32,7 @@ public interface VotePostRepository extends JpaRepository<VotePost, Long> {
 
     // 투표 종료 10분 전 투표 검색 (알림 발송용)
     @Query("SELECT v FROM VotePost v WHERE v.status = 'ACTIVE' " +
+           "AND v.notified10MinBefore = false " +
            "AND v.deadline BETWEEN :tenMinutesLater AND :elevenMinutesLater")
     List<VotePost> findVotesEndingInTenMinutes(
             @Param("tenMinutesLater") LocalDateTime tenMinutesLater,

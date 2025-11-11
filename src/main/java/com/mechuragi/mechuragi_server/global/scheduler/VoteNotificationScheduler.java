@@ -24,13 +24,18 @@ public class VoteNotificationScheduler {
      */
     @Scheduled(cron = "0 * * * * *") // 매 분 0초에 실행
     public void notifyVotesEndingSoon() {
-        LocalDateTime now = LocalDateTime.now();
-        LocalDateTime tenMinutesLater = now.plusMinutes(10);
-        LocalDateTime elevenMinutesLater = now.plusMinutes(11);
+        LocalDateTime now = LocalDateTime.now(); // KST 기준
+        // 9분 30초 ~ 10분 30초 범위로 검색 (여유있게)
+        LocalDateTime rangeStart = now.plusMinutes(9).plusSeconds(30);
+        LocalDateTime rangeEnd = now.plusMinutes(10).plusSeconds(30);
+
+        log.debug("[10분 전 알림 스케줄러] 실행: now={}, 검색범위={} ~ {}", now, rangeStart, rangeEnd);
 
         List<VotePost> endingSoonVotes = votePostRepository.findVotesEndingInTenMinutes(
-                tenMinutesLater, elevenMinutesLater
+                rangeStart, rangeEnd
         );
+
+        log.debug("[10분 전 알림 스케줄러] 검색 결과: {} 건", endingSoonVotes.size());
 
         if (!endingSoonVotes.isEmpty()) {
             log.info("투표 종료 10분 전 알림 발송: {} 건", endingSoonVotes.size());
@@ -52,8 +57,13 @@ public class VoteNotificationScheduler {
      */
     @Scheduled(cron = "0 * * * * *") // 매 분 0초에 실행
     public void completeExpiredVotes() {
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = LocalDateTime.now(); // KST 기준
+
+        log.debug("[투표 종료 스케줄러] 실행: now={}", now);
+
         List<VotePost> expiredVotes = votePostRepository.findExpiredActiveVotes(now);
+
+        log.debug("[투표 종료 스케줄러] 검색 결과: {} 건", expiredVotes.size());
 
         if (!expiredVotes.isEmpty()) {
             log.info("만료된 투표 종료 처리: {} 건", expiredVotes.size());

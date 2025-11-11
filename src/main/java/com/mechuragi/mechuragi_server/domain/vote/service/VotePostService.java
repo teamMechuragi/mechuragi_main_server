@@ -164,6 +164,7 @@ public class VotePostService {
     /**
      * 투표 종료 10분 전 알림 발행
      */
+    @Transactional
     public void notifyVoteEndingSoon(Long voteId, String title) {
         try {
             VoteNotificationMessageDTO message = VoteNotificationMessageDTO.builder()
@@ -174,6 +175,13 @@ public class VotePostService {
                     .build();
 
             redisPubSubTemplate.convertAndSend("vote:before10min", message);
+
+            // 알림 발송 이력 기록 (중복 방지)
+            VotePost votePost = votePostRepository.findById(voteId)
+                    .orElseThrow(() -> new BusinessException(ErrorCode.VOTE_NOT_FOUND));
+            votePost.markNotified10MinBefore();
+            votePostRepository.save(votePost);
+
             log.info("투표 종료 10분 전 알림 발행: voteId={}", voteId);
         } catch (Exception e) {
             log.error("투표 종료 10분 전 알림 발행 실패: voteId={}", voteId, e);
