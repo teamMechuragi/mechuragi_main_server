@@ -52,9 +52,9 @@ public class RedisCacheConfig {
         // 캐시별 커스텀 설정
         Map<String, RedisCacheConfiguration> cacheConfigurations = new HashMap<>();
 
-        // popularMenus 캐시: 1분 TTL (실시간성 확보)
+        // popularMenus 캐시: 12분 TTL (10분 주기 스케줄러 + 2분 버퍼)
         cacheConfigurations.put("popularMenus",
-                defaultCacheConfig.entryTtl(Duration.ofMinutes(1)));
+                defaultCacheConfig.entryTtl(Duration.ofMinutes(12)));
 
         return RedisCacheManager.builder(connectionFactory)
                 .cacheDefaults(defaultCacheConfig)
