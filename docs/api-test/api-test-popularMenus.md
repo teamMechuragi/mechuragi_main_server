@@ -394,4 +394,4 @@ redis-cli KEYS *popularMenus*
 
 - **Hot 투표 조회**: `GET /api/votes/hot`
 - **투표 참여**: `POST /api/votes/participate`
-- **설계 문서**: [realTime-popularMenus.md](../logic/popular-menus.md)
+- **설계 문서**: [realTime-popularMenus.md](../workflow/popular-menus.md)
