@@ -2,6 +2,7 @@ package com.mechuragi.mechuragi_server.global.redis.subscriber;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mechuragi.mechuragi_server.domain.notification.dto.VoteNotificationMessageDTO;
+import com.mechuragi.mechuragi_server.domain.notification.metrics.VoteNotificationMetrics;
 import com.mechuragi.mechuragi_server.domain.notification.service.VoteNotificationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -15,6 +16,7 @@ import org.springframework.stereotype.Component;
 public class VoteNotificationSubscriber implements MessageListener {
     private final VoteNotificationService voteNotificationService;
     private final ObjectMapper objectMapper;
+    private final VoteNotificationMetrics metrics;
 
     @Override
     public void onMessage(Message message, byte[] pattern) {
@@ -24,6 +26,9 @@ public class VoteNotificationSubscriber implements MessageListener {
         try {
             byte[] body = message.getBody();
             VoteNotificationMessageDTO notification = objectMapper.readValue(body, VoteNotificationMessageDTO.class);
+
+            // 메트릭 기록
+            metrics.recordRedisMessageReceived(channel);
 
             log.info("[Redis Subscriber] 메시지 수신: channel={}, voteId={}", channel, notification.getVoteId());
 

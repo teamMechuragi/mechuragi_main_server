@@ -13,6 +13,7 @@ import com.mechuragi.mechuragi_server.domain.vote.repository.VotePostRepository;
 import com.mechuragi.mechuragi_server.global.exception.BusinessException;
 import com.mechuragi.mechuragi_server.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
@@ -25,6 +26,7 @@ import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -163,14 +165,19 @@ public class VotePostService {
      * 투표 종료 10분 전 알림 발행
      */
     public void notifyVoteEndingSoon(Long voteId, String title) {
-        VoteNotificationMessageDTO message = VoteNotificationMessageDTO.builder()
-                .voteId(voteId)
-                .title(title)
-                .type(VoteNotificationType.ENDING_SOON)
-                .timestamp(LocalDateTime.now())
-                .build();
+        try {
+            VoteNotificationMessageDTO message = VoteNotificationMessageDTO.builder()
+                    .voteId(voteId)
+                    .title(title)
+                    .type(VoteNotificationType.ENDING_SOON)
+                    .timestamp(LocalDateTime.now())
+                    .build();
 
-        redisPubSubTemplate.convertAndSend("vote:before10min", message);
+            redisPubSubTemplate.convertAndSend("vote:before10min", message);
+            log.info("투표 종료 10분 전 알림 발행: voteId={}", voteId);
+        } catch (Exception e) {
+            log.error("투표 종료 10분 전 알림 발행 실패: voteId={}", voteId, e);
+        }
     }
 
     /**
