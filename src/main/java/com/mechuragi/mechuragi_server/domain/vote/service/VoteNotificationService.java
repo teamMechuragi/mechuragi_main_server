@@ -1,6 +1,6 @@
 package com.mechuragi.mechuragi_server.domain.vote.service;
 
-import com.mechuragi.mechuragi_server.domain.vote.dto.VoteNotificationMessage;
+import com.mechuragi.mechuragi_server.domain.vote.dto.VoteNotificationMessageDTO;
 import com.mechuragi.mechuragi_server.domain.vote.dto.VoteNotificationType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -16,7 +16,7 @@ public class VoteNotificationService {
     /**
      * STOMP를 통해 클라이언트에게 알림 전송
      */
-    public void sendNotification(VoteNotificationMessage message) {
+    public void sendNotification(VoteNotificationMessageDTO message) {
         try {
             String destination = getDestination(message.getType());
             messagingTemplate.convertAndSend(destination, message);

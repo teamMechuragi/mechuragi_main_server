@@ -2,11 +2,8 @@ package com.mechuragi.mechuragi_server.domain.vote.service;
 
 import com.mechuragi.mechuragi_server.domain.member.entity.Member;
 import com.mechuragi.mechuragi_server.domain.member.repository.MemberRepository;
-import com.mechuragi.mechuragi_server.domain.vote.dto.VoteCreateRequestDTO;
-import com.mechuragi.mechuragi_server.domain.vote.dto.VoteNotificationMessage;
-import com.mechuragi.mechuragi_server.domain.vote.dto.VoteNotificationType;
-import com.mechuragi.mechuragi_server.domain.vote.dto.VoteResponseDTO;
-import com.mechuragi.mechuragi_server.domain.vote.dto.VoteUpdateRequestDTO;
+import com.mechuragi.mechuragi_server.domain.vote.dto.*;
+import com.mechuragi.mechuragi_server.domain.vote.dto.VoteNotificationMessageDTO;
 import com.mechuragi.mechuragi_server.domain.vote.entity.VoteOption;
 import com.mechuragi.mechuragi_server.domain.vote.entity.VotePost;
 import com.mechuragi.mechuragi_server.domain.vote.entity.VotePost.VoteStatus;
@@ -18,7 +15,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
@@ -166,7 +162,7 @@ public class VotePostService {
      * 투표 종료 10분 전 알림 발행
      */
     public void notifyVoteEndingSoon(Long voteId, String title) {
-        VoteNotificationMessage message = VoteNotificationMessage.builder()
+        VoteNotificationMessageDTO message = VoteNotificationMessageDTO.builder()
                 .voteId(voteId)
                 .title(title)
                 .type(VoteNotificationType.ENDING_SOON)

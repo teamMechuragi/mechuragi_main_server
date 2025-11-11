@@ -249,7 +249,7 @@ public class VoteCompletedEvent {
 ```java
 package com.mechuragi.mechuragi_server.domain.vote.event;
 
-import com.mechuragi.mechuragi_server.domain.vote.dto.VoteNotificationMessage;
+import com.mechuragi.mechuragi_server.domain.vote.dto.VoteNotificationMessageDTO;
 import com.mechuragi.mechuragi_server.domain.vote.dto.VoteNotificationType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -293,7 +293,7 @@ public class VoteEventListener {
 package com.mechuragi.mechuragi_server.global.redis.subscriber;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.mechuragi.mechuragi_server.domain.vote.dto.VoteNotificationMessage;
+import com.mechuragi.mechuragi_server.domain.vote.dto.VoteNotificationMessageDTO;
 import com.mechuragi.mechuragi_server.domain.vote.service.VoteNotificationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -383,7 +383,7 @@ public class RedisSubscriberConfig {
 ```java
 package com.mechuragi.mechuragi_server.domain.vote.service;
 
-import com.mechuragi.mechuragi_server.domain.vote.dto.VoteNotificationMessage;
+import com.mechuragi.mechuragi_server.domain.vote.dto.VoteNotificationMessageDTO;
 import com.mechuragi.mechuragi_server.domain.vote.dto.VoteNotificationType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

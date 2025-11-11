@@ -1,7 +1,7 @@
 package com.mechuragi.mechuragi_server.global.redis.subscriber;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.mechuragi.mechuragi_server.domain.vote.dto.VoteNotificationMessage;
+import com.mechuragi.mechuragi_server.domain.vote.dto.VoteNotificationMessageDTO;
 import com.mechuragi.mechuragi_server.domain.vote.service.VoteNotificationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -23,7 +23,7 @@ public class VoteNotificationSubscriber implements MessageListener {
 
         try {
             byte[] body = message.getBody();
-            VoteNotificationMessage notification = objectMapper.readValue(body, VoteNotificationMessage.class);
+            VoteNotificationMessageDTO notification = objectMapper.readValue(body, VoteNotificationMessageDTO.class);
 
             log.info("[Redis Subscriber] 메시지 수신: channel={}, voteId={}", channel, notification.getVoteId());
 

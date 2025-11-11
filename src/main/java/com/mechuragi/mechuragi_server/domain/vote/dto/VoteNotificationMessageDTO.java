@@ -11,7 +11,7 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class VoteNotificationMessage {
+public class VoteNotificationMessageDTO {
     private Long voteId;
     private String title;
     private VoteNotificationType type;

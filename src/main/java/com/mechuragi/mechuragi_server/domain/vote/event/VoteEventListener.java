@@ -1,6 +1,6 @@
 package com.mechuragi.mechuragi_server.domain.vote.event;
 
-import com.mechuragi.mechuragi_server.domain.vote.dto.VoteNotificationMessage;
+import com.mechuragi.mechuragi_server.domain.vote.dto.VoteNotificationMessageDTO;
 import com.mechuragi.mechuragi_server.domain.vote.dto.VoteNotificationType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -19,7 +19,7 @@ public class VoteEventListener {
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void handleVoteCompleted(VoteCompletedEvent event) {
-        VoteNotificationMessage message = VoteNotificationMessage.builder()
+        VoteNotificationMessageDTO message = VoteNotificationMessageDTO.builder()
                 .voteId(event.getVoteId())
                 .title(event.getTitle())
                 .type(VoteNotificationType.COMPLETED)
