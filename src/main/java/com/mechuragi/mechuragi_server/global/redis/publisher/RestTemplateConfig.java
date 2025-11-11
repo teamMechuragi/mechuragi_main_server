@@ -1,4 +1,4 @@
-package com.mechuragi.mechuragi_server.global.config;
+package com.mechuragi.mechuragi_server.global.redis.publisher;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

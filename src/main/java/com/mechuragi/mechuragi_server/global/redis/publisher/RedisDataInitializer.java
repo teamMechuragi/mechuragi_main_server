@@ -1,4 +1,4 @@
-package com.mechuragi.mechuragi_server.global.config;
+package com.mechuragi.mechuragi_server.global.redis.publisher;
 
 import com.mechuragi.mechuragi_server.domain.vote.dto.PopularMenuResponseDTO;
 import com.mechuragi.mechuragi_server.domain.vote.entity.VoteOption;

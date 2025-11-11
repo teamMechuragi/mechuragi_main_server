@@ -29,4 +29,12 @@ public interface VotePostRepository extends JpaRepository<VotePost, Long> {
     // 마감 시간이 지난 ACTIVE 상태 투표들 조회 (배치 처리용)
     @Query("SELECT v FROM VotePost v WHERE v.status = 'ACTIVE' AND v.deadline <= :now")
     List<VotePost> findExpiredActiveVotes(@Param("now") LocalDateTime now);
+
+    // 투표 종료 10분 전 투표 검색 (알림 발송용)
+    @Query("SELECT v FROM VotePost v WHERE v.status = 'ACTIVE' " +
+           "AND v.deadline BETWEEN :tenMinutesLater AND :elevenMinutesLater")
+    List<VotePost> findVotesEndingInTenMinutes(
+            @Param("tenMinutesLater") LocalDateTime tenMinutesLater,
+            @Param("elevenMinutesLater") LocalDateTime elevenMinutesLater
+    );
 }
