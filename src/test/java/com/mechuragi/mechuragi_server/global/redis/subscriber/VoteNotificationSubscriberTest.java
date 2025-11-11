@@ -34,14 +34,17 @@ class VoteNotificationSubscriberTest {
     private VoteNotificationMetrics metrics;
 
     private ObjectMapper objectMapper;
-
-    @InjectMocks
     private VoteNotificationSubscriber subscriber;
 
     @BeforeEach
     void setUp() {
+        // ObjectMapper 설정
         objectMapper = new ObjectMapper();
         objectMapper.registerModule(new JavaTimeModule());
+        // LocalDateTime을 ISO-8601 형식으로 직렬화/역직렬화
+        objectMapper.disable(com.fasterxml.jackson.databind.SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+
+        // Mock 객체들을 주입하여 Subscriber 생성
         subscriber = new VoteNotificationSubscriber(voteNotificationService, objectMapper, metrics);
     }
 
@@ -57,7 +60,8 @@ class VoteNotificationSubscriberTest {
                 .build();
 
         byte[] body = objectMapper.writeValueAsBytes(message);
-        Message redisMessage = new DefaultMessage(body, "vote:end".getBytes());
+        // DefaultMessage(channel, body) 순서로 생성
+        Message redisMessage = new DefaultMessage("vote:end".getBytes(), body);
 
         // when
         subscriber.onMessage(redisMessage, null);
@@ -85,7 +89,8 @@ class VoteNotificationSubscriberTest {
                 .build();
 
         byte[] body = objectMapper.writeValueAsBytes(message);
-        Message redisMessage = new DefaultMessage(body, "vote:before10min".getBytes());
+        // DefaultMessage(channel, body) 순서로 생성
+        Message redisMessage = new DefaultMessage("vote:before10min".getBytes(), body);
 
         // when
         subscriber.onMessage(redisMessage, null);
@@ -93,7 +98,7 @@ class VoteNotificationSubscriberTest {
         // then
         ArgumentCaptor<VoteNotificationMessageDTO> captor =
                 ArgumentCaptor.forClass(VoteNotificationMessageDTO.class);
-        verify(voteNotificationService).sendNotification(captor.capture());
+        verify(voteNotificationService, times(1)).sendNotification(captor.capture());
 
         VoteNotificationMessageDTO captured = captor.getValue();
         assertEquals(2L, captured.getVoteId());
@@ -106,7 +111,8 @@ class VoteNotificationSubscriberTest {
     void onMessage_InvalidMessageFormat() {
         // given
         byte[] invalidBody = "invalid json".getBytes();
-        Message redisMessage = new DefaultMessage(invalidBody, "vote:end".getBytes());
+        // DefaultMessage(channel, body) 순서로 생성
+        Message redisMessage = new DefaultMessage("vote:end".getBytes(), invalidBody);
 
         // when & then
         assertDoesNotThrow(() -> subscriber.onMessage(redisMessage, null));
@@ -125,7 +131,8 @@ class VoteNotificationSubscriberTest {
                 .build();
 
         byte[] body = objectMapper.writeValueAsBytes(message);
-        Message redisMessage = new DefaultMessage(body, "vote:end".getBytes());
+        // DefaultMessage(channel, body) 순서로 생성
+        Message redisMessage = new DefaultMessage("vote:end".getBytes(), body);
 
         doThrow(new RuntimeException("STOMP 전송 실패"))
                 .when(voteNotificationService).sendNotification(any());
@@ -138,7 +145,7 @@ class VoteNotificationSubscriberTest {
     @Test
     @DisplayName("여러 메시지 연속 처리")
     void onMessage_MultipleMessages() throws Exception {
-        // given
+        // given & when
         for (int i = 1; i <= 5; i++) {
             VoteNotificationMessageDTO message = VoteNotificationMessageDTO.builder()
                     .voteId((long) i)
@@ -148,9 +155,9 @@ class VoteNotificationSubscriberTest {
                     .build();
 
             byte[] body = objectMapper.writeValueAsBytes(message);
-            Message redisMessage = new DefaultMessage(body, "vote:end".getBytes());
+            // DefaultMessage(channel, body) 순서로 생성
+            Message redisMessage = new DefaultMessage("vote:end".getBytes(), body);
 
-            // when
             subscriber.onMessage(redisMessage, null);
         }
 

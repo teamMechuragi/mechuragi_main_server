@@ -11,9 +11,11 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicLong;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
@@ -32,6 +34,7 @@ class VoteNotificationSchedulerTest {
     private VoteNotificationScheduler scheduler;
 
     private Member testMember;
+    private AtomicLong idCounter = new AtomicLong(1L);
 
     @BeforeEach
     void setUp() {
@@ -39,6 +42,7 @@ class VoteNotificationSchedulerTest {
                 .email("test@example.com")
                 .nickname("테스터")
                 .build();
+        idCounter.set(1L); // 각 테스트마다 id 카운터 리셋
     }
 
     @Test
@@ -154,12 +158,16 @@ class VoteNotificationSchedulerTest {
     }
 
     private VotePost createVotePost(String title, LocalDateTime deadline) {
-        return VotePost.builder()
+        VotePost votePost = VotePost.builder()
                 .author(testMember)
                 .title(title)
                 .description("투표 설명")
                 .deadline(deadline)
                 .allowMultipleChoice(false)
                 .build();
+
+        // ReflectionTestUtils를 사용하여 id 필드 설정
+        ReflectionTestUtils.setField(votePost, "id", idCounter.getAndIncrement());
+        return votePost;
     }
 }

@@ -18,6 +18,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -61,6 +62,9 @@ class VotePostServiceTest {
                 .deadline(LocalDateTime.now().plusHours(1))
                 .allowMultipleChoice(false)
                 .build();
+
+        // ReflectionTestUtils를 사용하여 id 필드 설정
+        ReflectionTestUtils.setField(testVotePost, "id", 1L);
     }
 
     @Test
@@ -140,6 +144,7 @@ class VotePostServiceTest {
                 .deadline(LocalDateTime.now().minusHours(1))
                 .allowMultipleChoice(false)
                 .build();
+        ReflectionTestUtils.setField(expiredVote1, "id", 2L);
 
         VotePost expiredVote2 = VotePost.builder()
                 .author(testMember)
@@ -147,6 +152,7 @@ class VotePostServiceTest {
                 .deadline(LocalDateTime.now().minusHours(2))
                 .allowMultipleChoice(false)
                 .build();
+        ReflectionTestUtils.setField(expiredVote2, "id", 3L);
 
         when(votePostRepository.findExpiredActiveVotes(any(LocalDateTime.class)))
                 .thenReturn(List.of(expiredVote1, expiredVote2));

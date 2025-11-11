@@ -36,7 +36,12 @@ public class VoteNotificationScheduler {
             log.info("투표 종료 10분 전 알림 발송: {} 건", endingSoonVotes.size());
 
             endingSoonVotes.forEach(vote -> {
-                votePostService.notifyVoteEndingSoon(vote.getId(), vote.getTitle());
+                try {
+                    votePostService.notifyVoteEndingSoon(vote.getId(), vote.getTitle());
+                } catch (Exception e) {
+                    log.error("투표(ID: {}) 종료 10분 전 알림 발송 중 예외 발생. 다음 투표로 계속 진행. 에러 메시지: {}",
+                            vote.getId(), e.getMessage(), e);
+                }
             });
         }
     }
@@ -54,7 +59,14 @@ public class VoteNotificationScheduler {
             log.info("만료된 투표 종료 처리: {} 건", expiredVotes.size());
 
             expiredVotes.forEach(vote -> {
-                votePostService.completeVoteAndNotify(vote.getId());
+                try {
+                    // 개별 투표 처리 로직을 try-catch로 감싸서 예외 발생 시에도 다음 투표로 넘어갈 수 있도록 처리
+                    votePostService.completeVoteAndNotify(vote.getId());
+                } catch (Exception e) {
+                    // 예외 발생 시 로그를 남기고, 현재 투표만 건너뛰고 다음 루프로 이동
+                    log.error("투표(ID: {}) 종료 처리 중 예외 발생. 다음 투표로 계속 진행. 에러 메시지: {}",
+                            vote.getId(), e.getMessage(), e);
+                }
             });
         }
     }
