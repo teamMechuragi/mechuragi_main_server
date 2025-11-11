@@ -1,4 +1,4 @@
-package com.mechuragi.mechuragi_server.domain.vote.dto;
+package com.mechuragi.mechuragi_server.domain.notification.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

@@ -1,4 +1,4 @@
-package com.mechuragi.mechuragi_server.domain.vote.dto;
+package com.mechuragi.mechuragi_server.domain.notification.dto;
 
 public enum VoteNotificationType {
     COMPLETED,      // 투표 종료

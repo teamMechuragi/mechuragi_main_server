@@ -1,8 +1,8 @@
 package com.mechuragi.mechuragi_server.global.redis.subscriber;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.mechuragi.mechuragi_server.domain.vote.dto.VoteNotificationMessageDTO;
-import com.mechuragi.mechuragi_server.domain.vote.service.VoteNotificationService;
+import com.mechuragi.mechuragi_server.domain.notification.dto.VoteNotificationMessageDTO;
+import com.mechuragi.mechuragi_server.domain.notification.service.VoteNotificationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.connection.Message;

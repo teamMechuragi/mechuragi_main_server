@@ -1,4 +1,4 @@
-package com.mechuragi.mechuragi_server.domain.vote.event;
+package com.mechuragi.mechuragi_server.domain.notification.event;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;

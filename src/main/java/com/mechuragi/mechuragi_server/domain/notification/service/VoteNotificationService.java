@@ -1,7 +1,7 @@
-package com.mechuragi.mechuragi_server.domain.vote.service;
+package com.mechuragi.mechuragi_server.domain.notification.service;
 
-import com.mechuragi.mechuragi_server.domain.vote.dto.VoteNotificationMessageDTO;
-import com.mechuragi.mechuragi_server.domain.vote.dto.VoteNotificationType;
+import com.mechuragi.mechuragi_server.domain.notification.dto.VoteNotificationMessageDTO;
+import com.mechuragi.mechuragi_server.domain.notification.dto.VoteNotificationType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.simp.SimpMessagingTemplate;

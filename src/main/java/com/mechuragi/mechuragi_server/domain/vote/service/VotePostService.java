@@ -2,12 +2,13 @@ package com.mechuragi.mechuragi_server.domain.vote.service;
 
 import com.mechuragi.mechuragi_server.domain.member.entity.Member;
 import com.mechuragi.mechuragi_server.domain.member.repository.MemberRepository;
+import com.mechuragi.mechuragi_server.domain.notification.dto.VoteNotificationMessageDTO;
+import com.mechuragi.mechuragi_server.domain.notification.dto.VoteNotificationType;
+import com.mechuragi.mechuragi_server.domain.notification.event.VoteCompletedEvent;
 import com.mechuragi.mechuragi_server.domain.vote.dto.*;
-import com.mechuragi.mechuragi_server.domain.vote.dto.VoteNotificationMessageDTO;
 import com.mechuragi.mechuragi_server.domain.vote.entity.VoteOption;
 import com.mechuragi.mechuragi_server.domain.vote.entity.VotePost;
 import com.mechuragi.mechuragi_server.domain.vote.entity.VotePost.VoteStatus;
-import com.mechuragi.mechuragi_server.domain.vote.event.VoteCompletedEvent;
 import com.mechuragi.mechuragi_server.domain.vote.repository.VotePostRepository;
 import com.mechuragi.mechuragi_server.global.exception.BusinessException;
 import com.mechuragi.mechuragi_server.global.exception.ErrorCode;
