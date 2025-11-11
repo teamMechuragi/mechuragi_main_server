@@ -3,16 +3,20 @@ package com.mechuragi.mechuragi_server.domain.vote.service;
 import com.mechuragi.mechuragi_server.domain.member.entity.Member;
 import com.mechuragi.mechuragi_server.domain.member.repository.MemberRepository;
 import com.mechuragi.mechuragi_server.domain.vote.dto.VoteCreateRequestDTO;
+import com.mechuragi.mechuragi_server.domain.vote.dto.VoteNotificationMessage;
+import com.mechuragi.mechuragi_server.domain.vote.dto.VoteNotificationType;
 import com.mechuragi.mechuragi_server.domain.vote.dto.VoteResponseDTO;
 import com.mechuragi.mechuragi_server.domain.vote.dto.VoteUpdateRequestDTO;
 import com.mechuragi.mechuragi_server.domain.vote.entity.VoteOption;
 import com.mechuragi.mechuragi_server.domain.vote.entity.VotePost;
 import com.mechuragi.mechuragi_server.domain.vote.entity.VotePost.VoteStatus;
+import com.mechuragi.mechuragi_server.domain.vote.event.VoteCompletedEvent;
 import com.mechuragi.mechuragi_server.domain.vote.repository.VotePostRepository;
 import com.mechuragi.mechuragi_server.global.exception.BusinessException;
 import com.mechuragi.mechuragi_server.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -32,6 +36,8 @@ public class VotePostService {
     private final VotePostRepository votePostRepository;
     private final MemberRepository memberRepository;
     private final RedisTemplate<String, String> redisTemplate;
+    private final RedisTemplate<String, Object> redisPubSubTemplate;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Transactional
     public VoteResponseDTO createVote(Long authorId, VoteCreateRequestDTO request) {
@@ -140,6 +146,39 @@ public class VotePostService {
         votePostRepository.delete(votePost);
     }
 
+    /**
+     * 투표 종료 처리 및 Redis 발행
+     */
+    @Transactional
+    public void completeVoteAndNotify(Long voteId) {
+        VotePost votePost = votePostRepository.findById(voteId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.VOTE_NOT_FOUND));
+
+        // 투표 상태 변경
+        votePost.complete();
+        votePostRepository.save(votePost);
+
+        // 트랜잭션 커밋 후 이벤트 발행
+        eventPublisher.publishEvent(new VoteCompletedEvent(votePost.getId(), votePost.getTitle()));
+    }
+
+    /**
+     * 투표 종료 10분 전 알림 발행
+     */
+    public void notifyVoteEndingSoon(Long voteId, String title) {
+        VoteNotificationMessage message = VoteNotificationMessage.builder()
+                .voteId(voteId)
+                .title(title)
+                .type(VoteNotificationType.ENDING_SOON)
+                .timestamp(LocalDateTime.now())
+                .build();
+
+        redisPubSubTemplate.convertAndSend("vote:before10min", message);
+    }
+
+    /**
+     * 만료된 투표들을 일괄 종료 처리 (스케줄러용)
+     */
     @Transactional
     public void completeExpiredVotes() {
         LocalDateTime now = LocalDateTime.now();
