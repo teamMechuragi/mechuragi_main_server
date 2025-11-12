@@ -88,4 +88,12 @@ public class MemberService {
     public boolean isNicknameDuplicate(String nickname) {
         return memberRepository.existsByNickname(nickname);
     }
+
+    // 투표 알림 설정 변경
+    @Transactional
+    public void updateVoteNotificationSetting(Long memberId, Boolean enabled) {
+        Member member = memberRepository.findById(memberId)
+                .orElseThrow(() -> new IllegalArgumentException("회원을 찾을 수 없습니다."));
+        member.updateVoteNotificationSetting(enabled);
+    }
 }

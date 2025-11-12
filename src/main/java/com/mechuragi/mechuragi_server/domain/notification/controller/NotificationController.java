@@ -4,6 +4,8 @@ import com.mechuragi.mechuragi_server.auth.dto.CustomUserDetails;
 import com.mechuragi.mechuragi_server.domain.notification.dto.NotificationResponseDTO;
 import com.mechuragi.mechuragi_server.domain.notification.dto.UnreadCountResponseDTO;
 import com.mechuragi.mechuragi_server.domain.notification.service.NotificationService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -16,14 +18,13 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/notifications")
 @RequiredArgsConstructor
+@Tag(name = "알림", description = "알림 관리 API")
 public class NotificationController {
 
     private final NotificationService notificationService;
 
-    /**
-     * 알림 목록 조회 (페이징)
-     */
     @GetMapping
+    @Operation(summary = "알림 목록 조회", description = "사용자의 알림 목록을 조회합니다")
     public ResponseEntity<Page<NotificationResponseDTO>> getNotifications(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
@@ -32,10 +33,8 @@ public class NotificationController {
         return ResponseEntity.ok(notifications);
     }
 
-    /**
-     * 특정 알림 읽음 처리
-     */
     @PatchMapping("/{notificationId}/read")
+    @Operation(summary = "알림 읽음 처리", description = "특정 알림을 읽음 처리합니다.")
     public ResponseEntity<Void> markAsRead(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @PathVariable Long notificationId) {
@@ -44,10 +43,8 @@ public class NotificationController {
         return ResponseEntity.ok().build();
     }
 
-    /**
-     * 안 읽은 알림 개수 조회
-     */
     @GetMapping("/unread-count")
+    @Operation(summary = "안 읽은 알림 개수 조회", description = "안 읽은 알림의 개수를 조회합니다.")
     public ResponseEntity<UnreadCountResponseDTO> getUnreadCount(
             @AuthenticationPrincipal CustomUserDetails userDetails) {
         Long memberId = userDetails.getMemberId();

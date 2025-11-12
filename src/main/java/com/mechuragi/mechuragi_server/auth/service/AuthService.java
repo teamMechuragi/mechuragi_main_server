@@ -29,9 +29,6 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
 
-    /**
-     * 일반 회원가입
-     */
     @Transactional
     public MemberResponse signup(SignupRequest request) {
         // 이메일 중복 체크

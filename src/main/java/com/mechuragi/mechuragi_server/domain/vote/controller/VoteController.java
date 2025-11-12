@@ -7,6 +7,8 @@ import com.mechuragi.mechuragi_server.domain.vote.service.VoteLikeService;
 import com.mechuragi.mechuragi_server.domain.vote.service.VoteParticipationService;
 import com.mechuragi.mechuragi_server.domain.vote.service.VotePostService;
 import com.mechuragi.mechuragi_server.global.service.S3Service;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -25,6 +27,7 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/votes")
 @RequiredArgsConstructor
+@Tag(name = "투표", description = "투표 관리 API")
 public class VoteController {
 
     private final VotePostService votePostService;
@@ -34,6 +37,7 @@ public class VoteController {
     private final S3Service s3Service;
     private final PopularMenuService popularMenuService;
 
+    @Operation(summary = "투표 생성")
     @PostMapping
     public ResponseEntity<VoteResponseDTO> createVote(
             @AuthenticationPrincipal CustomUserDetails userDetails,
@@ -42,12 +46,14 @@ public class VoteController {
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
+    @Operation(summary = "투표 상세 조회")
     @GetMapping("/{voteId}")
     public ResponseEntity<VoteResponseDTO> getVote(@PathVariable Long voteId) {
         VoteResponseDTO response = votePostService.getVote(voteId);
         return ResponseEntity.ok(response);
     }
 
+    @Operation(summary = "활성화된 투표 목록 조회")
     @GetMapping("/active")
     public ResponseEntity<Page<VoteResponseDTO>> getActiveVotes(
             @PageableDefault(size = 10) Pageable pageable) {
@@ -55,6 +61,7 @@ public class VoteController {
         return ResponseEntity.ok(response);
     }
 
+    @Operation(summary = "top10 인기 투표 게시글 조회")
     @GetMapping("/hot")
     public ResponseEntity<List<VoteResponseDTO>> getHotVotes(
             @RequestParam(defaultValue = "10") int size) {
@@ -62,12 +69,14 @@ public class VoteController {
         return ResponseEntity.ok(response);
     }
 
+    @Operation(summary = "커뮤니티상 인기 메뉴 조회")
     @GetMapping("/popular-menus")
     public ResponseEntity<List<PopularMenuResponseDTO>> getPopularMenus() {
         List<PopularMenuResponseDTO> response = popularMenuService.getPopularMenus();
         return ResponseEntity.ok(response);
     }
 
+    @Operation(summary = "종료된 투표 목록 조회")
     @GetMapping("/completed")
     public ResponseEntity<Page<VoteResponseDTO>> getCompletedVotes(
             @PageableDefault(size = 10) Pageable pageable) {
@@ -75,6 +84,7 @@ public class VoteController {
         return ResponseEntity.ok(response);
     }
 
+    @Operation(summary = "사용자 투표 목록 조회")
     @GetMapping("/my")
     public ResponseEntity<Page<VoteResponseDTO>> getMyVotes(
             @AuthenticationPrincipal CustomUserDetails userDetails,
@@ -83,6 +93,7 @@ public class VoteController {
         return ResponseEntity.ok(response);
     }
 
+    @Operation(summary = "투표 게시글 수정")
     @PutMapping("/{voteId}")
     public ResponseEntity<VoteResponseDTO> updateVote(
             @PathVariable Long voteId,
@@ -92,6 +103,7 @@ public class VoteController {
         return ResponseEntity.ok(response);
     }
 
+    @Operation(summary = "투표 게시글 삭제")
     @DeleteMapping("/{voteId}")
     public ResponseEntity<Void> deleteVote(
             @PathVariable Long voteId,
@@ -100,6 +112,7 @@ public class VoteController {
         return ResponseEntity.noContent().build();
     }
 
+    @Operation(summary = "투표 이미지 업로드")
     @PostMapping(value = "/upload-image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<Map<String, String>> uploadImage(
             @RequestParam("file") MultipartFile file) {
@@ -107,6 +120,7 @@ public class VoteController {
         return ResponseEntity.ok(Map.of("imageUrl", imageUrl));
     }
 
+    @Operation(summary = "투표 참여")
     @PostMapping("/participate")
     public ResponseEntity<VoteParticipationResponseDTO> participateVote(
             @AuthenticationPrincipal CustomUserDetails userDetails,
@@ -116,6 +130,7 @@ public class VoteController {
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
+    @Operation(summary = "투표 취소")
     @DeleteMapping("/{voteId}/participate")
     public ResponseEntity<Void> cancelParticipation(
             @PathVariable Long voteId,
@@ -124,6 +139,7 @@ public class VoteController {
         return ResponseEntity.noContent().build();
     }
 
+    @Operation(summary = "사용자 투표 참여 상태 조회")
     @GetMapping("/{voteId}/my-participation")
     public ResponseEntity<VoteParticipationResponseDTO> getMyParticipation(
             @PathVariable Long voteId,
@@ -133,6 +149,7 @@ public class VoteController {
         return ResponseEntity.ok(response);
     }
 
+    @Operation(summary = "투표 참여자 존재 여부 조회")
     @GetMapping("/{voteId}/participated")
     public ResponseEntity<Map<String, Boolean>> hasParticipated(
             @PathVariable Long voteId,
@@ -144,6 +161,7 @@ public class VoteController {
 
     // 투표 댓글
 
+    @Operation(summary = "댓글 작성")
     @PostMapping("/comments")
     public ResponseEntity<VoteCommentResponseDTO> createComment(
             @AuthenticationPrincipal CustomUserDetails userDetails,
@@ -153,6 +171,7 @@ public class VoteController {
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
+    @Operation(summary = "댓글 조회")
     @GetMapping("/{voteId}/comments")
     public ResponseEntity<Page<VoteCommentResponseDTO>> getComments(
             @PathVariable Long voteId,
@@ -161,6 +180,7 @@ public class VoteController {
         return ResponseEntity.ok(response);
     }
 
+    @Operation(summary = "댓글 수정")
     @PutMapping("/comments/{commentId}")
     public ResponseEntity<VoteCommentResponseDTO> updateComment(
             @PathVariable Long commentId,
@@ -171,6 +191,7 @@ public class VoteController {
         return ResponseEntity.ok(response);
     }
 
+    @Operation(summary = "댓글 삭제")
     @DeleteMapping("/comments/{commentId}")
     public ResponseEntity<Void> deleteComment(
             @PathVariable Long commentId,
@@ -179,6 +200,7 @@ public class VoteController {
         return ResponseEntity.noContent().build();
     }
 
+    @Operation(summary = "댓글수 조회")
     @GetMapping("/{voteId}/comments/count")
     public ResponseEntity<Map<String, Integer>> getCommentCount(
             @PathVariable Long voteId) {
@@ -188,6 +210,7 @@ public class VoteController {
 
     // 투표 게시물 좋아요
 
+    @Operation(summary = "좋아요 토글 요청")
     @PostMapping("/{voteId}/like")
     public ResponseEntity<Map<String, Boolean>> toggleLike(
             @PathVariable Long voteId,
@@ -196,6 +219,7 @@ public class VoteController {
         return ResponseEntity.ok(Map.of("liked", isLiked));
     }
 
+    @Operation(summary = "좋아요 여부 조회")
     @GetMapping("/{voteId}/liked")
     public ResponseEntity<Map<String, Boolean>> isLiked(
             @PathVariable Long voteId,
@@ -204,6 +228,7 @@ public class VoteController {
         return ResponseEntity.ok(Map.of("liked", liked));
     }
 
+    @Operation(summary = "좋아요 수 조회")
     @GetMapping("/{voteId}/likes/count")
     public ResponseEntity<Map<String, Integer>> getLikeCount(
             @PathVariable Long voteId) {

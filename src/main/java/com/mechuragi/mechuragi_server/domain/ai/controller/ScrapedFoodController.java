@@ -4,6 +4,8 @@ import com.mechuragi.mechuragi_server.auth.dto.CustomUserDetails;
 import com.mechuragi.mechuragi_server.domain.ai.dto.internal.request.ScrapeFoodRequest;
 import com.mechuragi.mechuragi_server.domain.ai.dto.common.response.ScrapedFoodResponse;
 import com.mechuragi.mechuragi_server.domain.ai.service.ScrapFoodService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -18,14 +20,14 @@ import java.util.List;
 @RequestMapping("/api/scraped-foods")
 @RequiredArgsConstructor
 @Slf4j
+@Tag(name = "메뉴 스크랩",description = "스크랩한 메뉴 관리 API")
 public class ScrapedFoodController {
 
     private final ScrapFoodService scrapFoodService;
 
-    /**
-     * 음식 추천 스크랩 저장
-     */
+
     @PostMapping
+    @Operation(summary = "스크랩 메뉴 저장", description = "사용자가 추천받은 음식 중 스크랩한 메뉴를 저장합니다.")
     public ResponseEntity<ScrapedFoodResponse> saveScrap(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @Valid @RequestBody ScrapeFoodRequest request) {
@@ -38,10 +40,8 @@ public class ScrapedFoodController {
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
-    /**
-     * 사용자의 스크랩 목록 조회
-     */
     @GetMapping
+    @Operation(summary = "스크랩 메뉴 목록 조회", description = "사용자가 스크랩한 메뉴 목록을 조회합니다")
     public ResponseEntity<List<ScrapedFoodResponse>> getScrapedList(
             @AuthenticationPrincipal CustomUserDetails userDetails) {
 
@@ -53,10 +53,8 @@ public class ScrapedFoodController {
         return ResponseEntity.ok(responses);
     }
 
-    /**
-     * 스크랩 상세 조회
-     */
     @GetMapping("/{scrapId}")
+    @Operation(summary = "스크랩 메뉴 상세 조회", description = "사용자가 스크랩한 메뉴를 상세 조회합니다")
     public ResponseEntity<ScrapedFoodResponse> getScrapDetail(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @PathVariable Long scrapId) {
@@ -69,10 +67,8 @@ public class ScrapedFoodController {
         return ResponseEntity.ok(response);
     }
 
-    /**
-     * 스크랩 삭제
-     */
     @DeleteMapping("/{scrapId}")
+    @Operation(summary = "스크랩 메뉴 삭제", description = "사용자가 스크랩한 메뉴를 삭제합니다")
     public ResponseEntity<Void> deleteScrap(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @PathVariable Long scrapId) {

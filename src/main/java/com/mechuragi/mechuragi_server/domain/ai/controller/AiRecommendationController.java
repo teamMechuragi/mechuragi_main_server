@@ -4,6 +4,8 @@ import com.mechuragi.mechuragi_server.auth.dto.CustomUserDetails;
 import com.mechuragi.mechuragi_server.domain.ai.dto.common.response.FoodRecommendationResponse;
 import com.mechuragi.mechuragi_server.domain.ai.dto.internal.request.*;
 import com.mechuragi.mechuragi_server.domain.ai.service.AiRecommendationService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -15,11 +17,13 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/ai/recommend")
 @RequiredArgsConstructor
 @Slf4j
+@Tag(name = "AI 메뉴 추천", description = "사용자 context 기반 AI 메뉴 추천 API")
 public class AiRecommendationController {
 
     private final AiRecommendationService aiRecommendationService;
 
     @PostMapping("/weather")
+    @Operation(summary = "날씨 기반 메뉴 추천")
     public ResponseEntity<FoodRecommendationResponse> getWeatherBasedRecommendation(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @Valid @RequestBody WeatherRecommendationRequest request) {
@@ -34,6 +38,7 @@ public class AiRecommendationController {
     }
 
     @PostMapping("/time")
+    @Operation(summary = "시간대 기반 메뉴 추천")
     public ResponseEntity<FoodRecommendationResponse> getTimeBasedRecommendation(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @Valid @RequestBody TimeRecommendationRequest request) {
@@ -48,6 +53,7 @@ public class AiRecommendationController {
     }
 
     @PostMapping("/ingredients")
+    @Operation(summary = "재료 기반 메뉴 추천")
     public ResponseEntity<FoodRecommendationResponse> getIngredientsBasedRecommendation(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @Valid @RequestBody IngredientsRecommendationRequest request) {
@@ -62,6 +68,7 @@ public class AiRecommendationController {
     }
 
     @PostMapping("/feeling")
+    @Operation(summary = "기분 기반 추천")
     public ResponseEntity<FoodRecommendationResponse> getFeelingBasedRecommendation(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @Valid @RequestBody FeelingRecommendationRequest request) {
@@ -76,6 +83,7 @@ public class AiRecommendationController {
     }
 
     @PostMapping("/conversation")
+    @Operation(summary = "대화 기반 추천")
     public ResponseEntity<FoodRecommendationResponse> getConversationBasedRecommendation(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @Valid @RequestBody ConversationRecommendationRequest request) {
