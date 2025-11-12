@@ -158,7 +158,11 @@ public class VotePostService {
         votePostRepository.save(votePost);
 
         // 트랜잭션 커밋 후 이벤트 발행
-        eventPublisher.publishEvent(new VoteCompletedEvent(votePost.getId(), votePost.getTitle()));
+        eventPublisher.publishEvent(new VoteCompletedEvent(
+                votePost.getId(),
+                votePost.getTitle(),
+                votePost.getAuthor().getId()
+        ));
     }
 
     /**

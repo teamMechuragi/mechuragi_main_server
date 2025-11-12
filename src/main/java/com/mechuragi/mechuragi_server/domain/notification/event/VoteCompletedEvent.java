@@ -8,4 +8,5 @@ import lombok.RequiredArgsConstructor;
 public class VoteCompletedEvent {
     private final Long voteId;
     private final String title;
+    private final Long authorId;
 }
