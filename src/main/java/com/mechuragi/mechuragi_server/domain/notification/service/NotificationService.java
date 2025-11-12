@@ -1,0 +1,84 @@
+package com.mechuragi.mechuragi_server.domain.notification.service;
+
+import com.mechuragi.mechuragi_server.domain.member.entity.Member;
+import com.mechuragi.mechuragi_server.domain.member.repository.MemberRepository;
+import com.mechuragi.mechuragi_server.domain.notification.dto.NotificationResponseDTO;
+import com.mechuragi.mechuragi_server.domain.notification.dto.UnreadCountResponseDTO;
+import com.mechuragi.mechuragi_server.domain.notification.dto.VoteNotificationType;
+import com.mechuragi.mechuragi_server.domain.notification.entity.Notification;
+import com.mechuragi.mechuragi_server.domain.notification.repository.NotificationRepository;
+import com.mechuragi.mechuragi_server.global.exception.CustomException;
+import com.mechuragi.mechuragi_server.global.exception.ErrorCode;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+@Slf4j
+@Service
+@RequiredArgsConstructor
+@Transactional(readOnly = true)
+public class NotificationService {
+    private final NotificationRepository notificationRepository;
+    private final MemberRepository memberRepository;
+
+    /**
+     * 알림 저장
+     */
+    @Transactional
+    public Notification createNotification(Long memberId, Long voteId, String title, VoteNotificationType type) {
+        // 중복 확인
+        if (notificationRepository.existsByMemberIdAndVoteIdAndType(memberId, voteId, type)) {
+            log.info("중복 알림 저장 방지: memberId={}, voteId={}, type={}", memberId, voteId, type);
+            return null;
+        }
+
+        Member member = memberRepository.findById(memberId)
+                .orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
+
+        Notification notification = Notification.builder()
+                .member(member)
+                .voteId(voteId)
+                .title(title)
+                .type(type)
+                .build();
+
+        return notificationRepository.save(notification);
+    }
+
+    /**
+     * 알림 목록 조회 (페이징)
+     */
+    public Page<NotificationResponseDTO> getNotifications(Long memberId, Pageable pageable) {
+        return notificationRepository.findByMemberIdOrderByCreatedAtDesc(memberId, pageable)
+                .map(NotificationResponseDTO::from);
+    }
+
+    /**
+     * 특정 알림 읽음 처리
+     */
+    @Transactional
+    public void markAsRead(Long memberId, Long notificationId) {
+        Notification notification = notificationRepository.findById(notificationId)
+                .orElseThrow(() -> new CustomException(ErrorCode.NOTIFICATION_NOT_FOUND));
+
+        // 알림 소유자 확인
+        if (!notification.getMember().getId().equals(memberId)) {
+            throw new CustomException(ErrorCode.FORBIDDEN);
+        }
+
+        notification.markAsRead();
+    }
+
+    /**
+     * 안 읽은 알림 개수 조회
+     */
+    public UnreadCountResponseDTO getUnreadCount(Long memberId) {
+        long count = notificationRepository.countByMemberIdAndIsReadFalse(memberId);
+        return UnreadCountResponseDTO.builder()
+                .unreadCount(count)
+                .build();
+    }
+}
