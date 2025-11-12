@@ -13,7 +13,7 @@ import org.springframework.stereotype.Service;
 @Service
 @RequiredArgsConstructor
 public class VoteNotificationService {
-    private final SimpMessagingTemplate messagingTemplate;
+    private final SimpMessagingTemplate messagingTemplate; // 서버에서 STOMP 경로로 메시지 전송
     private final VoteNotificationMetrics metrics;
 
     /**

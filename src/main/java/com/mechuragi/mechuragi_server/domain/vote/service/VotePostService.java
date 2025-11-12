@@ -176,7 +176,12 @@ public class VotePostService {
             VotePost votePost = votePostRepository.findById(voteId)
                     .orElseThrow(() -> new BusinessException(ErrorCode.VOTE_NOT_FOUND));
 
-            Member author = votePost.getAuthor();
+            // DB에서 최신 알림 설정 조회
+            Member author = memberRepository.findById(votePost.getAuthor().getId())
+                    .orElseThrow(() -> new BusinessException(ErrorCode.MEMBER_NOT_FOUND));
+
+            log.info("투표 종료 10분 전 알림 처리 시작: voteId={}, authorId={}, voteNotificationEnabled={}",
+                    voteId, author.getId(), author.getVoteNotificationEnabled());
 
             // 알림 설정이 꺼져있으면 알림을 보내지 않음
             if (!author.getVoteNotificationEnabled()) {
