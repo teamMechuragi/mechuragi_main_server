@@ -7,7 +7,7 @@ import com.mechuragi.mechuragi_server.domain.notification.dto.UnreadCountRespons
 import com.mechuragi.mechuragi_server.domain.notification.dto.VoteNotificationType;
 import com.mechuragi.mechuragi_server.domain.notification.entity.Notification;
 import com.mechuragi.mechuragi_server.domain.notification.repository.NotificationRepository;
-import com.mechuragi.mechuragi_server.global.exception.CustomException;
+import com.mechuragi.mechuragi_server.global.exception.BusinessException;
 import com.mechuragi.mechuragi_server.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -27,8 +27,10 @@ public class NotificationService {
     /**
      * 알림 저장
      */
-    @Transactional
+    @Transactional(propagation = org.springframework.transaction.annotation.Propagation.REQUIRES_NEW)
     public Notification createNotification(Long memberId, Long voteId, String title, VoteNotificationType type) {
+        log.debug("알림 저장 시도: memberId={}, voteId={}, type={}", memberId, voteId, type);
+
         // 중복 확인
         if (notificationRepository.existsByMemberIdAndVoteIdAndType(memberId, voteId, type)) {
             log.info("중복 알림 저장 방지: memberId={}, voteId={}, type={}", memberId, voteId, type);
@@ -36,16 +38,25 @@ public class NotificationService {
         }
 
         Member member = memberRepository.findById(memberId)
-                .orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
+                .orElseThrow(() -> new BusinessException(ErrorCode.MEMBER_NOT_FOUND));
+
+        // 알림 타입에 따라 메시지 생성
+        String notificationMessage = switch (type) {
+            case ENDING_SOON -> "투표 마감 10분전입니다";
+            case COMPLETED -> "투표가 마감되었습니다";
+        };
 
         Notification notification = Notification.builder()
                 .member(member)
                 .voteId(voteId)
-                .title(title)
+                .title(notificationMessage)
                 .type(type)
                 .build();
 
-        return notificationRepository.save(notification);
+        Notification saved = notificationRepository.save(notification);
+        log.debug("알림 저장 완료: notificationId={}, memberId={}, voteId={}, type={}",
+                saved.getId(), memberId, voteId, type);
+        return saved;
     }
 
     /**
@@ -62,11 +73,11 @@ public class NotificationService {
     @Transactional
     public void markAsRead(Long memberId, Long notificationId) {
         Notification notification = notificationRepository.findById(notificationId)
-                .orElseThrow(() -> new CustomException(ErrorCode.NOTIFICATION_NOT_FOUND));
+                .orElseThrow(() -> new BusinessException(ErrorCode.NOTIFICATION_NOT_FOUND));
 
         // 알림 소유자 확인
         if (!notification.getMember().getId().equals(memberId)) {
-            throw new CustomException(ErrorCode.FORBIDDEN);
+            throw new BusinessException(ErrorCode.FORBIDDEN);
         }
 
         notification.markAsRead();
