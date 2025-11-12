@@ -60,9 +60,10 @@ public class VoteEventListener {
                     .title(event.getTitle())
                     .type(VoteNotificationType.COMPLETED)
                     .timestamp(LocalDateTime.now())
+                    .memberId(event.getAuthorId())
                     .build();
 
-            redisPubSubTemplate.convertAndSend("vote:end:" + event.getAuthorId(), message);
+            redisPubSubTemplate.convertAndSend("vote:end", message);
             metrics.recordRedisPublishDuration(sample);
 
             log.info("투표 종료 알림 발행: voteId={}, authorId={}", event.getVoteId(), event.getAuthorId());

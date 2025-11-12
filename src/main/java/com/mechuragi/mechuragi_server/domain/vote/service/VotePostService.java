@@ -5,6 +5,7 @@ import com.mechuragi.mechuragi_server.domain.member.repository.MemberRepository;
 import com.mechuragi.mechuragi_server.domain.notification.dto.VoteNotificationMessageDTO;
 import com.mechuragi.mechuragi_server.domain.notification.dto.VoteNotificationType;
 import com.mechuragi.mechuragi_server.domain.notification.event.VoteCompletedEvent;
+import com.mechuragi.mechuragi_server.domain.notification.service.NotificationService;
 import com.mechuragi.mechuragi_server.domain.vote.dto.*;
 import com.mechuragi.mechuragi_server.domain.vote.entity.VoteOption;
 import com.mechuragi.mechuragi_server.domain.vote.entity.VotePost;
@@ -37,6 +38,7 @@ public class VotePostService {
     private final RedisTemplate<String, String> redisTemplate;
     private final RedisTemplate<String, Object> redisPubSubTemplate;
     private final ApplicationEventPublisher eventPublisher;
+    private final NotificationService notificationService;
 
     @Transactional
     public VoteResponseDTO createVote(Long authorId, VoteCreateRequestDTO request) {
@@ -171,22 +173,43 @@ public class VotePostService {
     @Transactional
     public void notifyVoteEndingSoon(Long voteId, String title) {
         try {
+            VotePost votePost = votePostRepository.findById(voteId)
+                    .orElseThrow(() -> new BusinessException(ErrorCode.VOTE_NOT_FOUND));
+
+            Member author = votePost.getAuthor();
+
+            // 알림 설정이 꺼져있으면 알림을 보내지 않음
+            if (!author.getVoteNotificationEnabled()) {
+                log.info("투표 종료 10분 전 알림 건너뜀 (알림 설정 OFF): voteId={}, authorId={}",
+                        voteId, author.getId());
+                votePost.markNotified10MinBefore();
+                return;
+            }
+
+            // 알림 저장
+            notificationService.createNotification(
+                    author.getId(),
+                    voteId,
+                    title,
+                    VoteNotificationType.ENDING_SOON
+            );
+
+            // Redis Pub/Sub으로 실시간 알림 발행
             VoteNotificationMessageDTO message = VoteNotificationMessageDTO.builder()
                     .voteId(voteId)
                     .title(title)
                     .type(VoteNotificationType.ENDING_SOON)
                     .timestamp(LocalDateTime.now())
+                    .memberId(author.getId())
                     .build();
 
             redisPubSubTemplate.convertAndSend("vote:before10min", message);
 
             // 알림 발송 이력 기록 (중복 방지)
-            VotePost votePost = votePostRepository.findById(voteId)
-                    .orElseThrow(() -> new BusinessException(ErrorCode.VOTE_NOT_FOUND));
             votePost.markNotified10MinBefore();
             votePostRepository.save(votePost);
 
-            log.info("투표 종료 10분 전 알림 발행: voteId={}", voteId);
+            log.info("투표 종료 10분 전 알림 발행: voteId={}, authorId={}", voteId, author.getId());
         } catch (Exception e) {
             log.error("투표 종료 10분 전 알림 발행 실패: voteId={}", voteId, e);
         }

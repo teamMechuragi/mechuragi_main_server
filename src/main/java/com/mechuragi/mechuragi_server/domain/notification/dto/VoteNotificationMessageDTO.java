@@ -16,4 +16,5 @@ public class VoteNotificationMessageDTO {
     private String title;
     private VoteNotificationType type;
     private LocalDateTime timestamp;
+    private Long memberId; // 알림을 받을 사용자 ID
 }

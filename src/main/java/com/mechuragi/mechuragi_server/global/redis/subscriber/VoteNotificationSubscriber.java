@@ -30,10 +30,16 @@ public class VoteNotificationSubscriber implements MessageListener {
             // 메트릭 기록
             metrics.recordRedisMessageReceived(channel);
 
-            log.info("[Redis Subscriber] 메시지 수신: channel={}, voteId={}", channel, notification.getVoteId());
+            log.info("[Redis Subscriber] 메시지 수신: channel={}, voteId={}, memberId={}",
+                    channel, notification.getVoteId(), notification.getMemberId());
 
-            // 알림 서비스 계층으로 위임
-            voteNotificationService.sendNotification(notification);
+            // 알림 서비스 계층으로 위임 - 특정 사용자에게만 전송
+            if (notification.getMemberId() != null) {
+                voteNotificationService.sendNotificationToUser(notification.getMemberId(), notification);
+            } else {
+                // 하위 호환성: memberId가 없으면 브로드캐스트
+                voteNotificationService.sendNotification(notification);
+            }
 
             long duration = System.currentTimeMillis() - startTime;
             log.info("[Redis Subscriber] 메시지 처리 완료: channel={}, duration={}ms", channel, duration);
