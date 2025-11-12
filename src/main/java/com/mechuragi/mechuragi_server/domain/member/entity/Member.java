@@ -52,6 +52,9 @@ public class Member {
     @Column(nullable = false)
     private MemberStatus status = MemberStatus.ACTIVE;
 
+    @Column(nullable = false)
+    private Boolean voteNotificationEnabled = true;
+
     @CreatedDate
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -62,7 +65,8 @@ public class Member {
 
     @Builder
     public Member(String email, String nickname, String password, String profileImageUrl,
-                  Boolean emailVerified, AuthProvider provider, Role role, MemberStatus status) {
+                  Boolean emailVerified, AuthProvider provider, Role role, MemberStatus status,
+                  Boolean voteNotificationEnabled) {
         this.email = email;
         this.nickname = nickname;
         this.password = password;
@@ -71,6 +75,7 @@ public class Member {
         this.provider = provider != null ? provider : AuthProvider.NORMAL;
         this.role = role != null ? role : Role.USER;
         this.status = status != null ? status : MemberStatus.ACTIVE;
+        this.voteNotificationEnabled = voteNotificationEnabled != null ? voteNotificationEnabled : true;
     }
 
     public void updateProfile(String nickname, String profileImageUrl) {
@@ -92,6 +97,12 @@ public class Member {
 
     public void changeStatus(MemberStatus status) {
         this.status = status;
+    }
+
+    public void updateVoteNotificationSetting(Boolean enabled) {
+        if (enabled != null) {
+            this.voteNotificationEnabled = enabled;
+        }
     }
 
     /**
