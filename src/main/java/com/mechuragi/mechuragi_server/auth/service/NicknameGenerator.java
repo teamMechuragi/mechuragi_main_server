@@ -1,10 +1,11 @@
-package com.mechuragi.mechuragi_server.global.util;
+package com.mechuragi.mechuragi_server.auth.service;
 
 import org.springframework.stereotype.Component;
 
 import java.util.List;
 import java.util.Random;
 
+// 닉네임 null 방지용 - 소셜 로그인에서만 사용
 @Component
 public class NicknameGenerator {
 

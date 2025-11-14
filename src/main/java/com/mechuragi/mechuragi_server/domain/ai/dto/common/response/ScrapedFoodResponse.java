@@ -1,6 +1,6 @@
 package com.mechuragi.mechuragi_server.domain.ai.dto.common.response;
 
-import com.mechuragi.mechuragi_server.domain.ai.type.RecommendationType;
+import com.mechuragi.mechuragi_server.domain.ai.entity.type.RecommendationType;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;

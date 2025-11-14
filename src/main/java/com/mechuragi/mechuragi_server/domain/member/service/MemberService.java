@@ -8,6 +8,8 @@ import com.mechuragi.mechuragi_server.domain.member.entity.Member;
 import com.mechuragi.mechuragi_server.domain.member.entity.type.MemberStatus;
 import com.mechuragi.mechuragi_server.domain.member.repository.MemberRepository;
 import com.mechuragi.mechuragi_server.domain.member.service.mapper.MemberMapper;
+import com.mechuragi.mechuragi_server.global.exception.BusinessException;
+import com.mechuragi.mechuragi_server.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -24,18 +26,15 @@ public class MemberService {
     private final PasswordEncoder passwordEncoder;
     private final MemberMapper memberMapper;
 
-    // 회원가입
+    // 일반 회원가입
     @Transactional
     public MemberResponse signup(SignupRequest request) {
 
         // 회원 엔티티 생성 (Mapper 사용)
         Member member = memberMapper.toEntity(request);
 
-        // 회원 저장 (ID 발급을 위해)
+        // 회원 저장
         Member savedMember = memberRepository.save(member);
-
-        // 닉네임 + ID 조합으로 최종 닉네임 업데이트 (예: "행복한곰1")
-        savedMember.appendIdToNickname(request.getNickname());
 
         log.info("회원가입 완료: email={}, nickname={}", request.getEmail(), savedMember.getNickname());
 
@@ -45,27 +44,27 @@ public class MemberService {
     // 회원 조회 (ID)
     public MemberResponse getMember(Long memberId) {
         Member member = memberRepository.findById(memberId)
-                .orElseThrow(() -> new IllegalArgumentException("회원을 찾을 수 없습니다."));
+                .orElseThrow(() -> new BusinessException(ErrorCode.MEMBER_NOT_FOUND));
         return memberMapper.toDto(member);
     }
 
     // 회원 조회 (이메일)
     public MemberResponse getMemberByEmail(String email) {
         Member member = memberRepository.findByEmail(email)
-                .orElseThrow(() -> new IllegalArgumentException("회원을 찾을 수 없습니다."));
+                .orElseThrow(() -> new BusinessException(ErrorCode.MEMBER_NOT_FOUND));
         return memberMapper.toDto(member);
     }
 
-    // 회원 정보 수정
+    // 프로필 수정 (닉네임 및 프로필 사진 업데이트)
     @Transactional
     public MemberResponse updateMember(Long memberId, UpdateMemberRequest request) {
         Member member = memberRepository.findById(memberId)
-                .orElseThrow(() -> new IllegalArgumentException("회원을 찾을 수 없습니다."));
+                .orElseThrow(() -> new BusinessException(ErrorCode.MEMBER_NOT_FOUND));
 
         // 닉네임 중복 체크
         if (request.getNickname() != null && !request.getNickname().equals(member.getNickname())) {
             if (memberRepository.existsByNickname(request.getNickname())) {
-                throw new IllegalArgumentException("이미 사용 중인 닉네임입니다.");
+                throw new BusinessException(ErrorCode.NICKNAME_DUPLICATED);
             }
         }
 
@@ -77,16 +76,16 @@ public class MemberService {
     @Transactional
     public void updatePassword(Long memberId, UpdatePasswordRequest request) {
         Member member = memberRepository.findById(memberId)
-                .orElseThrow(() -> new IllegalArgumentException("회원을 찾을 수 없습니다."));
+                .orElseThrow(() -> new BusinessException(ErrorCode.MEMBER_NOT_FOUND));
 
         // 소셜 로그인 회원은 비밀번호 변경 불가
         if (member.getPassword() == null) {
-            throw new IllegalArgumentException("소셜 로그인 회원은 비밀번호를 변경할 수 없습니다.");
+            throw new BusinessException(ErrorCode.PASSWORD_CHANGE_DENIED);
         }
 
         // 현재 비밀번호 확인
         if (!passwordEncoder.matches(request.getCurrentPassword(), member.getPassword())) {
-            throw new IllegalArgumentException("현재 비밀번호가 일치하지 않습니다.");
+            throw new BusinessException(ErrorCode.PASSWORD_MISMATCH);
         }
 
         // 새 비밀번호 암호화 및 저장
@@ -98,7 +97,7 @@ public class MemberService {
     @Transactional
     public void deleteMember(Long memberId) {
         Member member = memberRepository.findById(memberId)
-                .orElseThrow(() -> new IllegalArgumentException("회원을 찾을 수 없습니다."));
+                .orElseThrow(() -> new BusinessException(ErrorCode.MEMBER_NOT_FOUND));
         member.changeStatus(MemberStatus.INACTIVE);
     }
 
@@ -109,14 +108,14 @@ public class MemberService {
 
     // 닉네임 중복 확인
     public boolean isNicknameDuplicate(String nickname) {
-        return memberRepository.existsByNickname(nickname);
+        return memberRepository.existsByNickname(nickname) ;
     }
 
     // 투표 알림 설정 변경
     @Transactional
     public void updateVoteNotificationSetting(Long memberId, Boolean enabled) {
         Member member = memberRepository.findById(memberId)
-                .orElseThrow(() -> new IllegalArgumentException("회원을 찾을 수 없습니다."));
+                .orElseThrow(() -> new BusinessException(ErrorCode.MEMBER_NOT_FOUND));
         member.updateVoteNotificationSetting(enabled);
     }
 }

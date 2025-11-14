@@ -2,7 +2,7 @@ package com.mechuragi.mechuragi_server.global.config;
 
 import com.mechuragi.mechuragi_server.domain.member.entity.Member;
 import com.mechuragi.mechuragi_server.domain.member.repository.MemberRepository;
-import com.mechuragi.mechuragi_server.global.util.NicknameGenerator;
+import com.mechuragi.mechuragi_server.auth.service.NicknameGenerator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;

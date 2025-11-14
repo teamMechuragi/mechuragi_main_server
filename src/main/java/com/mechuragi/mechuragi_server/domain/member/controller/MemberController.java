@@ -2,13 +2,11 @@ package com.mechuragi.mechuragi_server.domain.member.controller;
 
 import com.mechuragi.mechuragi_server.auth.dto.CustomUserDetails;
 import com.mechuragi.mechuragi_server.domain.member.dto.MemberResponse;
-import com.mechuragi.mechuragi_server.domain.member.dto.NicknameResponse;
 import com.mechuragi.mechuragi_server.domain.member.dto.SignupRequest;
 import com.mechuragi.mechuragi_server.domain.member.dto.UpdateMemberRequest;
 import com.mechuragi.mechuragi_server.domain.member.dto.UpdatePasswordRequest;
 import com.mechuragi.mechuragi_server.domain.member.dto.UpdateNotificationSettingRequest;
 import com.mechuragi.mechuragi_server.domain.member.service.MemberService;
-import com.mechuragi.mechuragi_server.global.util.NicknameGenerator;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -26,7 +24,6 @@ import org.springframework.web.bind.annotation.*;
 public class MemberController {
 
     private final MemberService memberService;
-    private final NicknameGenerator nicknameGenerator;
 
     @Operation(summary = "회원가입")
     @PostMapping("/signup")
@@ -36,16 +33,8 @@ public class MemberController {
         return ResponseEntity.ok(response);
     }
 
-    @Operation(summary = "랜덤 닉네임 생성")
-    @GetMapping("/nickname/generate")
-    public ResponseEntity<NicknameResponse> generateNickname() {
-        log.info("랜덤 닉네임 생성 요청");
-        String nickname = nicknameGenerator.generateRandomNickname();
-        return ResponseEntity.ok(new NicknameResponse(nickname));
-    }
-
     @Operation(summary = "이메일 중복 체크")
-    @GetMapping("/check")
+    @GetMapping("/check/email")
     public ResponseEntity<Boolean> checkEmailDuplicate(@RequestParam String email) {
         log.info("이메일 중복 체크 요청: email={}", email);
         boolean isDuplicate = memberService.isEmailDuplicate(email);

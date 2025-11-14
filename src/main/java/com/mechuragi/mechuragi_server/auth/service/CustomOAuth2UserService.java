@@ -4,7 +4,8 @@ import com.mechuragi.mechuragi_server.auth.dto.CustomUserDetails;
 import com.mechuragi.mechuragi_server.auth.dto.OAuth2Attributes;
 import com.mechuragi.mechuragi_server.domain.member.entity.Member;
 import com.mechuragi.mechuragi_server.domain.member.repository.MemberRepository;
-import com.mechuragi.mechuragi_server.global.util.NicknameGenerator;
+import com.mechuragi.mechuragi_server.global.exception.BusinessException;
+import com.mechuragi.mechuragi_server.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
@@ -72,9 +73,7 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
 
             // 소셜 로그인 제공자 확인
             if (member.getProvider() != attributes.getProvider()) {
-                throw new IllegalArgumentException(
-                        String.format("이미 %s로 가입된 계정입니다.", member.getProvider())
-                );
+                throw new BusinessException(ErrorCode.EMAIL_ALREADY_EXISTS); // 가입된 일반 계정 존재
             }
 
             log.info("기존 회원 로그인: email={}", member.getEmail());

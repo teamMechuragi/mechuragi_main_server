@@ -1,6 +1,6 @@
 package com.mechuragi.mechuragi_server.domain.ai.dto.external.request;
 
-import com.mechuragi.mechuragi_server.domain.ai.type.RecommendationType;
+import com.mechuragi.mechuragi_server.domain.ai.entity.type.RecommendationType;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
