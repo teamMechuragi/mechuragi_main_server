@@ -184,13 +184,19 @@
   - ✅ refreshAccessToken() - Refresh Token으로 Access Token 재발급
   - ✅ logout() - Refresh Token 삭제
 
-- **AuthService**
-  - ✅ signup() - 일반 회원가입
+- **MemberService 업데이트** (회원가입 로직 책임 분리)
+  - ✅ signup() - 일반 회원가입 핵심 로직 (auth → member 도메인으로 이동)
     - ✅ 이메일 중복 체크
     - ✅ 닉네임 중복 체크
     - ✅ 비밀번호 암호화 (BCryptPasswordEncoder)
     - ✅ 회원 저장 (provider: NORMAL, role: USER, status: ACTIVE)
-    - ✅ TODO: 이메일 인증 메일 발송 (6단계)
+    - ✅ Member 엔티티 반환
+
+- **AuthService**
+  - ✅ signup() - 인증 관련 후처리
+    - ✅ MemberService.signup() 호출 (회원 생성)
+    - ✅ 이메일 인증 메일 발송 (EmailService 사용)
+    - ✅ 발송 실패해도 회원가입은 완료 (재발송 가능)
   - ✅ login() - 일반 로그인
     - ✅ 이메일로 회원 조회
     - ✅ 소셜 로그인 계정 체크
@@ -329,12 +335,17 @@
   - `spring.security.oauth2.redirect-uri`: 카카오 → 백엔드 (OAuth2 콜백)
   - `oauth2.redirect-uri`: 백엔드 → 프론트엔드 (JWT 토큰 전달)
 
-### 8단계: 공통 예외 처리 및 응답 형식
-- **GlobalExceptionHandler**
-  - 인증 실패, 권한 없음, 중복 데이터 등 처리
-- **공통 응답 DTO**
-  - ApiResponse<T> (success, message, data)
-  - ErrorResponse (error, message, details)
+### 8단계: 회원가입 로직 책임 분리 ✅ 완료
+- **관심사 분리**
+  - ✅ 회원가입 핵심 로직: auth → member 도메인으로 이동
+  - ✅ AuthService: 인증 관련 후처리(이메일 발송)만 담당
+  - ✅ MemberService: 회원 생성 및 검증 로직 담당
+
+- **이유**
+  - ✅ 단일 책임 원칙(SRP) 준수
+  - ✅ 도메인 경계 명확화 (회원 관리 vs 인증)
+  - ✅ 테스트 용이성 향상
+  - ✅ 재사용성 증가 (다른 회원 생성 시나리오에서도 활용 가능)
 
 ## 패키지 구조
 
