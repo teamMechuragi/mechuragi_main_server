@@ -1,222 +1,149 @@
-# Mechuragi Main Server 프로젝트 구조
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/553f3847-c5f9-4267-94e3-e97f41f4542f" width="200"/>
+</p>
 
-## 1. 프로젝트 개요
-Spring Boot 3.5.5 기반의 백엔드 서버로, Docker 컨테이너로 배포되는 메인 서비스입니다.
+# 🐦 메추라기
+AI 기반 메뉴/식당 추천 커뮤니티 플랫폼
 
-## 2. 인프라 구성
-- **메인 서비스**: t3.micro (Public IP + Elastic IP) - 현재 프로젝트
-- **AI 서비스**: t3.small (Bedrock IAM Profile)
-- **MySQL 서버**: t3.micro (30GB gp3 볼륨)
-- **Redis 서버**: t3.micro (캐시 전용)
+---
 
-## 3. 기술 스택
-- **언어**: Java 17
-- **프레임워크**: Spring Boot 3.5.5
-- **빌드 도구**: Gradle
-- **데이터베이스**: MySQL 8.0
-- **캐시**: Redis
-- **컨테이너**: Docker, Docker Compose
+## 온보딩 화면
 
-## 4. 주요 의존성
-- Spring Boot Starter Web
-- Spring Data JPA
-- Spring Data Redis
-- Spring Boot Actuator
-- Spring Validation
-- MySQL Connector
-- Spring Dotenv (환경 변수 관리)
+<table>
+  <tr>
+    <td align="center">
+      <img src="https://github.com/user-attachments/assets/da07656c-4ef0-45aa-ba2e-f523b101fa09" width="300"/><br/>
+    </td>
+    <td align="center">
+      <img src="https://github.com/user-attachments/assets/364bf9e2-4de5-47f1-b271-277355766c0a" width="300"/><br/>
+    </td>
+  </tr>
+  <tr>
+    <td align="center">
+      <img src="https://github.com/user-attachments/assets/3c9b8ba2-5bb4-40a2-b98c-33d86f8fdc99" width="300"/><br/>
+    </td>
+    <td align="center">
+      <img src="https://github.com/user-attachments/assets/e51977a8-79be-456a-8507-475c399d95b9" width="300"/><br/>
+    </td>
+  </tr>
+</table>
 
-## 5. 디렉토리 구조
-```
-mechuragi_main_server/
-├── src/
-│   ├── main/
-│   │   ├── java/com/mechuragi/mechuragi_server/
-│   │   │   ├── MechuragiServerApplication.java    # 메인 애플리케이션
-│   │   │   ├── TestController.java                # 테스트 API 컨트롤러
-│   │   │   ├── domain/                            # 도메인 패키지
-│   │   │   │   ├── member/                        # 회원 도메인
-│   │   │   │   │   ├── entity/                    # Member (회원 엔티티)
-│   │   │   │   │   ├── repository/                # MemberRepository
-│   │   │   │   │   ├── service/                   # MemberService (예정)
-│   │   │   │   │   ├── controller/                # MemberController (예정)
-│   │   │   │   │   └── dto/                       # MemberRequest, MemberResponse (예정)
-│   │   │   │   └── preference/                    # 음식 취향 도메인
-│   │   │   │       ├── entity/                    # FoodPreference, DislikedFood 등
-│   │   │   │       ├── repository/                # FoodPreferenceRepository 등
-│   │   │   │       ├── service/                   # FoodPreferenceService
-│   │   │   │       ├── controller/                # FoodPreferenceController
-│   │   │   │       └── dto/                       # CreatePreferenceRequest 등
-│   │   │   └── auth/                              # 모든 도메인에 작동하는 전역 인증 인프라
-│   │   │       ├── config/                        # SecurityConfig, JwtConfig
-│   │   │       ├── entity/                        # RefreshToken, EmailVerification
-│   │   │       ├── dto/                           # SignupRequest, LoginRequest/Response
-│   │   │       ├── service/                       # AuthService, EmailService, JwtService
-│   │   │       ├── controller/                    # AuthController
-│   │   │       └── filter/                        # JwtAuthenticationFilter
-│   │   └── resources/
-│   │       ├── application.yml                    # 공통 설정
-│   │       ├── application-local.yml              # 로컬 환경 설정
-│   │       └── application-docker.yml             # Docker 환경 설정
-│   └── test/
-│       ├── java/com/mechuragi/mechuragi_server/
-│       │   └── MechuragiServerApplicationTests.java
-│       └── resources/
-│           └── application-test.yml
-├── gradle/                                        # Gradle wrapper
-├── Dockerfile                                     # 멀티 스테이지 빌드 설정
-├── docker-compose.yml                             # 전체 스택 구성
-├── build.gradle                                   # 빌드 설정
-├── settings.gradle                                # 프로젝트 설정
-├── gradlew                                        # Gradle wrapper 스크립트
-└── gradlew.bat                                    # Windows용 Gradle wrapper
-```
 
-## 6. Docker 구성
+---
 
-### 6.1. Dockerfile
-- **빌드 스테이지**: eclipse-temurin:17-jdk 사용
-  - Gradle 의존성 캐싱
-  - 소스 코드 빌드 (테스트 제외)
-- **실행 스테이지**: eclipse-temurin:17-jre 사용
-  - 한국 시간대 설정 (Asia/Seoul)
-  - 보안을 위한 전용 사용자(spring) 생성
-  - JVM 메모리 옵션: MaxRAMPercentage=75.0
-  - 헬스체크: `/actuator/health` 엔드포인트
-  - 포트: 8080
+## 📌 프로젝트 소개
 
-### 6.2. docker-compose.yml
-4개의 서비스로 구성:
+**Mechuragi**는 **Claude API**와 **Custom ML 모델**을 활용한 **AI 기반 메뉴/식당 추천 커뮤니티 플랫폼**입니다.
 
-1. **spring-app** (메인 백엔드)
-   - 컨테이너명: mechuragi-server-backend
-   - 포트: 8080
-   - 프로파일: docker
-   - 의존성: mysql, redis
+**🎯 핵심 기능**
+1. **메뉴 추천 (Claude API)**
+   - 사용자 취향 정보 (식사인원, 알러지, 다이어트 여부, 비건, 매운맛 정도, 선호 음식 종류, 선호 맛, 안 먹는 음식 등)
+   - 오늘의 상황 정보 (날씨, 시간대, 기분, 재료 등)
+   - → **Claude API 분석**을 통한 맞춤 메뉴 추천
 
-2. **nginx** (웹 서버)
-   - 컨테이너명: mechuragi-server-nginx
-   - 포트: 80
-   - 역할: 리버스 프록시 및 정적 파일 서빙
+2. **식당 추천 (Custom ML Model)**
+   - 추천받은 메뉴 정보
+   - 사용자 위치 정보
+   - 식당 요구사항 (주차 가능 여부, 유아 동반 가능, 펫프렌들리, 비건, 할랄식당)
+   - → **Custom ML 모델 분석**을 통한 최적 식당 추천
 
-3. **mysql** (데이터베이스)
-   - 컨테이너명: mechuragi-server-mysql
-   - MySQL 8.0
-   - 볼륨: mysql_data (영구 저장)
-   - 초기화 스크립트: init.sql
+**추가 기능**: 실시간 인기메뉴, 투표 커뮤니티, 먹방 일기, 실시간 알림
 
-4. **redis** (캐시)
-   - 컨테이너명: mechuragi-server-redis
-   - 포트: 6379
-   - AOF 영속성 활성화
-   - 볼륨: redis_data
+---
 
-### 6.3. 네트워크
-- **app-network**: bridge 드라이버 사용하여 모든 서비스 연결
+## 🎯 제작 목표
 
-## 7. 환경별 설정
+🍽 Claude API 기반 맞춤 메뉴 추천
+🏪 Custom ML 모델 기반 식당 추천
+📅 먹방 일기 캘린더로 식사 기록
+👥 커뮤니티 투표로 메뉴 선택
+🔔 실시간 알림 및 인기메뉴 확인
 
-### 7.1. application.yml (공통)
-- 서버 포트: 8080
-- JPA: Hibernate ddl-auto=update, MySQL Dialect
-- 파일 업로드: 최대 10MB
-- JWT 만료 시간: 86400000ms (24시간)
-- Actuator: health, info 엔드포인트 노출
-- AWS S3: 버킷(mechuragi-dev-images), 리전(ap-northeast-2)
+---
 
-### 7.2. application-local.yml (로컬 개발)
-- MySQL: localhost:3306
-- Redis: localhost:6379
-- JPA SQL 로깅: 활성화 (포맷팅 포함)
-- 로깅 레벨: DEBUG
+## ✅ 기대 효과
 
-### 7.3. application-docker.yml (Docker 환경)
-- MySQL/Redis: 환경 변수로 주입
-- JPA SQL 로깅: 비활성화
-- 프로덕션 최적화 설정
+- Claude API를 활용한 정확하고 맥락 있는 메뉴 추천
+- Custom ML 모델을 통한 사용자 맞춤 식당 추천
+- 상세한 식당 요구사항 반영 (주차, 유아동반, 펫프렌들리, 비건, 할랄)
+- 메뉴 결정 스트레스 해소 및 식사 경험 향상
+- 실시간 인기메뉴와 커뮤니티 기반 소통 경험 강화
 
-## 8. API 엔드포인트
+---
 
-### 8.1. TestController
-- `GET /api/test`: 서버 상태 테스트
-  - 응답: message, timestamp, status
-- `GET /api/health`: 서비스 헬스 체크
-  - 응답: status, service
+## ⚙️ 주요 기능
 
-### 8.2. Spring Actuator
-- `/actuator/health`: 상세 헬스 체크 정보
-- `/actuator/info`: 애플리케이션 정보
+### 🎯 핵심 추천 시스템
 
-## 9. 환경 변수
-Docker Compose에서 필요한 환경 변수:
-- `DB_NAME`: 데이터베이스 이름
-- `DB_USERNAME`: 데이터베이스 사용자명
-- `DB_PASSWORD`: 데이터베이스 비밀번호
-- `MYSQL_ROOT_PASSWORD`: MySQL root 비밀번호
-- `REDIS_PORT`: Redis 포트 (기본: 6379)
-- `JWT_SECRET`: JWT 시크릿 키
+| 구분       | 기능 설명 |
+|------------|-----------|
+| **메뉴 추천** | Claude API 기반 맞춤 메뉴 추천<br>- 사용자 취향 (식사인원, 알러지, 다이어트, 비건, 매운맛 정도, 선호 음식, 선호 맛, 안 먹는 음식)<br>- 상황 정보 (기분, 날씨, 재료, 시간대) |
+| **식당 추천** | Custom ML 모델 기반 식당 추천<br>- 메뉴 정보 + 위치 정보<br>- 식당 요구사항 (주차 가능, 유아동반 가능, 펫프렌들리, 비건, 할랄식당) |
 
-## 10. 빌드 및 실행
+### 📱 부가 기능
 
-### 10.1. 로컬 개발
-```bash
-./gradlew bootRun --args='--spring.profiles.active=local'
-```
+| 구분       | 기능 설명 |
+|------------|-----------|
+| 실시간 인기메뉴 | 현재 가장 인기 있는 메뉴 실시간 확인 |
+| 투표 커뮤니티 | "오늘 뭐 먹지?" 주제로 투표 생성 및 참여 |
+| 먹방 일기 | 캘린더 기반의 식사 기록 및 사진 저장 |
+| 실시간 알림 | 투표 결과, 추천 알림 등 실시간 푸시 알림 |
+| 사용자 기능 | 로그인 / 회원가입 / 설정 |
 
-### 10.2. Docker 빌드 및 실행
-```bash
-docker-compose up -d
-```
+---
 
-### 10.3. Docker 중지
-```bash
-docker-compose down
-```
+## 💻 기술 스택
 
-## 11. 보안 및 최적화
-- Spring Security 및 OAuth2 설정 준비됨 (주석 처리)
-- 멀티 스테이지 빌드로 이미지 크기 최소화
-- 비 root 사용자로 컨테이너 실행
-- 컨테이너 메모리 자동 감지 및 제한
-- 헬스체크 자동화
-- 재시작 정책: unless-stopped
+### 🎨 Frontend
+![React](https://img.shields.io/badge/React-61DAFB?style=for-the-badge&logo=React&logoColor=black)
+![React Native](https://img.shields.io/badge/React_Native-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)
+![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
+![Next.js](https://img.shields.io/badge/Next.js-000000?style=for-the-badge&logo=nextdotjs&logoColor=white)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white)
 
-## 12. CI/CD 파이프라인
+### 🛠 Backend
+![Spring Boot](https://img.shields.io/badge/Spring_Boot-6DB33F?style=for-the-badge&logo=springboot&logoColor=white)
+![Spring Security](https://img.shields.io/badge/Spring_Security-6DB33F?style=for-the-badge&logo=springsecurity&logoColor=white)
+![JPA](https://img.shields.io/badge/JPA-59666C?style=for-the-badge)
+![JWT](https://img.shields.io/badge/JWT-000000?style=for-the-badge&logo=jsonwebtokens&logoColor=white)
+![OAuth](https://img.shields.io/badge/OAuth-EB5424?style=for-the-badge&logo=auth0&logoColor=white)
+![STOMP](https://img.shields.io/badge/STOMP-010101?style=for-the-badge&logo=socketdotio&logoColor=white)
 
-### 12.1. GitHub Actions 워크플로우
-자동 배포 파이프라인이 구성되어 있습니다.
+### 🗄 Database & Infra
+![MySQL](https://img.shields.io/badge/MySQL-4479A1?style=for-the-badge&logo=mysql&logoColor=white)
+![Redis](https://img.shields.io/badge/Redis-DC382D?style=for-the-badge&logo=redis&logoColor=white)
+![AWS EC2](https://img.shields.io/badge/AWS_EC2-FF9900?style=for-the-badge&logo=amazonaws&logoColor=white)
+![AWS S3](https://img.shields.io/badge/AWS_S3-569A31?style=for-the-badge&logo=amazons3&logoColor=white)
+![CloudFront](https://img.shields.io/badge/CloudFront-232F3E?style=for-the-badge&logo=amazonaws&logoColor=white)
+![AWS SES](https://img.shields.io/badge/AWS_SES-DD344C?style=for-the-badge&logo=amazonaws&logoColor=white)
+![Bedrock](https://img.shields.io/badge/AWS_Bedrock-FF9900?style=for-the-badge&logo=amazonaws&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)
+![NGINX](https://img.shields.io/badge/NGINX-009639?style=for-the-badge&logo=nginx&logoColor=white)
 
-#### 12.1.1. 트리거
-- **main 브랜치 push**: 테스트 + 빌드 + 배포
-- **main/dev 브랜치 PR**: 테스트 + 빌드만 실행
+### 🔄 CI/CD
+![GitHub Actions](https://img.shields.io/badge/GitHub_Actions-2088FF?style=for-the-badge&logo=githubactions&logoColor=white)
+![Terraform](https://img.shields.io/badge/Terraform-7B42BC?style=for-the-badge&logo=terraform&logoColor=white)
+![Ansible](https://img.shields.io/badge/Ansible-EE0000?style=for-the-badge&logo=ansible&logoColor=white)
 
-#### 12.1.2. 배포 프로세스
-1. **테스트 단계**
-   - JDK 17 설정
-   - Gradle 캐시 활용
-   - 단위 테스트 실행
-   - 애플리케이션 빌드
+---
 
-2. **배포 단계** (main 브랜치만)
-   - Docker 이미지 빌드 (멀티 플랫폼: amd64, arm64)
-   - DockerHub에 이미지 푸시 (mamel1016/mechuragi-app:latest)
-   - EC2 서버 SSH 접속
-   - 기존 컨테이너 중지 및 제거
-   - 새 컨테이너 실행 (환경 변수 주입)
-   - 헬스체크 확인
-   - 사용하지 않는 이미지 정리
 
-#### 12.1.3. 필요한 GitHub Secrets
-- `DOCKERHUB_TOKEN`: DockerHub 접근 토큰
-- `EC2_SSH_KEY`: EC2 서버 SSH 키
-- `DB_HOST`, `DB_PORT`, `DB_NAME`: 데이터베이스 연결 정보
-- `DB_USERNAME`, `DB_PASSWORD`: 데이터베이스 인증 정보
-- `REDIS_HOST`, `REDIS_PORT`: Redis 연결 정보
-- `JWT_SECRET`: JWT 시크릿 키
-- `S3_BUCKET`, `AWS_REGION`: AWS S3 설정
+## 🔗 Version Control & Collaboration
 
-#### 12.1.4. 배포 서버
-- **호스트**: 
-- **포트**: 8080
-- **컨테이너명**: mechuragi-app
-- **헬스체크**: http://localhost:8080/actuator/health
+![GitHub](https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white)
+![Notion](https://img.shields.io/badge/Notion-000000?style=for-the-badge&logo=notion&logoColor=white)
+![Figma](https://img.shields.io/badge/Figma-F24E1E?style=for-the-badge&logo=figma&logoColor=white)
+
+> 📎 [Notion 프로젝트 페이지 바로가기](우리 노션 링크 넣기)
+
+---
+
+## 👥 팀원 소개
+
+| 이름      | 역할       | 담당 기능                                                                                                                        |
+|---------|----------|------------------------------------------------------------------------------------------------------------------------------|
+| 🎨 박은진  | Design   | - 사용자 인터페이스(UI) 디자인 및 시각적 요소 기획                                                                                              |                                                                                                                |
+| 🐰 김지영  | Frontend | - 메인 화면 <br> - AI 추천 <br> - 취향 설정 <br> - 온보딩 설계                                                                              |
+| 🦝 김진아  | Backend  | - 인프라 구축 <br> - 실시간 알림/ 인기 메뉴 <br> - 기분,재료기반 메뉴 추천 <br> - 회원/인증 <br>                                                         |
+| 🐿️ 김희주 | Backend  | - 데이터베이스 설계 및 JPA 엔티티 기반 모델링 <br> - AWS EC2 및 RDS 인프라 구축 <br> - 커뮤니티 투표 게시판 기능 구현 <br> - 날씨, 시간대, ChatGPT API 연동 메뉴 추천 기능 개발 |
+
