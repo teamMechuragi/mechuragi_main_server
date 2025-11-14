@@ -44,6 +44,21 @@ public class MemberController {
         return ResponseEntity.ok(new NicknameResponse(nickname));
     }
 
+    @Operation(summary = "이메일 중복 체크")
+    @GetMapping("/check")
+    public ResponseEntity<Boolean> checkEmailDuplicate(@RequestParam String email) {
+        log.info("이메일 중복 체크 요청: email={}", email);
+        boolean isDuplicate = memberService.isEmailDuplicate(email);
+        return ResponseEntity.ok(isDuplicate);
+    }
+
+    @Operation(summary = "닉네임 중복 체크")
+    @GetMapping("/check/nickname")
+    public ResponseEntity<Boolean> checkNicknameDuplicate(@RequestParam String nickname) {
+        boolean isDuplicate = memberService.isNicknameDuplicate(nickname);
+        return ResponseEntity.ok(isDuplicate);
+    }
+
     @Operation(summary = "회원 정보 조회")
     @GetMapping("/{memberId}")
     public ResponseEntity<MemberResponse> getMember(@PathVariable Long memberId) {
@@ -74,20 +89,6 @@ public class MemberController {
     public ResponseEntity<Void> deleteMember(@PathVariable Long memberId) {
         memberService.deleteMember(memberId);
         return ResponseEntity.noContent().build();
-    }
-
-    @Operation(summary = "이메일 중복 체크")
-    @GetMapping("/check/email")
-    public ResponseEntity<Boolean> checkEmailDuplicate(@RequestParam String email) {
-        boolean isDuplicate = memberService.isEmailDuplicate(email);
-        return ResponseEntity.ok(isDuplicate);
-    }
-
-    @Operation(summary = "닉네임 중복 체크")
-    @GetMapping("/check/nickname")
-    public ResponseEntity<Boolean> checkNicknameDuplicate(@RequestParam String nickname) {
-        boolean isDuplicate = memberService.isNicknameDuplicate(nickname);
-        return ResponseEntity.ok(isDuplicate);
     }
 
     @PatchMapping("/me/notification-setting")

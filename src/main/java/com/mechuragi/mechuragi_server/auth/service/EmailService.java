@@ -34,9 +34,9 @@ public class EmailService {
     @Transactional
     public void sendVerificationEmail(String email) {
         // 이메일 중복 체크
-//        if (memberRepository.existsByEmail(email)) {
-//            throw new IllegalArgumentException("이미 사용 중인 이메일입니다.");
-//        }
+        if (memberRepository.existsByEmail(email)) {
+            throw new IllegalArgumentException("이미 사용 중인 이메일입니다.");
+        }
 
         // 인증 코드 생성
         String verificationCode = generateVerificationCode();
