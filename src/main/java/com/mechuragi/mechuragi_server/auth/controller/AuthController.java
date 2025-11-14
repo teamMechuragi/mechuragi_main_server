@@ -3,8 +3,6 @@ package com.mechuragi.mechuragi_server.auth.controller;
 import com.mechuragi.mechuragi_server.auth.dto.*;
 import com.mechuragi.mechuragi_server.auth.service.AuthService;
 import com.mechuragi.mechuragi_server.auth.service.EmailService;
-import com.mechuragi.mechuragi_server.domain.member.dto.MemberResponse;
-import com.mechuragi.mechuragi_server.global.util.NicknameGenerator;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -23,14 +21,6 @@ public class AuthController {
 
     private final AuthService authService;
     private final EmailService emailService;
-    private final NicknameGenerator nicknameGenerator;
-
-    @PostMapping("/signup")
-    public ResponseEntity<MemberResponse> signup(@Valid @RequestBody SignupRequest request) {
-        log.info("회원가입 요청: email={}", request.getEmail());
-        MemberResponse response = authService.signup(request);
-        return ResponseEntity.ok(response);
-    }
 
     @Operation(summary = "로그인")
     @PostMapping("/login")
@@ -70,13 +60,5 @@ public class AuthController {
         log.info("이메일 인증 요청: email={}", request.getEmail());
         emailService.verifyEmail(request.getEmail(), request.getVerificationCode());
         return ResponseEntity.ok().build();
-    }
-
-    @Operation(summary = "랜덤 닉네임 생성")
-    @GetMapping("/nickname/generate")
-    public ResponseEntity<NicknameResponse> generateNickname() {
-        log.info("랜덤 닉네임 생성 요청");
-        String nickname = nicknameGenerator.generateRandomNickname();
-        return ResponseEntity.ok(new NicknameResponse(nickname));
     }
 }

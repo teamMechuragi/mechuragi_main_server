@@ -1,16 +1,20 @@
 package com.mechuragi.mechuragi_server.domain.member.service;
 
 import com.mechuragi.mechuragi_server.domain.member.dto.MemberResponse;
+import com.mechuragi.mechuragi_server.domain.member.dto.SignupRequest;
 import com.mechuragi.mechuragi_server.domain.member.dto.UpdateMemberRequest;
 import com.mechuragi.mechuragi_server.domain.member.dto.UpdatePasswordRequest;
 import com.mechuragi.mechuragi_server.domain.member.entity.Member;
 import com.mechuragi.mechuragi_server.domain.member.entity.type.MemberStatus;
 import com.mechuragi.mechuragi_server.domain.member.repository.MemberRepository;
+import com.mechuragi.mechuragi_server.domain.member.service.mapper.MemberMapper;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -18,19 +22,38 @@ public class MemberService {
 
     private final MemberRepository memberRepository;
     private final PasswordEncoder passwordEncoder;
+    private final MemberMapper memberMapper;
+
+    // 회원가입
+    @Transactional
+    public MemberResponse signup(SignupRequest request) {
+
+        // 회원 엔티티 생성 (Mapper 사용)
+        Member member = memberMapper.toEntity(request);
+
+        // 회원 저장 (ID 발급을 위해)
+        Member savedMember = memberRepository.save(member);
+
+        // 닉네임 + ID 조합으로 최종 닉네임 업데이트 (예: "행복한곰1")
+        savedMember.appendIdToNickname(request.getNickname());
+
+        log.info("회원가입 완료: email={}, nickname={}", request.getEmail(), savedMember.getNickname());
+
+        return memberMapper.toDto(savedMember);
+    }
 
     // 회원 조회 (ID)
     public MemberResponse getMember(Long memberId) {
         Member member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new IllegalArgumentException("회원을 찾을 수 없습니다."));
-        return MemberResponse.from(member);
+        return memberMapper.toDto(member);
     }
 
     // 회원 조회 (이메일)
     public MemberResponse getMemberByEmail(String email) {
         Member member = memberRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("회원을 찾을 수 없습니다."));
-        return MemberResponse.from(member);
+        return memberMapper.toDto(member);
     }
 
     // 회원 정보 수정
@@ -47,7 +70,7 @@ public class MemberService {
         }
 
         member.updateProfile(request.getNickname(), request.getProfileImageUrl());
-        return MemberResponse.from(member);
+        return memberMapper.toDto(member);
     }
 
     // 비밀번호 변경
