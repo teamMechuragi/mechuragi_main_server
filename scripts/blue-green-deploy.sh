@@ -130,7 +130,7 @@ main() {
 
     # 새 컨테이너 시작
     log "새 컨테이너 시작: ${PROJECT_NAME}-main-$new_active"
-    docker-compose -f docker-compose.blue-green.yml up -d --no-deps ${PROJECT_NAME}-main-$new_active
+    docker compose -f docker-compose.blue-green.yml up -d --no-deps ${PROJECT_NAME}-main-$new_active
 
     # 헬스체크
     health_check $new_port
