@@ -17,16 +17,6 @@ GREEN_SERVICE_PORT="8081"
 APP_DIRECTORY="/home/ubuntu/app"
 NGINX_CONFIG="/etc/nginx/sites-available/main-service"
 
-# Docker Compose 명령어 감지 (docker-compose 또는 docker compose)
-if command -v docker-compose &> /dev/null; then
-    DOCKER_COMPOSE_CMD="docker-compose"
-elif docker compose version &> /dev/null; then
-    DOCKER_COMPOSE_CMD="docker compose"
-else
-    echo "Error: Neither docker-compose nor docker compose is available"
-    exit 1
-fi
-
 # 로그 함수
 log() {
     echo -e "${BLUE}[$(date +'%Y-%m-%d %H:%M:%S')]${NC} $1"
@@ -44,6 +34,12 @@ success() {
 warn() {
     echo -e "${YELLOW}[WARN]${NC} $1"
 }
+
+# Docker 네트워크 확인 및 생성
+if ! docker network ls | grep -q app-network; then
+    echo "app-network 생성 중..."
+    docker network create app-network 2>/dev/null || true
+fi
 
 # 현재 활성 컨테이너 확인
 get_active_container() {
@@ -140,7 +136,25 @@ main() {
 
     # 새 컨테이너 시작
     log "새 컨테이너 시작: ${PROJECT_NAME}-main-$new_active"
-    $DOCKER_COMPOSE_CMD -f docker-compose.blue-green.yml up -d --no-deps ${PROJECT_NAME}-main-$new_active
+    docker run -d \
+        --name ${PROJECT_NAME}-main-$new_active \
+        --network app-network \
+        -p $new_port:8080 \
+        -e SPRING_PROFILES_ACTIVE=production \
+        -e SPRING_DATASOURCE_URL=jdbc:mysql://${DB_HOST}:${DB_PORT}/${DB_NAME} \
+        -e SPRING_DATASOURCE_USERNAME=${DB_USERNAME} \
+        -e SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD} \
+        -e SPRING_REDIS_HOST=${REDIS_HOST} \
+        -e SPRING_REDIS_PORT=${REDIS_PORT} \
+        -e REDIS_HOST=${REDIS_HOST} \
+        -e REDIS_PORT=${REDIS_PORT} \
+        -e JWT_SECRET=${JWT_SECRET} \
+        -e AWS_REGION=${AWS_REGION} \
+        -e S3_BUCKET=${S3_BUCKET} \
+        -e SES_FROM_EMAIL=${SES_FROM_EMAIL} \
+        -e BEDROCK_AI_HOST=${BEDROCK_AI_HOST} \
+        --restart unless-stopped \
+        ${DOCKERHUB_USERNAME}/mechuragi-app:latest
 
     # 헬스체크
     health_check $new_port
