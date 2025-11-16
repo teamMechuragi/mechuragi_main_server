@@ -89,86 +89,58 @@ jobs:
           context: .
           platforms: linux/amd64,linux/arm64
           push: true
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/mechuragi-main-server:latest
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/mechuragi-app:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: Deploy to Main Server
+      - name: Upload deployment files to server
+        uses: appleboy/scp-action@v0.1.4
+        with:
+          host: ${{ secrets.MAIN_SERVER_HOST }}
+          username: ubuntu
+          key: ${{ secrets.EC2_SSH_KEY }}
+          source: "docker-compose.blue-green.yml,nginx/blue-green.conf,scripts/blue-green-deploy.sh"
+          target: "/home/ubuntu/app/"
+
+      - name: Deploy to Main Server (Blue-Green)
         uses: appleboy/ssh-action@v0.1.5
         with:
           host: ${{ secrets.MAIN_SERVER_HOST }}
           username: ubuntu
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            # Create shared network for service communication (ignore if exists)
-            sudo docker network create mechuragi-network 2>/dev/null || true
+            # 애플리케이션 디렉토리로 이동
+            cd /home/ubuntu/app
 
-            # Pull latest image
-            sudo docker pull ${{ secrets.DOCKERHUB_USERNAME }}/mechuragi-main-server:latest
+            # Docker Compose 설정 확인
+            echo "블루-그린 배포 파일 확인 중..."
+            ls -la docker-compose.blue-green.yml nginx/blue-green.conf scripts/blue-green-deploy.sh || echo "일부 파일이 없을 수 있음 (정상)"
 
-            # Stop and remove all containers using port 8080
-            echo "Checking for containers using port 8080..."
-            CONTAINER_IDS=$(sudo docker ps -q --filter "publish=8080")
-            if [ -n "$CONTAINER_IDS" ]; then
-              echo "Stopping containers using port 8080: $CONTAINER_IDS"
-              sudo docker stop $CONTAINER_IDS
-              sudo docker rm $CONTAINER_IDS
-            else
-              echo "No containers using port 8080 found"
-            fi
+            # 스크립트 실행 권한 부여
+            chmod +x scripts/blue-green-deploy.sh
 
-            # Also clean up by name (legacy support)
-            sudo docker stop mechuragi-main-server 2>/dev/null || true
-            sudo docker rm mechuragi-main-server 2>/dev/null || true
-            sudo docker stop mechuragi-server 2>/dev/null || true
-            sudo docker rm mechuragi-server 2>/dev/null || true
+            # 환경 변수 설정
+            export DB_HOST="${{ secrets.DB_HOST }}"
+            export DB_PORT="${{ secrets.DB_PORT }}"
+            export DB_NAME="${{ secrets.DB_NAME }}"
+            export DB_USERNAME="${{ secrets.DB_USERNAME }}"
+            export DB_PASSWORD="${{ secrets.DB_PASSWORD }}"
+            export REDIS_HOST="${{ secrets.REDIS_HOST }}"
+            export REDIS_PORT="${{ secrets.REDIS_PORT }}"
+            export JWT_SECRET="${{ secrets.JWT_SECRET }}"
+            export S3_BUCKET="${{ secrets.S3_BUCKET }}"
+            export SES_FROM_EMAIL="${{ secrets.SES_FROM_EMAIL }}"
+            export AWS_REGION="${{ secrets.AWS_REGION }}"
+            export BEDROCK_AI_HOST="${{ secrets.BEDROCK_AI_HOST }}"
+            export DOCKERHUB_USERNAME="${{ secrets.DOCKERHUB_USERNAME }}"
 
-            # Run new container with environment variables and IAM role access
-            sudo docker run -d \
-              -p 8080:8080 \
-              --name mechuragi-main-server \
-              --network mechuragi-network \
-              --restart unless-stopped \
-              -e "SPRING_PROFILES_ACTIVE=dev" \
-              -e "DB_HOST=${{ secrets.DB_HOST }}" \
-              -e "DB_PORT=${{ secrets.DB_PORT }}" \
-              -e "DB_NAME=${{ secrets.DB_NAME }}" \
-              -e "DB_USERNAME=${{ secrets.DB_USERNAME }}" \
-              -e "DB_PASSWORD=${{ secrets.DB_PASSWORD }}" \
-              -e "REDIS_HOST=${{ secrets.REDIS_HOST }}" \
-              -e "REDIS_PORT=${{ secrets.REDIS_PORT }}" \
-              -e "JWT_SECRET=${{ secrets.JWT_SECRET }}" \
-              -e "S3_BUCKET=${{ secrets.S3_BUCKET }}" \
-              -e "AWS_REGION=${{ secrets.AWS_REGION }}" \
-              -e "SES_FROM_EMAIL=${{ secrets.SES_FROM_EMAIL }}" \
-              -e "KAKAO_CLIENT_ID=${{ secrets.KAKAO_CLIENT_ID }}" \
-              -e "KAKAO_CLIENT_SECRET=${{ secrets.KAKAO_CLIENT_SECRET }}" \
-              -e "KAKAO_REDIRECT_URI=${{ secrets.KAKAO_REDIRECT_URI }}" \
-              -e "OAUTH2_REDIRECT_URI=${{ secrets.OAUTH2_REDIRECT_URI }}" \
-              -e "AI_SERVICE_URL=${{ secrets.AI_SERVICE_URL }}" \
-              ${{ secrets.DOCKERHUB_USERNAME }}/mechuragi-main-server:latest
+            # 최신 이미지 풀
+            docker pull ${{ secrets.DOCKERHUB_USERNAME }}/mechuragi-app:latest
 
-            # Wait for application to start
-            sleep 45
+            # Blue-Green 배포 실행
+            ./scripts/blue-green-deploy.sh
 
-            # Health check (up to 5 attempts)
-            for i in {1..5}; do
-              if curl -f http://localhost:8080/actuator/health; then
-                echo "Health check passed"
-                break
-              else
-                echo "Health check failed ($i/5), retrying in 10 seconds..."
-                sleep 10
-                if [ $i -eq 5 ]; then
-                  echo "Health check final failure, showing logs:"
-                  sudo docker logs mechuragi-main-server
-                  exit 1
-                fi
-              fi
-            done
-
-            # Clean up old images
-            sudo docker image prune -f
+            # Blue-Green 스크립트에서 헬스체크가 완료됨
 
       - name: Send Discord Notification - Deploy Success
         if: success()

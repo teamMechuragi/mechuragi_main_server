@@ -1,9 +1,11 @@
 package com.mechuragi.mechuragi_server.domain.vote.service;
 
 import com.mechuragi.mechuragi_server.domain.member.entity.Member;
+import com.mechuragi.mechuragi_server.domain.member.repository.MemberRepository;
 import com.mechuragi.mechuragi_server.domain.notification.dto.VoteNotificationMessageDTO;
 import com.mechuragi.mechuragi_server.domain.notification.dto.VoteNotificationType;
 import com.mechuragi.mechuragi_server.domain.notification.event.VoteCompletedEvent;
+import com.mechuragi.mechuragi_server.domain.notification.service.NotificationService;
 import com.mechuragi.mechuragi_server.domain.vote.entity.VotePost;
 import com.mechuragi.mechuragi_server.domain.vote.entity.VotePost.VoteStatus;
 import com.mechuragi.mechuragi_server.domain.vote.repository.VotePostRepository;
@@ -37,10 +39,16 @@ class VotePostServiceTest {
     private VotePostRepository votePostRepository;
 
     @Mock
+    private MemberRepository memberRepository;
+
+    @Mock
     private RedisTemplate<String, Object> redisPubSubTemplate;
 
     @Mock
     private ApplicationEventPublisher eventPublisher;
+
+    @Mock
+    private NotificationService notificationService;
 
     @InjectMocks
     private VotePostService votePostService;
@@ -54,6 +62,10 @@ class VotePostServiceTest {
                 .email("test@example.com")
                 .nickname("테스터")
                 .build();
+
+        // ReflectionTestUtils를 사용하여 id 및 알림 설정 필드 설정
+        ReflectionTestUtils.setField(testMember, "id", 1L);
+        ReflectionTestUtils.setField(testMember, "voteNotificationEnabled", true);
 
         testVotePost = VotePost.builder()
                 .author(testMember)
@@ -111,6 +123,10 @@ class VotePostServiceTest {
         // given
         Long voteId = 1L;
         String title = "점심 메뉴 투표";
+
+        // Mock 설정
+        when(votePostRepository.findById(voteId)).thenReturn(Optional.of(testVotePost));
+        when(memberRepository.findById(testMember.getId())).thenReturn(Optional.of(testMember));
 
         // when
         votePostService.notifyVoteEndingSoon(voteId, title);

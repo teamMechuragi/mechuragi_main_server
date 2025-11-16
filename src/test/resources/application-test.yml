@@ -23,11 +23,11 @@ spring:
         jdbc:
           time_zone: Asia/Seoul
 
-  # Redis 테스트 설정 (임베디드 Redis 또는 비활성화)
+  # Redis 테스트 설정
   data:
     redis:
       host: localhost
-      port: 6370  # 다른 포트 사용
+      port: 6379
 
   # OAuth2 테스트 설정 (실제 값 사용)
   security:
