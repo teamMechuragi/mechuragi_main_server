@@ -20,10 +20,10 @@ public class PopularMenuScheduler {
     private final CacheManager cacheManager;
 
     /**
-     * 3분마다 실시간 인기 메뉴 캐시를 자동 갱신
+     * 10분마다 실시간 인기 메뉴 캐시를 자동 갱신
      * 홈화면에 표시되는 인기 메뉴가 항상 최신 상태로 유지됨
      */
-    @Scheduled(fixedRate = 180000)  // 3분 (180,000ms)
+    @Scheduled(fixedRate = 600000)  // 10분 (600,000ms)
     public void refreshPopularMenus() {
         try {
             // 1. 기존 캐시 무효화
@@ -36,7 +36,7 @@ public class PopularMenuScheduler {
             // 2. 새로 계산 (캐시에 자동 저장됨)
             popularMenuService.getPopularMenus();
 
-            log.info("실시간 인기 메뉴 자동 갱신 완료 (3분 주기)");
+            log.info("실시간 인기 메뉴 자동 갱신 완료 (10분 주기)");
         } catch (Exception e) {
             log.error("실시간 인기 메뉴 자동 갱신 실패: {}", e.getMessage(), e);
         }

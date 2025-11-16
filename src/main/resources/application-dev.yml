@@ -25,6 +25,8 @@ spring:
     properties:
       hibernate:
         format_sql: true
+        jdbc:
+          time_zone: Asia/Seoul
 
   security:
     oauth2:
@@ -57,15 +59,6 @@ jwt:
 oauth2:
   redirect-uri: ${OAUTH2_REDIRECT_URI} #백엔드에서 프론트엔드로 토큰 전달
 
-management:
-  endpoints:
-    web:
-      exposure:
-        include: health,info
-  endpoint:
-    health:
-      show-details: always
-
 cloud:
   aws:
     region:
@@ -92,3 +85,22 @@ logging:
     name: logs/mechuragi-dev.log  # 로그 파일 경로
     max-size: 10MB
     max-history: 30
+
+# Actuator 설정
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+      base-path: /actuator
+  endpoint:
+    health:
+      show-details: always
+    metrics:
+      enabled: true
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+    tags:
+      application: ${spring.application.name:mechuragi-server}

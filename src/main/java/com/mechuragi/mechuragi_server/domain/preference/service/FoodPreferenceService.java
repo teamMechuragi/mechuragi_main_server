@@ -4,6 +4,7 @@ import com.mechuragi.mechuragi_server.domain.preference.dto.*;
 import com.mechuragi.mechuragi_server.domain.preference.entity.*;
 import com.mechuragi.mechuragi_server.domain.preference.repository.*;
 import com.mechuragi.mechuragi_server.domain.member.entity.Member;
+import com.mechuragi.mechuragi_server.domain.member.repository.MemberRepository;
 import com.mechuragi.mechuragi_server.global.exception.BusinessException;
 import com.mechuragi.mechuragi_server.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
@@ -22,10 +23,14 @@ public class FoodPreferenceService {
     private final PreferenceFoodTypeRepository preferenceFoodTypeRepository;
     private final PreferenceTasteRepository preferenceTasteRepository;
     private final DislikedFoodRepository dislikedFoodRepository;
+    private final MemberRepository memberRepository;
 
     // 새로운 음식 취향 등록
     @Transactional
-    public Long createPreference(Member member, CreatePreferenceRequestDTO request) {
+    public Long createPreference(Long memberId, CreatePreferenceRequestDTO request) {
+        Member member = memberRepository.findById(memberId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.MEMBER_NOT_FOUND));
+
         String preferenceName = generatePreferenceName(member, request.getPreferenceName());
 
         // 첫 번째 취향이면 자동 활성화

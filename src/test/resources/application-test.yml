@@ -20,6 +20,8 @@ spring:
     properties:
       hibernate:
         dialect: org.hibernate.dialect.H2Dialect
+        jdbc:
+          time_zone: Asia/Seoul
 
   # Redis 테스트 설정 (임베디드 Redis 또는 비활성화)
   data:
@@ -49,12 +51,14 @@ spring:
 
 # JWT 테스트 설정
 jwt:
-  secret: testSecretKey
+  secret: testSecretKeyForIntegrationTestPleaseIgnoreThisValueItIsJustForTestingPurposes1234567890
   expiration: 86400000
 
 # 로깅 설정 (테스트용)
 logging:
   level:
-    com.example.foodrecommendation: WARN
+    com.mechuragi.mechuragi_server: DEBUG
+    com.mechuragi.mechuragi_server.global.redis.subscriber: DEBUG
+    com.mechuragi.mechuragi_server.domain.notification: DEBUG
     org.springframework.security: WARN
     org.springframework.web: WARN

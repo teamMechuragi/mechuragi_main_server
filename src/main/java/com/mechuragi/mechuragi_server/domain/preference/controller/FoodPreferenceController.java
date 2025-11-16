@@ -1,16 +1,14 @@
 package com.mechuragi.mechuragi_server.domain.preference.controller;
 
+import com.mechuragi.mechuragi_server.auth.dto.CustomUserDetails;
 import com.mechuragi.mechuragi_server.domain.preference.dto.*;
 import com.mechuragi.mechuragi_server.domain.preference.service.FoodPreferenceService;
-import com.mechuragi.mechuragi_server.domain.member.entity.Member;
-import com.mechuragi.mechuragi_server.domain.member.repository.MemberRepository;
-import com.mechuragi.mechuragi_server.auth.util.JwtTokenProvider;
-import com.mechuragi.mechuragi_server.global.exception.BusinessException;
-import com.mechuragi.mechuragi_server.global.exception.ErrorCode;
-import jakarta.servlet.http.HttpServletRequest;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.net.URI;
@@ -19,86 +17,73 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/preferences")
 @RequiredArgsConstructor
+@Tag(name = "음식 취향",description = "사용자 음식 취향 관리 API")
 public class FoodPreferenceController {
 
     private final FoodPreferenceService foodPreferenceService;
-    private final MemberRepository memberRepository;
-    private final JwtTokenProvider jwtTokenProvider;
 
-    private Long getMemberIdFromRequest(HttpServletRequest request) {
-        String authHeader = request.getHeader("Authorization");
-        if (authHeader != null && authHeader.startsWith("Bearer ")) {
-            String token = authHeader.substring(7);
-            return jwtTokenProvider.getMemberIdFromToken(token);
-        }
-        throw new BusinessException(ErrorCode.INVALID_JWT_TOKEN);
-    }
-
-    // 음식 취향 등록
     @PostMapping
+    @Operation(summary = "음식 취향 등록")
     public ResponseEntity<Void> createPreference(
-            HttpServletRequest request,
+            @AuthenticationPrincipal CustomUserDetails userDetails,
             @Valid @RequestBody CreatePreferenceRequestDTO preferenceRequest) {
 
-        Long memberId = getMemberIdFromRequest(request);
-        Member member = memberRepository.findById(memberId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.MEMBER_NOT_FOUND));
-
-        Long preferenceId = foodPreferenceService.createPreference(member, preferenceRequest);
+        Long memberId = userDetails.getMemberId();
+        Long preferenceId = foodPreferenceService.createPreference(memberId, preferenceRequest);
         return ResponseEntity.created(URI.create("/api/preferences/" + preferenceId)).build();
     }
 
-    // 음식 취향 목록 조회
     @GetMapping
+    @Operation(summary = "음식 취향 목록 조회")
     public ResponseEntity<List<PreferenceListResponseDTO>> getPreferenceList(
-            HttpServletRequest request) {
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
 
-        Long memberId = getMemberIdFromRequest(request);
+        Long memberId = userDetails.getMemberId();
         List<PreferenceListResponseDTO> preferences = foodPreferenceService.getPreferenceList(memberId);
         return ResponseEntity.ok(preferences);
     }
 
-    // 음식 취향 상세 조회
+    @Operation(summary = "음식 취향 상세 조회")
     @GetMapping("/{preferenceId}")
     public ResponseEntity<PreferenceDetailResponseDTO> getPreferenceDetail(
-            HttpServletRequest request,
+            @AuthenticationPrincipal CustomUserDetails userDetails,
             @PathVariable Long preferenceId) {
 
-        Long memberId = getMemberIdFromRequest(request);
+        Long memberId = userDetails.getMemberId();
         PreferenceDetailResponseDTO preference = foodPreferenceService.getPreferenceDetail(memberId, preferenceId);
         return ResponseEntity.ok(preference);
     }
 
-    // 음식 취향 수정
+    @Operation(summary = "음식 취향 수정")
     @PutMapping("/{preferenceId}")
     public ResponseEntity<Void> updatePreference(
-            HttpServletRequest request,
+            @AuthenticationPrincipal CustomUserDetails userDetails,
             @PathVariable Long preferenceId,
             @Valid @RequestBody UpdatePreferenceRequestDTO updateRequest) {
 
-        Long memberId = getMemberIdFromRequest(request);
+        Long memberId = userDetails.getMemberId();
         foodPreferenceService.updatePreference(memberId, preferenceId, updateRequest);
         return ResponseEntity.ok().build();
     }
 
-    // 음식 취향 삭제
+    @Operation(summary = "음식 취향 삭제")
     @DeleteMapping("/{preferenceId}")
     public ResponseEntity<Void> deletePreference(
-            HttpServletRequest request,
+            @AuthenticationPrincipal CustomUserDetails userDetails,
             @PathVariable Long preferenceId) {
 
-        Long memberId = getMemberIdFromRequest(request);
+        Long memberId = userDetails.getMemberId();
         foodPreferenceService.deletePreference(memberId, preferenceId);
         return ResponseEntity.noContent().build();
     }
 
-    // 음식 취향 활성화 토글
+    @Operation(summary = "음식 취향 토글 상태 변경")
     @PatchMapping("/{preferenceId}/toggle-active")
     public ResponseEntity<Void> toggleActivePreference(
-            HttpServletRequest request,
+            @AuthenticationPrincipal CustomUserDetails userDetails,
             @PathVariable Long preferenceId) {
 
-        Long memberId = getMemberIdFromRequest(request);
+        Long memberId = userDetails.getMemberId();
         foodPreferenceService.toggleActivePreference(memberId, preferenceId);
         return ResponseEntity.ok().build();
     }

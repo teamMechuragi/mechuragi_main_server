@@ -681,3 +681,145 @@ sudo docker rm mechuragi-server 2>/dev/null || true
 - 에러 처리를 통해 배포 중단 방지
 
 ---
+
+## 테스트 일자: 2025-11-12
+
+---
+
+## 알림 관련 트러블슈팅
+
+### 문제 8: 투표 종료 알림이 DB에 저장되지 않는 문제
+**발생 일시:** 2025-11-12
+
+**증상:**
+```
+- 투표 종료 10분 전 알림: DB 저장 ✅ 정상
+- 투표 종료 알림: Redis Pub/Sub 발송 ✅ 정상, DB 저장 ❌ 실패
+```
+
+**에러 로그:**
+```
+DEBUG c.m.m.d.n.event.VoteEventListener : 투표 종료 이벤트 수신: voteId=22, authorId=6
+DEBUG c.m.m.d.n.event.VoteEventListener : 투표 종료 알림 DB 저장 호출: voteId=22, authorId=6
+DEBUG c.m.m.d.n.service.NotificationService : 알림 저장 시도: memberId=6, voteId=22, type=COMPLETED
+DEBUG c.m.m.d.n.service.NotificationService : 알림 저장 완료: notificationId=null, memberId=6, voteId=22, type=COMPLETED
+DEBUG c.m.m.d.n.event.VoteEventListener : 투표 종료 알림 DB 저장 결과: notificationId=null
+```
+
+**원인 분석:**
+
+**핵심 문제:** `notificationId=null` - `notificationRepository.save()`가 제대로 커밋되지 않음
+
+**상세 분석:**
+
+1. **트랜잭션 전파 문제**
+   ```java
+   @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+   public void handleVoteCompleted(VoteCompletedEvent event) {
+       // 이 시점에는 이미 트랜잭션이 커밋된 후
+       notificationService.createNotification(...); // 새 트랜잭션 필요
+   }
+   ```
+
+2. **VoteEventListener 실행 시점**
+   - `@TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)`
+   - 투표 종료 처리 트랜잭션이 **커밋된 이후**에 실행됨
+   - 이 시점에는 활성 트랜잭션이 없음
+
+3. **NotificationService의 @Transactional 문제**
+   ```java
+   @Transactional  // 기본 전파 옵션: REQUIRED
+   public Notification createNotification(...) {
+       // REQUIRED: 기존 트랜잭션 사용, 없으면 새로 생성
+       // 하지만 AFTER_COMMIT 시점에는 트랜잭션 컨텍스트가 없어서
+       // 제대로 커밋되지 않음
+   }
+   ```
+
+4. **투표 10분 전 알림은 왜 정상?**
+   ```java
+   @Transactional  // VotePostService.notifyVoteEndingSoon()
+   public void notifyVoteEndingSoon(Long voteId, String title) {
+       // 이 메서드 자체가 @Transactional 내에서 실행
+       notificationService.createNotification(...);
+       // 같은 트랜잭션 내에서 실행되어 정상 저장됨
+   }
+   ```
+
+**해결 방법:**
+
+`NotificationService.createNotification()`에 **새 트랜잭션 시작** 전파 옵션 추가
+
+**수정 파일:**
+`src/main/java/com/mechuragi/mechuragi_server/domain/notification/service/NotificationService.java:30`
+
+**수정 내용:**
+```java
+// 변경 전
+@Transactional
+public Notification createNotification(Long memberId, Long voteId, String title, VoteNotificationType type) {
+
+// 변경 후
+@Transactional(propagation = org.springframework.transaction.annotation.Propagation.REQUIRES_NEW)
+public Notification createNotification(Long memberId, Long voteId, String title, VoteNotificationType type) {
+```
+
+**트랜잭션 전파 옵션 설명:**
+- `REQUIRED` (기본값): 기존 트랜잭션 사용, 없으면 새로 생성
+- `REQUIRES_NEW`: **항상 새로운 독립적인 트랜잭션 시작**
+  - 기존 트랜잭션이 있어도 새로 생성
+  - 기존 트랜잭션과 독립적으로 커밋/롤백
+  - `@TransactionalEventListener(AFTER_COMMIT)` 사용 시 필수
+
+**결과:**
+- ✅ 투표 종료 알림 DB 저장 정상 동작
+- ✅ notificationId 정상 생성
+- ✅ 투표 10분 전 알림도 계속 정상 동작 (기존 트랜잭션과 독립적으로 실행)
+
+**디버깅 로그 추가:**
+
+추가로 디버깅을 위해 `log.debug()` 로그를 추가했습니다.
+
+**수정 파일:**
+1. `NotificationService.java:32, 57-58`
+2. `VoteEventListener.java:30, 43-44, 54, 61`
+
+**추가된 로그:**
+```java
+// NotificationService
+log.debug("알림 저장 시도: memberId={}, voteId={}, type={}", ...);
+log.debug("알림 저장 완료: notificationId={}, memberId={}, voteId={}, type={}", ...);
+
+// VoteEventListener
+log.debug("투표 종료 이벤트 수신: voteId={}, authorId={}", ...);
+log.debug("투표 종료 알림 처리 시작: voteId={}, authorId={}, voteNotificationEnabled={}", ...);
+log.debug("투표 종료 알림 DB 저장 호출: voteId={}, authorId={}", ...);
+log.debug("투표 종료 알림 DB 저장 결과: notificationId={}", ...);
+```
+
+**디버그 로그 vs 일반 로그:**
+- `log.debug()`: 개발/디버깅용 상세 로그
+- `log.info()`: 운영 환경 주요 정보 로그
+- `log.warn()`: 경고 로그
+- `log.error()`: 에러 로그
+
+**로그 레벨 설정 (application.yml):**
+```yaml
+logging:
+  level:
+    com.mechuragi: DEBUG  # 개발 환경 - debug 로그 출력
+    # com.mechuragi: INFO  # 운영 환경 - debug 로그 숨김
+```
+
+**교훈:**
+- `@TransactionalEventListener(AFTER_COMMIT)` 사용 시 새 트랜잭션이 필요한 작업은 `REQUIRES_NEW` 전파 옵션 필수
+- 같은 서비스 메서드라도 호출 시점(트랜잭션 내부 vs 외부)에 따라 동작이 달라질 수 있음
+- 디버그 로그를 적극 활용하여 트랜잭션 경계와 실행 흐름 파악 필요
+- `notificationId=null`은 트랜잭션 미커밋의 명확한 신호
+
+**관련 파일:**
+- `VoteEventListener.java` - 투표 종료 이벤트 리스너
+- `NotificationService.java` - 알림 저장 서비스
+- `VotePostService.java` - 투표 10분 전 알림 (정상 동작)
+
+---
