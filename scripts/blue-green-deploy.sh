@@ -17,6 +17,16 @@ GREEN_SERVICE_PORT="8081"
 APP_DIRECTORY="/home/ubuntu/app"
 NGINX_CONFIG="/etc/nginx/sites-available/main-service"
 
+# Docker Compose 명령어 감지 (docker-compose 또는 docker compose)
+if command -v docker-compose &> /dev/null; then
+    DOCKER_COMPOSE_CMD="docker-compose"
+elif docker compose version &> /dev/null; then
+    DOCKER_COMPOSE_CMD="docker compose"
+else
+    echo "Error: Neither docker-compose nor docker compose is available"
+    exit 1
+fi
+
 # 로그 함수
 log() {
     echo -e "${BLUE}[$(date +'%Y-%m-%d %H:%M:%S')]${NC} $1"
@@ -130,7 +140,7 @@ main() {
 
     # 새 컨테이너 시작
     log "새 컨테이너 시작: ${PROJECT_NAME}-main-$new_active"
-    docker compose -f docker-compose.blue-green.yml up -d --no-deps ${PROJECT_NAME}-main-$new_active
+    $DOCKER_COMPOSE_CMD -f docker-compose.blue-green.yml up -d --no-deps ${PROJECT_NAME}-main-$new_active
 
     # 헬스체크
     health_check $new_port
