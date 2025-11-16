@@ -134,27 +134,9 @@ main() {
 
     log "새로 배포할 컨테이너: $new_active (포트: $new_port)"
 
-    # 새 컨테이너 시작
+    # 새 컨테이너 시작 (Docker Compose 사용)
     log "새 컨테이너 시작: ${PROJECT_NAME}-main-$new_active"
-    docker run -d \
-        --name "${PROJECT_NAME}-main-${new_active}" \
-        --network app-network \
-        -p "${new_port}:8080" \
-        -e "SPRING_PROFILES_ACTIVE=production" \
-        -e "SPRING_DATASOURCE_URL=jdbc:mysql://${DB_HOST}:${DB_PORT}/${DB_NAME}" \
-        -e "SPRING_DATASOURCE_USERNAME=${DB_USERNAME}" \
-        -e "SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD}" \
-        -e "SPRING_REDIS_HOST=${REDIS_HOST}" \
-        -e "SPRING_REDIS_PORT=${REDIS_PORT}" \
-        -e "REDIS_HOST=${REDIS_HOST}" \
-        -e "REDIS_PORT=${REDIS_PORT}" \
-        -e "JWT_SECRET=${JWT_SECRET}" \
-        -e "AWS_REGION=${AWS_REGION}" \
-        -e "S3_BUCKET=${S3_BUCKET}" \
-        -e "SES_FROM_EMAIL=${SES_FROM_EMAIL}" \
-        -e "BEDROCK_AI_HOST=${BEDROCK_AI_HOST}" \
-        --restart unless-stopped \
-        "${DOCKERHUB_USERNAME}/mechuragi-app:latest"
+    docker compose -f docker-compose.blue-green.yml up -d ${PROJECT_NAME}-main-${new_active}
 
     # 헬스체크
     health_check $new_port
@@ -165,8 +147,8 @@ main() {
     # 이전 컨테이너 중지 (존재하는 경우)
     if [ "$current_active" != "none" ]; then
         log "이전 컨테이너 중지: $old_container"
-        docker stop $old_container || warn "이전 컨테이너 중지 실패 (이미 중지되었을 수 있음)"
-        docker rm $old_container || warn "이전 컨테이너 제거 실패"
+        docker compose -f docker-compose.blue-green.yml stop ${PROJECT_NAME}-main-${current_active} || warn "이전 컨테이너 중지 실패 (이미 중지되었을 수 있음)"
+        docker compose -f docker-compose.blue-green.yml rm -f ${PROJECT_NAME}-main-${current_active} || warn "이전 컨테이너 제거 실패"
     fi
 
     # 사용하지 않는 이미지 정리
