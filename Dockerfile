@@ -20,8 +20,8 @@ RUN ./gradlew build -x test --no-daemon
 # 실행 스테이지
 FROM eclipse-temurin:17-jre
 
-# 한국 시간대 설정
-RUN apt-get update && apt-get install -y tzdata && \
+# 한국 시간대 설정 및 curl 설치 (HEALTHCHECK용)
+RUN apt-get update && apt-get install -y tzdata curl && \
     ln -sf /usr/share/zoneinfo/Asia/Seoul /etc/localtime && \
     echo "Asia/Seoul" > /etc/timezone && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
