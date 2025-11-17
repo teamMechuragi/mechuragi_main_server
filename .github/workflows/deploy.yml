@@ -140,6 +140,11 @@ jobs:
             export AWS_REGION="${{ secrets.AWS_REGION }}"
             export BEDROCK_AI_HOST="${{ secrets.BEDROCK_AI_HOST }}"
             export DOCKERHUB_USERNAME="${{ secrets.DOCKERHUB_USERNAME }}"
+            export OAUTH2_REDIRECT_URI="${{ secrets.OAUTH2_REDIRECT_URI }}"
+            export KAKAO_CLIENT_ID="${{ secrets.KAKAO_CLIENT_ID }}"
+            export KAKAO_CLIENT_SECRET="${{ secrets.KAKAO_CLIENT_SECRET }}"
+            export KAKAO_REDIRECT_URI="${{ secrets.KAKAO_REDIRECT_URI }}"
+            export AI_SERVICE_URL="${{ secrets.AI_SERVICE_URL }}"
 
             # 최신 이미지 풀
             docker pull ${{ secrets.DOCKERHUB_USERNAME }}/mechuragi-app:latest
