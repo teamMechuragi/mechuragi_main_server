@@ -94,20 +94,24 @@ jobs:
           cache-to: type=gha,mode=max
 
       - name: Upload deployment files to server
-        uses: appleboy/scp-action@v0.1.4
+        uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.MAIN_SERVER_HOST }}
           username: ubuntu
           key: ${{ secrets.EC2_SSH_KEY }}
           source: "docker-compose.blue-green.yml,nginx/blue-green.conf,scripts/blue-green-deploy.sh"
           target: "/home/ubuntu/app/"
+          timeout: 30s
+          command_timeout: 10m
 
       - name: Deploy to Main Server (Blue-Green)
-        uses: appleboy/ssh-action@v0.1.5
+        uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.MAIN_SERVER_HOST }}
           username: ubuntu
           key: ${{ secrets.EC2_SSH_KEY }}
+          timeout: 30s
+          command_timeout: 15m
           script: |
             # 애플리케이션 디렉토리로 이동
             cd /home/ubuntu/app
