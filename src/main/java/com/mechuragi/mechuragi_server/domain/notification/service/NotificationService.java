@@ -77,7 +77,7 @@ public class NotificationService {
 
         // 알림 소유자 확인
         if (!notification.getMember().getId().equals(memberId)) {
-            throw new BusinessException(ErrorCode.FORBIDDEN);
+            throw new BusinessException(ErrorCode.NOTIFICATION_FORBIDDEN);
         }
 
         notification.markAsRead();

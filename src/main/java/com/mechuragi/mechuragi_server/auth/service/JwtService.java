@@ -6,6 +6,8 @@ import com.mechuragi.mechuragi_server.auth.repository.RefreshTokenRepository;
 import com.mechuragi.mechuragi_server.auth.util.JwtTokenProvider;
 import com.mechuragi.mechuragi_server.domain.member.entity.Member;
 import com.mechuragi.mechuragi_server.domain.member.repository.MemberRepository;
+import com.mechuragi.mechuragi_server.global.exception.BusinessException;
+import com.mechuragi.mechuragi_server.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -71,22 +73,22 @@ public class JwtService {
     public TokenResponse refreshAccessToken(String refreshTokenValue) {
         // Refresh Token 유효성 검증
         if (!jwtTokenProvider.validateToken(refreshTokenValue)) {
-            throw new IllegalArgumentException("유효하지 않은 Refresh Token입니다.");
+            throw new BusinessException(ErrorCode.INVALID_REFRESH_TOKEN);
         }
 
         // DB에서 Refresh Token 조회
         RefreshToken refreshToken = refreshTokenRepository.findByToken(refreshTokenValue)
-                .orElseThrow(() -> new IllegalArgumentException("Refresh Token을 찾을 수 없습니다."));
+                .orElseThrow(() -> new BusinessException(ErrorCode.REFRESH_TOKEN_NOT_FOUND));
 
         // 만료 여부 확인
         if (refreshToken.isExpired()) {
             refreshTokenRepository.delete(refreshToken);
-            throw new IllegalArgumentException("만료된 Refresh Token입니다.");
+            throw new BusinessException(ErrorCode.REFRESH_TOKEN_EXPIRED);
         }
 
         // 회원 조회
         Member member = memberRepository.findById(refreshToken.getMemberId())
-                .orElseThrow(() -> new IllegalArgumentException("회원을 찾을 수 없습니다."));
+                .orElseThrow(() -> new BusinessException(ErrorCode.MEMBER_NOT_FOUND));
 
         // 새로운 Access Token 발급
         String newAccessToken = jwtTokenProvider.generateAccessToken(

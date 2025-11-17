@@ -1,12 +1,13 @@
 package com.mechuragi.mechuragi_server.domain.member.dto;
 
-import com.mechuragi.mechuragi_server.domain.member.entity.Member;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 
 import java.time.LocalDateTime;
 
 @Getter
+@Builder
 @AllArgsConstructor
 public class MemberResponse {
 
@@ -20,19 +21,4 @@ public class MemberResponse {
     private String status;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
-
-    public static MemberResponse from(Member member) {
-        return new MemberResponse(
-                member.getId(),
-                member.getEmail(),
-                member.getNickname(),
-                member.getProfileImageUrl(),
-                member.getEmailVerified(),
-                member.getProvider().name(),
-                member.getRole().name(),
-                member.getStatus().name(),
-                member.getCreatedAt(),
-                member.getUpdatedAt()
-        );
-    }
 }

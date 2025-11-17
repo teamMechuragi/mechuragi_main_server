@@ -37,6 +37,7 @@ public class Member {
     @Column(length = 500)
     private String profileImageUrl;
 
+    //TODO: 추후 수정
     @Column
     private Boolean emailVerified = false;
 

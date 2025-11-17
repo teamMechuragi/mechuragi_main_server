@@ -59,13 +59,64 @@
 - 필드 선언과 메소드 간: 공백 1줄
 - import 구문과 클래스 선언 간: 공백 1줄
 
-## 7. DTO 네이밍 규칙
+## 7. DTO 네이밍 및 어노테이션 규칙
 
 ### DTO 클래스명 규칙
 - 클래스명: `엔티티명 + Request/Response` (예: `MemberRequest`, `MemberResponse`)
 - **Dto 접미사는 사용하지 않음**
-- DTO 어노테이션: `@Getter`, `@NoArgsConstructor`, `@AllArgsConstructor`, `@Builder`
 - **Setter는 사용하지 않음** (불변 객체 지향)
+
+### Request DTO 어노테이션 규칙
+- **필수 어노테이션**: `@Getter`, `@NoArgsConstructor`
+- **사용 금지**: `@Builder`, `@AllArgsConstructor`
+- **이유**: Jackson이 JSON 역직렬화 시 기본 생성자를 사용하여 객체를 자동 생성하므로, 빌더 패턴이나 전체 생성자는 불필요
+
+```java
+// ✅ 올바른 Request DTO
+@Getter
+@NoArgsConstructor
+public class SignupRequest {
+    @NotBlank
+    private String email;
+    @NotBlank
+    private String password;
+}
+
+// ❌ 잘못된 Request DTO
+@Getter
+@Builder  // 불필요
+@AllArgsConstructor  // 불필요
+public class SignupRequest { ... }
+```
+
+### Response DTO 어노테이션 규칙
+- **파라미터 1개인 경우**: `@Getter`, `@AllArgsConstructor`
+- **파라미터 2개 이상인 경우**: `@Getter`, `@Builder`, `@AllArgsConstructor`
+- **이유**:
+  - 서버에서 직접 객체를 생성하여 반환
+  - 파라미터가 2개 이상일 때 생성자 파라미터 순서가 바뀔 위험 방지
+  - 빌더 패턴으로 명확하고 안전한 객체 생성
+
+```java
+// ✅ 파라미터 1개 - AllArgsConstructor만 사용
+@Getter
+@AllArgsConstructor
+public class NicknameResponse {
+    private String nickname;
+}
+
+// ✅ 파라미터 2개 이상 - Builder + AllArgsConstructor 사용
+@Getter
+@Builder
+@AllArgsConstructor
+public class MemberResponse {
+    private Long id;
+    private String email;
+    private String nickname;
+    private String profileImageUrl;
+    // ... 더 많은 필드
+}
+```
 
 ## 8. 예외 처리
 
@@ -90,7 +141,9 @@
 
 ### Lombok 활용
 - **Entity**: `@Entity`, `@Getter`, `@NoArgsConstructor`, `@Table(name = "...")`, `@EntityListeners(AuditingEntityListener.class)`, `@Builder`
-- **DTO**: `@Getter`, `@NoArgsConstructor`, `@AllArgsConstructor`, `@Builder` (Setter 사용 안 함)
+- **Request DTO**: `@Getter`, `@NoArgsConstructor` (Setter, Builder, AllArgsConstructor 사용 안 함)
+- **Response DTO (1개 파라미터)**: `@Getter`, `@AllArgsConstructor`
+- **Response DTO (2개 이상 파라미터)**: `@Getter`, `@Builder`, `@AllArgsConstructor`
 - **Service**: `@RequiredArgsConstructor` (final 필드 DI)
 - **Mapper**: `@Component`
 - **로깅**: `@Slf4j`

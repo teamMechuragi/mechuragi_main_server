@@ -2,7 +2,7 @@ package com.mechuragi.mechuragi_server.domain.ai.service.mapper;
 
 import com.mechuragi.mechuragi_server.domain.ai.dto.external.request.FoodPreferenceDto;
 import com.mechuragi.mechuragi_server.domain.ai.dto.external.request.FoodRecommendationRequest;
-import com.mechuragi.mechuragi_server.domain.ai.type.RecommendationType;
+import com.mechuragi.mechuragi_server.domain.ai.entity.type.RecommendationType;
 import org.springframework.stereotype.Component;
 
 import java.util.List;

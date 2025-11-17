@@ -49,9 +49,10 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         // 인증 없이 접근 가능한 경로
                         .requestMatchers(
-                                "/api/auth/**",              // 회원가입, 로그인
-                                "/api/test/**",              // 테스트
+                                "api/members/signup", // 회원가입
                                 "/api/members/check/**",     // 이메일/닉네임 중복 체크
+                                "/api/auth/**",              // 인증/인가
+                                "/api/test/**",              // 테스트
                                 "/actuator/**",              // Actuator
                                 "/error",                    // 에러 페이지
                                 "/oauth2/**",                // OAuth2 로그인

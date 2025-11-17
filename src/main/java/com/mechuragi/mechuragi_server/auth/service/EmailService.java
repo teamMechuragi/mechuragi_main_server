@@ -4,6 +4,8 @@ import com.mechuragi.mechuragi_server.auth.entity.EmailVerification;
 import com.mechuragi.mechuragi_server.auth.repository.EmailVerificationRepository;
 import com.mechuragi.mechuragi_server.domain.member.entity.Member;
 import com.mechuragi.mechuragi_server.domain.member.repository.MemberRepository;
+import com.mechuragi.mechuragi_server.global.exception.BusinessException;
+import com.mechuragi.mechuragi_server.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -34,9 +36,9 @@ public class EmailService {
     @Transactional
     public void sendVerificationEmail(String email) {
         // 이메일 중복 체크
-//        if (memberRepository.existsByEmail(email)) {
-//            throw new IllegalArgumentException("이미 사용 중인 이메일입니다.");
-//        }
+        if (memberRepository.existsByEmail(email)) {
+            throw new BusinessException(ErrorCode.EMAIL_ALREADY_EXISTS);
+        }
 
         // 인증 코드 생성
         String verificationCode = generateVerificationCode();
@@ -65,7 +67,7 @@ public class EmailService {
             log.info("이메일 인증 메일 발송 완료: email={}, code={}", email, verificationCode);
         } catch (Exception e) {
             log.error("이메일 발송 실패: email={}, error={}", email, e.getMessage(), e);
-            throw new RuntimeException("이메일 발송에 실패했습니다.");
+            throw new BusinessException(ErrorCode.EMAIL_SEND_FAILED);
         }
     }
 
@@ -77,16 +79,16 @@ public class EmailService {
         // 인증 정보 조회
         EmailVerification emailVerification = emailVerificationRepository
                 .findByEmailAndVerificationCode(email, verificationCode)
-                .orElseThrow(() -> new IllegalArgumentException("인증 코드가 일치하지 않습니다."));
+                .orElseThrow(() -> new BusinessException(ErrorCode.EMAIL_VERIFICATION_CODE_MISMATCH));
 
         // 만료 여부 확인
         if (emailVerification.isExpired()) {
-            throw new IllegalArgumentException("인증 코드가 만료되었습니다.");
+            throw new BusinessException(ErrorCode.EMAIL_VERIFICATION_CODE_EXPIRED);
         }
 
         // 이미 인증 완료된 경우
         if (emailVerification.getVerified()) {
-            throw new IllegalArgumentException("이미 인증 완료된 이메일입니다.");
+            throw new BusinessException(ErrorCode.EMAIL_ALREADY_VERIFIED);
         }
 
         // 인증 완료 처리
@@ -139,7 +141,7 @@ public class EmailService {
             sesClient.sendEmail(request);
         } catch (SesException e) {
             log.error("AWS SES 이메일 발송 실패: {}", e.awsErrorDetails().errorMessage());
-            throw new RuntimeException("이메일 발송에 실패했습니다.");
+            throw new BusinessException(ErrorCode.EMAIL_SEND_FAILED);
         }
     }
 
