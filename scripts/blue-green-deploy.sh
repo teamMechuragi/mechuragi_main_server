@@ -136,7 +136,7 @@ main() {
 
     # 새 컨테이너 시작 (Docker Compose 사용)
     log "새 컨테이너 시작: ${PROJECT_NAME}-main-$new_active"
-    docker compose -f docker-compose.blue-green.yml up -d ${PROJECT_NAME}-main-${new_active}
+    docker-compose -f docker-compose.blue-green.yml up -d ${PROJECT_NAME}-main-${new_active}
 
     # 헬스체크
     health_check $new_port
@@ -147,8 +147,8 @@ main() {
     # 이전 컨테이너 중지 (존재하는 경우)
     if [ "$current_active" != "none" ]; then
         log "이전 컨테이너 중지: $old_container"
-        docker compose -f docker-compose.blue-green.yml stop ${PROJECT_NAME}-main-${current_active} || warn "이전 컨테이너 중지 실패 (이미 중지되었을 수 있음)"
-        docker compose -f docker-compose.blue-green.yml rm -f ${PROJECT_NAME}-main-${current_active} || warn "이전 컨테이너 제거 실패"
+        docker-compose -f docker-compose.blue-green.yml stop ${PROJECT_NAME}-main-${current_active} || warn "이전 컨테이너 중지 실패 (이미 중지되었을 수 있음)"
+        docker-compose -f docker-compose.blue-green.yml rm -f ${PROJECT_NAME}-main-${current_active} || warn "이전 컨테이너 제거 실패"
     fi
 
     # 사용하지 않는 이미지 정리
