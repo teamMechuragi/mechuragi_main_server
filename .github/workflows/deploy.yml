@@ -103,6 +103,8 @@ jobs:
           target: "/home/ubuntu/app/"
           timeout: 30s
           command_timeout: 10m
+          debug: true
+          strip_components: 0
 
       - name: Deploy to Main Server (Blue-Green)
         uses: appleboy/ssh-action@v1.0.3
@@ -112,6 +114,7 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           timeout: 30s
           command_timeout: 15m
+          debug: true
           script: |
             # 애플리케이션 디렉토리로 이동
             cd /home/ubuntu/app
