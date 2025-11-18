@@ -1,33 +1,19 @@
-<p align="center">
-  <img src="https://github.com/user-attachments/assets/553f3847-c5f9-4267-94e3-e97f41f4542f" width="200"/>
-</p>
-
 # 🐦 메추라기
 AI 기반 메뉴/식당 추천 커뮤니티 플랫폼
 
 ---
 
-## 온보딩 화면
+## 📱 주요 화면
 
-<table>
-  <tr>
-    <td align="center">
-      <img src="https://github.com/user-attachments/assets/da07656c-4ef0-45aa-ba2e-f523b101fa09" width="300"/><br/>
-    </td>
-    <td align="center">
-      <img src="https://github.com/user-attachments/assets/364bf9e2-4de5-47f1-b271-277355766c0a" width="300"/><br/>
-    </td>
-  </tr>
-  <tr>
-    <td align="center">
-      <img src="https://github.com/user-attachments/assets/3c9b8ba2-5bb4-40a2-b98c-33d86f8fdc99" width="300"/><br/>
-    </td>
-    <td align="center">
-      <img src="https://github.com/user-attachments/assets/e51977a8-79be-456a-8507-475c399d95b9" width="300"/><br/>
-    </td>
-  </tr>
-</table>
-
+### 🎨 스플래시 & 온보딩
+<p align="center">
+  <img src="./assets/스플레시.png" width="250"/>
+</p>
+<p align="center"><i>"AI가 만드는 모두의 식탁" - 메추라기 시작 화면</i></p>
+<p align="center">
+   <img src="./assets/온보딩4.png" width="250"/>
+</p>
+<p align="center"><i>온보딩 화면</i></p>
 
 ---
 
@@ -48,6 +34,68 @@ AI 기반 메뉴/식당 추천 커뮤니티 플랫폼
    - → **Custom ML 모델 분석**을 통한 최적 식당 추천
 
 **추가 기능**: 실시간 인기메뉴, 투표 커뮤니티, 먹방 일기, 실시간 알림
+
+---
+
+## 🎯 1단계: AI 메뉴 추천 (Claude API)
+
+### 📝 취향 설정
+<p align="center">
+  <img src="./assets/음식 취향 설정.png" width="250"/>
+</p>
+
+사용자의 식사 인원, 알레르기, 다이어트 여부, 비건 단계, 매운맛 선호도, 좋아하는 음식/싫어하는 음식 등 **상세한 취향 정보를 등록**합니다.
+
+### 🎭 다양한 추천 방식
+
+<table>
+  <tr>
+    <td align="center" width="33%">
+      <img src="./assets/기분기반 메뉴추천.png" width="200"/><br/>
+      <b>기분 기반 추천</b><br/>
+      <i>오늘의 기분에 맞는 메뉴</i>
+    </td>
+    <td align="center" width="33%">
+      <img src="./assets/날씨기반 메뉴추천.png" width="200"/><br/>
+      <b>날씨 기반 추천</b><br/>
+      <i>실시간 날씨를 고려한 메뉴</i>
+    </td>
+    <td align="center" width="33%">
+      <img src="./assets/대화기반 메뉴추천.png" width="200"/><br/>
+      <b>AI 대화 추천</b><br/>
+      <i>자연어로 상황을 설명하면<br/>Claude가 분석</i>
+    </td>
+  </tr>
+</table>
+
+**Claude API**가 사용자의 취향 정보와 실시간 상황(기분, 날씨, 시간대, 재료)을 종합 분석하여 **개인 맞춤형 메뉴**를 추천합니다.
+
+---
+
+## 🏪 2단계: 맞춤 식당 추천 (Custom ML Model)
+
+### 🗺️ 배리어프리 식당 필터링
+<table>
+  <tr>
+    <td align="center" width="50%">
+      <img src="./assets/장소 조건 설정.png" width="250"/><br/>
+      <b>식당 요구사항 설정</b>
+    </td>
+    <td align="center" width="50%">
+      <img src="./assets/장소 추천.png" width="250"/><br/>
+      <b>AI 메뉴/장소 추천</b>
+    </td>
+  </tr>
+</table>
+
+**포용적 식문화를 위한 배리어프리 필터:**
+- 🚗 **주차 가능** - 차량 이용자를 위한 주차 공간
+- 🐾 **펫 프렌들리** - 반려동물 동반 가능
+- ♿ **휠체어 접근** - 경사로, 승강기 등 이동약자 지원
+- 👶 **유아 동반** - 유아 의자, 수유실 등 키즈 케어 시설
+- 🥗 **비건/할랄** - 종교 및 채식 단계별 엄격한 식단 기준
+
+**Sentence-BERT 기반 Custom ML 모델**이 사용자 위치, 취향, 배리어프리 조건을 종합하여 **최적의 식당**을 추천합니다. 특히 **30년 이상 전통 노포**에는 가중치를 부여하여 검증된 맛집을 우선 추천합니다.
 
 ---
 
@@ -140,10 +188,10 @@ AI 기반 메뉴/식당 추천 커뮤니티 플랫폼
 
 ## 👥 팀원 소개
 
-| 이름      | 역할       | 담당 기능                                                                                                                        |
-|---------|----------|------------------------------------------------------------------------------------------------------------------------------|
-| 🎨 박은진  | Design   | - 사용자 인터페이스(UI) 디자인 및 시각적 요소 기획                                                                                              |                                                                                                                |
-| 🐰 김지영  | Frontend | - 메인 화면 <br> - AI 추천 <br> - 취향 설정 <br> - 온보딩 설계                                                                              |
-| 🦝 김진아  | Backend  | - 인프라 구축 <br> - 실시간 알림/ 인기 메뉴 <br> - 기분,재료기반 메뉴 추천 <br> - 회원/인증 <br>                                                         |
-| 🐿️ 김희주 | Backend  | - 데이터베이스 설계 및 JPA 엔티티 기반 모델링 <br> - AWS EC2 및 RDS 인프라 구축 <br> - 커뮤니티 투표 게시판 기능 구현 <br> - 날씨, 시간대, ChatGPT API 연동 메뉴 추천 기능 개발 |
+| 이름      | 역할       | 담당 기능                                                                                                                                   |
+|---------|----------|-----------------------------------------------------------------------------------------------------------------------------------------|
+| 🎨 박은진  | Design   | - 사용자 인터페이스(UI) 디자인 및 시각적 요소 기획                                                                                                         |                                                                                                                |
+| 🐰 김지영  | Frontend | - 메인 화면 <br> - AI 추천 <br> - 취향 설정 <br> - 온보딩 설계                                                                                         |
+| 🦝 김진아  | Backend  | - AWS EC2 인프라 구축 (Terraform, Ansible) <br> - 실시간 알림/인기 메뉴 <br> - 기분, 재료 기반 메뉴 추천 로직 구현 <br> - 회원/인증                                     |
+| 🐿️ 김희주 | Backend  | - 데이터베이스 설계 및 JPA 엔티티 기반 모델링 <br> - Docker 기반 배포 및 컨테이너화 <br> - 커뮤니티 투표 게시판 기능 구현 <br> - AWS Bedrock 기반 Claude API 연동 (날씨, 시간대, 대화형 추천) |
 
