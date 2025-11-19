@@ -34,7 +34,7 @@ public class SwaggerConfig {
                         .version("v1.0.0"))
                 .servers(List.of(
                         new Server().url("http://localhost:8080").description("로컬 서버"),
-                        new Server().url("http://15.165.136.100:8080").description("프로덕션 서버")
+                        new Server().url("https://mechuragi.kro.kr").description("프로덕션 서버")
                 ))
                 .components(new Components()
                         .addSecuritySchemes("Bearer Authentication", securityScheme))
