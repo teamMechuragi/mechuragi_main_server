@@ -41,6 +41,30 @@ AI 기반 메뉴/식당 추천 커뮤니티 플랫폼
 
 ---
 
+## 🏗️ 시스템 아키텍처
+
+<p align="center">
+  <img src="./assets/시스템_아키텍처.png" width="800"/>
+</p>
+
+**Infrastructure as Code (IaC) 기반 자동화 배포**
+- **Terraform**: AWS 인프라 프로비저닝 (VPC, EC2, S3, CloudFront, ACM 등)
+- **Ansible**: 서버 구성 관리 및 Docker 컨테이너 배포
+- **GitHub Actions**: CI/CD 파이프라인 자동화 (빌드, 테스트, Docker 이미지 푸시)
+- **Docker Hub**: 컨테이너 이미지 레지스트리
+
+**Multi-Server Architecture**
+- **메인 서버 (EC2)**: Spring Boot 기반 API 서버, STOMP 웹소켓, Redis 캐싱, MySQL DB
+- **AI 후보 서버 (EC2)**: 메뉴 추천 AI 서비스 (Claude API 연동)
+- **AI 장소 서버 (EC2)**: FastAPI 기반 식당 추천 ML 모델 (Sentence-BERT)
+- **Nginx (EC2)**: 리버스 프록시 및 로드 밸런싱
+
+**Frontend & CDN**
+- **S3**: React 프론트엔드 정적 파일 및 이미지 저장소
+- **CloudFront**: 글로벌 CDN으로 낮은 지연시간 제공, HTTPS 지원 (ACM 인증서)
+
+---
+
 ## 🎯 1단계: AI 메뉴 추천 (Claude API)
 
 ### 📝 취향 설정
