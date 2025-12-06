@@ -5,6 +5,7 @@ import com.mechuragi.mechuragi_server.domain.vote.repository.VotePostRepository;
 import com.mechuragi.mechuragi_server.domain.vote.service.VotePostService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
@@ -23,6 +24,7 @@ public class VoteNotificationScheduler {
      * 매 1분마다 실행
      */
     @Scheduled(cron = "0 * * * * *") // 매 분 0초에 실행
+    @SchedulerLock(name = "notifyVotesEndingSoon", lockAtMostFor = "58s", lockAtLeastFor = "30s")
     public void notifyVotesEndingSoon() {
         LocalDateTime now = LocalDateTime.now(); // KST 기준
         // 9분 30초 ~ 10분 30초 범위로 검색 (여유있게)
@@ -56,6 +58,7 @@ public class VoteNotificationScheduler {
      * 매 1분마다 실행
      */
     @Scheduled(cron = "0 * * * * *") // 매 분 0초에 실행
+    @SchedulerLock(name = "completeExpiredVotes", lockAtMostFor = "58s", lockAtLeastFor = "30s")
     public void completeExpiredVotes() {
         LocalDateTime now = LocalDateTime.now(); // KST 기준
 

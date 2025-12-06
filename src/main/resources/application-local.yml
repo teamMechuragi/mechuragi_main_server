@@ -27,6 +27,8 @@ spring:
         format_sql: true
         jdbc:
           time_zone: Asia/Seoul
+  flyway:
+    enabled: false  # 로컬 환경에서는 Flyway 비활성화, JPA가 스키마 관리
   security:
     oauth2:
       client:
