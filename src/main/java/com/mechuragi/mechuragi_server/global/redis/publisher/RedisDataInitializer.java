@@ -16,6 +16,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Duration;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -63,7 +64,7 @@ public class RedisDataInitializer {
             double score = participantCount + likeCount * 0.5;
 
             // 마감 시간 가중치 추가 (48시간 이내면 보너스)
-            long hoursRemaining = Duration.between(LocalDateTime.now(), vote.getDeadline()).toHours();
+            long hoursRemaining = Duration.between(Instant.now(), vote.getDeadline()).toHours();
             if (hoursRemaining > 0 && hoursRemaining <= 48) {
                 double deadlineBonus = (48 - hoursRemaining) / 20.0;
                 score += deadlineBonus;

@@ -19,7 +19,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Duration;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -125,8 +125,14 @@ public class VoteParticipationService {
         List<VoteParticipation> participations =
                 voteParticipationRepository.findByMemberIdAndVotePostId(memberId, voteId);
 
+        // 투표 참여하지 않은 경우 빈 응답 반환 (에러 아님)
         if (participations.isEmpty()) {
-            throw new BusinessException(ErrorCode.VOTE_PARTICIPATION_NOT_FOUND);
+            return VoteParticipationResponseDTO.builder()
+                    .voteId(votePost.getId())
+                    .voteTitle(votePost.getTitle())
+                    .participatedOptions(List.of())
+                    .participatedAt(null)
+                    .build();
         }
 
         return VoteParticipationResponseDTO.from(votePost.getId(), votePost.getTitle(), participations);
@@ -183,7 +189,8 @@ public class VoteParticipationService {
         // 마감 시간 가중치 추가 (48시간 이내면 보너스)
         VotePost votePost = votePostRepository.findById(voteId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.VOTE_NOT_FOUND));
-        long hoursRemaining = Duration.between(LocalDateTime.now(), votePost.getDeadline()).toHours();
+
+        long hoursRemaining = Duration.between(Instant.now(), votePost.getDeadline()).toHours();
         if (hoursRemaining > 0 && hoursRemaining <= 48) {
             double deadlineBonus = (48 - hoursRemaining) / 20.0;
             score += deadlineBonus;
