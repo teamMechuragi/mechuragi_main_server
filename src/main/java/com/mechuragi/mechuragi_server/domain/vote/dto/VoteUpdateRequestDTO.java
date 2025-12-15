@@ -8,7 +8,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 @Getter
 @Builder
@@ -24,5 +24,5 @@ public class VoteUpdateRequestDTO {
     private String description;
 
     @NotNull(message = "마감일은 필수입니다")
-    private LocalDateTime deadline;
+    private Instant deadline;
 }

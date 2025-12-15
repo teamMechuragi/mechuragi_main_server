@@ -10,6 +10,7 @@ import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -43,7 +44,7 @@ public class VotePost {
     private String imageUrl;
 
     @Column(nullable = false)
-    private LocalDateTime deadline;
+    private Instant deadline;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -88,7 +89,7 @@ public class VotePost {
 
     @Builder
     public VotePost(Member author, String title, String description, VoteType voteType,
-                   String imageUrl, LocalDateTime deadline, Boolean allowMultipleChoice,
+                   String imageUrl, Instant deadline, Boolean allowMultipleChoice,
                    Boolean isAnonymous) {
         this.author = author;
         this.title = title;
@@ -101,7 +102,7 @@ public class VotePost {
         this.status = VoteStatus.ACTIVE;
     }
 
-    public void updatePost(String title, String description, LocalDateTime deadline,
+    public void updatePost(String title, String description, Instant deadline,
                           Boolean allowMultipleChoice, Boolean isAnonymous) {
         if (title != null) this.title = title;
         if (description != null) this.description = description;
@@ -123,7 +124,7 @@ public class VotePost {
         this.status = VoteStatus.COMPLETED;
     }
 
-    public void updateVote(String title, String description, LocalDateTime deadline) {
+    public void updateVote(String title, String description, Instant deadline) {
         if (title != null) this.title = title;
         if (description != null) this.description = description;
         if (deadline != null) this.deadline = deadline;
@@ -138,7 +139,7 @@ public class VotePost {
     }
 
     public boolean isExpired() {
-        return LocalDateTime.now().isAfter(deadline);
+        return Instant.now().isAfter(deadline);
     }
 
     public boolean isActive() {

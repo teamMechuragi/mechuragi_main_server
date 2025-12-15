@@ -7,7 +7,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
@@ -16,26 +16,32 @@ public interface VotePostRepository extends JpaRepository<VotePost, Long> {
     Optional<VotePost> findByIdAndAuthorId(Long id, Long authorId);
 
     // 진행 중인 투표 목록 조회 (최신순)
-    @Query("SELECT v FROM VotePost v WHERE v.status = 'ACTIVE' AND v.deadline > :now ORDER BY v.createdAt DESC")
-    Page<VotePost> findActiveVotes(@Param("now") LocalDateTime now, Pageable pageable);
+    @Query("SELECT v FROM VotePost v " +
+            "WHERE v.status = 'ACTIVE' AND v.deadline > :now " +
+            "ORDER BY v.createdAt DESC")
+    Page<VotePost> findActiveVotes(@Param("now") Instant now, Pageable pageable);
 
     // 완료된 투표 목록 조회 (최신순)
-    @Query("SELECT v FROM VotePost v WHERE v.status = 'COMPLETED' OR v.deadline <= :now ORDER BY v.createdAt DESC")
-    Page<VotePost> findCompletedVotes(@Param("now") LocalDateTime now, Pageable pageable);
+    @Query("SELECT v FROM VotePost v " +
+            "WHERE v.status = 'COMPLETED' OR v.deadline <= :now " +
+            "ORDER BY v.createdAt DESC")
+    Page<VotePost> findCompletedVotes(@Param("now") Instant now, Pageable pageable);
 
     // 사용자별 투표 게시물 조회
     Page<VotePost> findByAuthorIdOrderByCreatedAtDesc(Long authorId, Pageable pageable);
 
     // 마감 시간이 지난 ACTIVE 상태 투표들 조회 (배치 처리용)
-    @Query("SELECT v FROM VotePost v WHERE v.status = 'ACTIVE' AND v.deadline <= :now")
-    List<VotePost> findExpiredActiveVotes(@Param("now") LocalDateTime now);
+    @Query("SELECT v FROM VotePost v " +
+            "WHERE v.status = 'ACTIVE' AND v.deadline <= :now")
+    List<VotePost> findExpiredActiveVotes(@Param("now") Instant now);
 
     // 투표 종료 10분 전 투표 검색 (알림 발송용)
-    @Query("SELECT v FROM VotePost v WHERE v.status = 'ACTIVE' " +
-           "AND v.notified10MinBefore = false " +
-           "AND v.deadline BETWEEN :tenMinutesLater AND :elevenMinutesLater")
+    @Query("SELECT v FROM VotePost v " +
+            "WHERE v.status = 'ACTIVE' " +
+            "AND v.notified10MinBefore = false " +
+            "AND v.deadline BETWEEN :tenMinutesLater AND :elevenMinutesLater")
     List<VotePost> findVotesEndingInTenMinutes(
-            @Param("tenMinutesLater") LocalDateTime tenMinutesLater,
-            @Param("elevenMinutesLater") LocalDateTime elevenMinutesLater
+            @Param("tenMinutesLater") Instant tenMinutesLater,
+            @Param("elevenMinutesLater") Instant elevenMinutesLater
     );
 }

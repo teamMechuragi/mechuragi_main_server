@@ -13,8 +13,10 @@ import com.mechuragi.mechuragi_server.domain.vote.entity.VotePost.VoteStatus;
 import com.mechuragi.mechuragi_server.domain.vote.repository.VotePostRepository;
 import com.mechuragi.mechuragi_server.global.exception.BusinessException;
 import com.mechuragi.mechuragi_server.global.exception.ErrorCode;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
@@ -23,7 +25,10 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
+
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -40,6 +45,9 @@ public class VotePostService {
     private final ApplicationEventPublisher eventPublisher;
     private final NotificationService notificationService;
 
+    /**
+     * 투표 생성
+     */
     @Transactional
     public VoteResponseDTO createVote(Long authorId, VoteCreateRequestDTO request) {
         Member author = memberRepository.findById(authorId)
@@ -51,7 +59,7 @@ public class VotePostService {
         VotePost votePost = VotePost.builder()
                 .title(request.getTitle())
                 .description(request.getDescription())
-                .deadline(request.getDeadline())
+                .deadline(request.getDeadline()) // Instant 그대로
                 .allowMultipleChoice(request.getAllowMultipleChoice())
                 .author(author)
                 .voteType(hasImage ? VotePost.VoteType.IMAGE : VotePost.VoteType.TEXT)
@@ -59,7 +67,7 @@ public class VotePostService {
 
         List<VoteOption> voteOptions = new ArrayList<>();
         for (int i = 0; i < request.getOptions().size(); i++) {
-            VoteCreateRequestDTO.VoteOptionRequestDTO option = request.getOptions().get(i);
+            var option = request.getOptions().get(i);
             voteOptions.add(VoteOption.builder()
                     .optionText(option.getOptionText())
                     .imageUrl(option.getImageUrl())
@@ -81,26 +89,37 @@ public class VotePostService {
         return VoteResponseDTO.from(votePost, redisTemplate);
     }
 
+    /**
+     * 진행 중 투표 조회
+     */
     public Page<VoteResponseDTO> getActiveVotes(Pageable pageable) {
-        LocalDateTime now = LocalDateTime.now();
+        Instant now = Instant.now();
         Page<VotePost> votePosts = votePostRepository.findActiveVotes(now, pageable);
         return votePosts.map(v -> VoteResponseDTO.from(v, redisTemplate));
     }
 
+    /**
+     * 완료된 투표 조회
+     */
     public Page<VoteResponseDTO> getCompletedVotes(Pageable pageable) {
-        LocalDateTime now = LocalDateTime.now();
+        Instant now = Instant.now();
         Page<VotePost> votePosts = votePostRepository.findCompletedVotes(now, pageable);
         return votePosts.map(v -> VoteResponseDTO.from(v, redisTemplate));
     }
 
+    /**
+     * 특정 유저 작성 투표 목록
+     */
     public Page<VoteResponseDTO> getUserVotes(Long userId, Pageable pageable) {
         Page<VotePost> votePosts = votePostRepository.findByAuthorIdOrderByCreatedAtDesc(userId, pageable);
         return votePosts.map(v -> VoteResponseDTO.from(v, redisTemplate));
     }
 
+    /**
+     * 핫한 투표 조회 (Redis 기반)
+     */
     @Cacheable(value = "hotVotes", key = "'list:' + #size")
     public List<VoteResponseDTO> getHotVotes(int size) {
-        // Redis Sorted Set에서 상위 N개의 투표 ID 조회 (점수 높은 순)
         Set<String> topVoteIds = redisTemplate.opsForZSet()
                 .reverseRange("vote:hot", 0, size - 1);
 
@@ -108,14 +127,12 @@ public class VotePostService {
             return new ArrayList<>();
         }
 
-        // VotePost 조회
         List<Long> voteIds = topVoteIds.stream()
                 .map(Long::valueOf)
                 .collect(Collectors.toList());
 
         List<VotePost> hotVotes = votePostRepository.findAllById(voteIds);
 
-        // Redis에서 가져온 순서대로 정렬
         Map<Long, VotePost> voteMap = hotVotes.stream()
                 .collect(Collectors.toMap(VotePost::getId, v -> v));
 
@@ -155,11 +172,9 @@ public class VotePostService {
         VotePost votePost = votePostRepository.findById(voteId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.VOTE_NOT_FOUND));
 
-        // 투표 상태 변경
         votePost.complete();
         votePostRepository.save(votePost);
 
-        // 트랜잭션 커밋 후 이벤트 발행
         eventPublisher.publishEvent(new VoteCompletedEvent(
                 votePost.getId(),
                 votePost.getTitle(),
@@ -176,14 +191,12 @@ public class VotePostService {
             VotePost votePost = votePostRepository.findById(voteId)
                     .orElseThrow(() -> new BusinessException(ErrorCode.VOTE_NOT_FOUND));
 
-            // DB에서 최신 알림 설정 조회
             Member author = memberRepository.findById(votePost.getAuthor().getId())
                     .orElseThrow(() -> new BusinessException(ErrorCode.MEMBER_NOT_FOUND));
 
             log.info("투표 종료 10분 전 알림 처리 시작: voteId={}, authorId={}, voteNotificationEnabled={}",
                     voteId, author.getId(), author.getVoteNotificationEnabled());
 
-            // 알림 설정이 꺼져있으면 알림을 보내지 않음
             if (!author.getVoteNotificationEnabled()) {
                 log.info("투표 종료 10분 전 알림 건너뜀 (알림 설정 OFF): voteId={}, authorId={}",
                         voteId, author.getId());
@@ -191,7 +204,6 @@ public class VotePostService {
                 return;
             }
 
-            // 알림 저장
             notificationService.createNotification(
                     author.getId(),
                     voteId,
@@ -199,7 +211,7 @@ public class VotePostService {
                     VoteNotificationType.ENDING_SOON
             );
 
-            // Redis Pub/Sub으로 실시간 알림 발행
+            // Pub/Sub timestamp는 LocalDateTime으로 유지 (프론트 표시용)
             VoteNotificationMessageDTO message = VoteNotificationMessageDTO.builder()
                     .voteId(voteId)
                     .title(title)
@@ -210,7 +222,6 @@ public class VotePostService {
 
             redisPubSubTemplate.convertAndSend("vote:before10min", message);
 
-            // 알림 발송 이력 기록 (중복 방지)
             votePost.markNotified10MinBefore();
             votePostRepository.save(votePost);
 
@@ -225,7 +236,7 @@ public class VotePostService {
      */
     @Transactional
     public void completeExpiredVotes() {
-        LocalDateTime now = LocalDateTime.now();
+        Instant now = Instant.now();
         List<VotePost> expiredVotes = votePostRepository.findExpiredActiveVotes(now);
         expiredVotes.forEach(VotePost::complete);
     }

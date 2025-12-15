@@ -8,6 +8,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.springframework.data.redis.core.RedisTemplate;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -22,7 +23,7 @@ public class VoteResponseDTO {
     private Long id;
     private String title;
     private String description;
-    private LocalDateTime deadline;
+    private Instant deadline;
     private VoteStatus status;
     private Boolean allowMultipleChoice;
     private int totalParticipants;

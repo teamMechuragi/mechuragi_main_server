@@ -48,6 +48,15 @@ public class MemberController {
         return ResponseEntity.ok(isDuplicate);
     }
 
+    @Operation(summary = "현재 로그인한 회원 정보 조회")
+    @GetMapping("/me")
+    public ResponseEntity<MemberResponse> getCurrentMember(
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        Long memberId = userDetails.getMemberId();
+        MemberResponse member = memberService.getMember(memberId);
+        return ResponseEntity.ok(member);
+    }
+
     @Operation(summary = "회원 정보 조회")
     @GetMapping("/{memberId}")
     public ResponseEntity<MemberResponse> getMember(@PathVariable Long memberId) {
