@@ -136,9 +136,12 @@ public class VotePostService {
         Map<Long, VotePost> voteMap = hotVotes.stream()
                 .collect(Collectors.toMap(VotePost::getId, v -> v));
 
+        Instant now = Instant.now();
+
         return voteIds.stream()
                 .map(voteMap::get)
                 .filter(Objects::nonNull)
+                .filter(v -> v.getStatus() == VoteStatus.ACTIVE && v.getDeadline().isAfter(now))
                 .map(v -> VoteResponseDTO.from(v, redisTemplate))
                 .collect(Collectors.toList());
     }

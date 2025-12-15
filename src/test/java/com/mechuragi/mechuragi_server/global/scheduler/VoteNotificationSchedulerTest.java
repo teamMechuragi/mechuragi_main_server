@@ -13,7 +13,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -49,8 +49,8 @@ class VoteNotificationSchedulerTest {
     @DisplayName("투표 종료 10분 전 알림 스케줄러 - 알림 발송 대상 있음")
     void notifyVotesEndingSoon_WithEndingSoonVotes() {
         // given
-        VotePost endingSoonVote1 = createVotePost("투표 1", LocalDateTime.now().plusMinutes(10));
-        VotePost endingSoonVote2 = createVotePost("투표 2", LocalDateTime.now().plusMinutes(10).plusSeconds(30));
+        VotePost endingSoonVote1 = createVotePost("투표 1", Instant.now().plusSeconds(600));
+        VotePost endingSoonVote2 = createVotePost("투표 2", Instant.now().plusSeconds(630));
 
         when(votePostRepository.findVotesEndingInTenMinutes(any(), any()))
                 .thenReturn(List.of(endingSoonVote1, endingSoonVote2));
@@ -84,8 +84,8 @@ class VoteNotificationSchedulerTest {
     @DisplayName("만료된 투표 종료 처리 스케줄러 - 만료된 투표 있음")
     void completeExpiredVotes_WithExpiredVotes() {
         // given
-        VotePost expiredVote1 = createVotePost("만료 투표 1", LocalDateTime.now().minusMinutes(10));
-        VotePost expiredVote2 = createVotePost("만료 투표 2", LocalDateTime.now().minusHours(1));
+        VotePost expiredVote1 = createVotePost("만료 투표 1", Instant.now().minusSeconds(600));
+        VotePost expiredVote2 = createVotePost("만료 투표 2", Instant.now().minusSeconds(3600));
 
         when(votePostRepository.findExpiredActiveVotes(any()))
                 .thenReturn(List.of(expiredVote1, expiredVote2));
@@ -119,8 +119,8 @@ class VoteNotificationSchedulerTest {
     @DisplayName("스케줄러 실행 중 예외 발생 시에도 계속 실행")
     void scheduler_ContinuesOnException() {
         // given
-        VotePost vote1 = createVotePost("투표 1", LocalDateTime.now().minusMinutes(10));
-        VotePost vote2 = createVotePost("투표 2", LocalDateTime.now().minusMinutes(20));
+        VotePost vote1 = createVotePost("투표 1", Instant.now().minusSeconds(600));
+        VotePost vote2 = createVotePost("투표 2", Instant.now().minusSeconds(1200));
 
         when(votePostRepository.findExpiredActiveVotes(any()))
                 .thenReturn(List.of(vote1, vote2));
@@ -140,11 +140,11 @@ class VoteNotificationSchedulerTest {
     void scheduler_HandlesManyVotes() {
         // given
         List<VotePost> manyVotes = List.of(
-                createVotePost("투표 1", LocalDateTime.now().minusMinutes(1)),
-                createVotePost("투표 2", LocalDateTime.now().minusMinutes(2)),
-                createVotePost("투표 3", LocalDateTime.now().minusMinutes(3)),
-                createVotePost("투표 4", LocalDateTime.now().minusMinutes(4)),
-                createVotePost("투표 5", LocalDateTime.now().minusMinutes(5))
+                createVotePost("투표 1", Instant.now().minusSeconds(60)),
+                createVotePost("투표 2", Instant.now().minusSeconds(120)),
+                createVotePost("투표 3", Instant.now().minusSeconds(180)),
+                createVotePost("투표 4", Instant.now().minusSeconds(240)),
+                createVotePost("투표 5", Instant.now().minusSeconds(300))
         );
 
         when(votePostRepository.findExpiredActiveVotes(any()))
@@ -157,7 +157,7 @@ class VoteNotificationSchedulerTest {
         verify(votePostService, times(5)).completeVoteAndNotify(any());
     }
 
-    private VotePost createVotePost(String title, LocalDateTime deadline) {
+    private VotePost createVotePost(String title, Instant deadline) {
         VotePost votePost = VotePost.builder()
                 .author(testMember)
                 .title(title)

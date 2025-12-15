@@ -22,7 +22,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.test.util.ReflectionTestUtils;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
@@ -71,7 +71,7 @@ class VotePostServiceTest {
                 .author(testMember)
                 .title("점심 메뉴 투표")
                 .description("오늘 점심 메뉴를 투표해주세요")
-                .deadline(LocalDateTime.now().plusHours(1))
+                .deadline(Instant.now().plusSeconds(3600))
                 .allowMultipleChoice(false)
                 .build();
 
@@ -157,7 +157,7 @@ class VotePostServiceTest {
         VotePost expiredVote1 = VotePost.builder()
                 .author(testMember)
                 .title("만료된 투표 1")
-                .deadline(LocalDateTime.now().minusHours(1))
+                .deadline(Instant.now().minusSeconds(3600))
                 .allowMultipleChoice(false)
                 .build();
         ReflectionTestUtils.setField(expiredVote1, "id", 2L);
@@ -165,12 +165,12 @@ class VotePostServiceTest {
         VotePost expiredVote2 = VotePost.builder()
                 .author(testMember)
                 .title("만료된 투표 2")
-                .deadline(LocalDateTime.now().minusHours(2))
+                .deadline(Instant.now().minusSeconds(7200))
                 .allowMultipleChoice(false)
                 .build();
         ReflectionTestUtils.setField(expiredVote2, "id", 3L);
 
-        when(votePostRepository.findExpiredActiveVotes(any(LocalDateTime.class)))
+        when(votePostRepository.findExpiredActiveVotes(any(Instant.class)))
                 .thenReturn(List.of(expiredVote1, expiredVote2));
 
         // when
@@ -185,7 +185,7 @@ class VotePostServiceTest {
     @DisplayName("만료된 투표가 없을 때 정상 동작")
     void completeExpiredVotes_NoExpiredVotes() {
         // given
-        when(votePostRepository.findExpiredActiveVotes(any(LocalDateTime.class)))
+        when(votePostRepository.findExpiredActiveVotes(any(Instant.class)))
                 .thenReturn(List.of());
 
         // when & then
