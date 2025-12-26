@@ -93,25 +93,31 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: Upload deployment files to server
+      - name: Upload deployment files to server via Bastion
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.MAIN_SERVER_HOST }}
           username: ubuntu
           key: ${{ secrets.EC2_SSH_KEY }}
-          source: "docker-compose.blue-green.yml,nginx/blue-green.conf,scripts/blue-green-deploy.sh"
+          proxy_host: ${{ secrets.NGINX_GATEWAY_HOST }}
+          proxy_username: ubuntu
+          proxy_key: ${{ secrets.EC2_SSH_KEY }}
+          source: "docker-compose.prod.yml,.env.dev"
           target: "/home/ubuntu/app/"
           timeout: 30s
           command_timeout: 10m
           debug: true
           strip_components: 0
 
-      - name: Deploy to Main Server (Blue-Green)
+      - name: Deploy to Main Server (Blue-Green) via Bastion
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.MAIN_SERVER_HOST }}
           username: ubuntu
           key: ${{ secrets.EC2_SSH_KEY }}
+          proxy_host: ${{ secrets.NGINX_GATEWAY_HOST }}
+          proxy_username: ubuntu
+          proxy_key: ${{ secrets.EC2_SSH_KEY }}
           timeout: 30s
           command_timeout: 15m
           debug: true
@@ -119,40 +125,161 @@ jobs:
             # 애플리케이션 디렉토리로 이동
             cd /home/ubuntu/app
 
-            # Docker Compose 설정 확인
-            echo "블루-그린 배포 파일 확인 중..."
-            ls -la docker-compose.blue-green.yml nginx/blue-green.conf scripts/blue-green-deploy.sh || echo "일부 파일이 없을 수 있음 (정상)"
+            # 배포 파일 확인
+            echo "배포 파일 확인 중..."
+            ls -la docker-compose.prod.yml .env.dev
 
-            # 스크립트 실행 권한 부여
-            chmod +x scripts/blue-green-deploy.sh
+            # .env.dev에서 환경 변수 로드
+            set -a
+            source .env.dev
+            set +a
 
-            # 환경 변수 설정
-            export DB_HOST="${{ secrets.DB_HOST }}"
-            export DB_PORT="${{ secrets.DB_PORT }}"
+            # GitHub Secrets에서 민감한 정보 덮어쓰기
             export DB_NAME="${{ secrets.DB_NAME }}"
             export DB_USERNAME="${{ secrets.DB_USERNAME }}"
             export DB_PASSWORD="${{ secrets.DB_PASSWORD }}"
-            export REDIS_HOST="${{ secrets.REDIS_HOST }}"
-            export REDIS_PORT="${{ secrets.REDIS_PORT }}"
+            export MYSQL_ROOT_PASSWORD="${{ secrets.MYSQL_ROOT_PASSWORD }}"
             export JWT_SECRET="${{ secrets.JWT_SECRET }}"
+            export AWS_REGION="${{ secrets.AWS_REGION }}"
             export S3_BUCKET="${{ secrets.S3_BUCKET }}"
             export SES_FROM_EMAIL="${{ secrets.SES_FROM_EMAIL }}"
-            export AWS_REGION="${{ secrets.AWS_REGION }}"
-            export BEDROCK_AI_HOST="${{ secrets.BEDROCK_AI_HOST }}"
-            export DOCKERHUB_USERNAME="${{ secrets.DOCKERHUB_USERNAME }}"
-            export OAUTH2_REDIRECT_URI="${{ secrets.OAUTH2_REDIRECT_URI }}"
+            export SUPPORT_EMAIL="${{ secrets.SUPPORT_EMAIL }}"
             export KAKAO_CLIENT_ID="${{ secrets.KAKAO_CLIENT_ID }}"
             export KAKAO_CLIENT_SECRET="${{ secrets.KAKAO_CLIENT_SECRET }}"
             export KAKAO_REDIRECT_URI="${{ secrets.KAKAO_REDIRECT_URI }}"
+            export OAUTH2_REDIRECT_URI="${{ secrets.OAUTH2_REDIRECT_URI }}"
             export AI_SERVICE_URL="${{ secrets.AI_SERVICE_URL }}"
+            export DOCKERHUB_USERNAME="${{ secrets.DOCKERHUB_USERNAME }}"
 
             # 최신 이미지 풀
             docker pull ${{ secrets.DOCKERHUB_USERNAME }}/mechuragi-app:latest
 
-            # Blue-Green 배포 실행
-            ./scripts/blue-green-deploy.sh
+            # 현재 활성 컨테이너 확인
+            if docker ps | grep -q "mechuragi-main-blue"; then
+              CURRENT="blue"
+              TARGET="green"
+              CURRENT_PORT=8080
+              TARGET_PORT=8081
+            else
+              CURRENT="green"
+              TARGET="blue"
+              CURRENT_PORT=8081
+              TARGET_PORT=8080
+            fi
 
-            # Blue-Green 스크립트에서 헬스체크가 완료됨
+            echo "현재 활성: $CURRENT (포트 $CURRENT_PORT)"
+            echo "배포 대상: $TARGET (포트 $TARGET_PORT)"
+
+            # Target 컨테이너 시작 (docker-compose.prod.yml 사용)
+            if [ "$TARGET" = "green" ]; then
+              docker-compose -f docker-compose.prod.yml --profile deploy up -d mechuragi-main-green
+            else
+              docker-compose -f docker-compose.prod.yml up -d mechuragi-main-blue
+            fi
+
+            # 헬스체크 대기 (최대 2분)
+            echo "$TARGET 컨테이너 헬스체크 대기 중..."
+            for i in {1..24}; do
+              if curl -f http://localhost:$TARGET_PORT/actuator/health > /dev/null 2>&1; then
+                echo "$TARGET 컨테이너 정상 시작 확인"
+                break
+              fi
+              if [ $i -eq 24 ]; then
+                echo "헬스체크 실패"
+                docker-compose -f docker-compose.prod.yml logs mechuragi-main-$TARGET
+                exit 1
+              fi
+              echo "대기 중... ($i/24)"
+              sleep 5
+            done
+
+            echo "✅ $TARGET 컨테이너 배포 완료 (포트 $TARGET_PORT)"
+            echo "다음 단계: Nginx 트래픽 전환"
+
+      - name: Switch Nginx Traffic to New Container
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.NGINX_GATEWAY_HOST }}
+          username: ubuntu
+          key: ${{ secrets.EC2_SSH_KEY }}
+          timeout: 30s
+          command_timeout: 5m
+          script: |
+            # 현재 활성 포트 확인
+            CURRENT_PORT=$(grep -oP 'server 10.0.2.10:\K\d+' /etc/nginx/conf.d/proxy.conf | head -1)
+
+            if [ "$CURRENT_PORT" = "8080" ]; then
+              NEW_PORT=8081
+              NEW_COLOR="green"
+              OLD_COLOR="blue"
+            else
+              NEW_PORT=8080
+              NEW_COLOR="blue"
+              OLD_COLOR="green"
+            fi
+
+            echo "현재 활성 포트: $CURRENT_PORT ($OLD_COLOR)"
+            echo "전환할 포트: $NEW_PORT ($NEW_COLOR)"
+
+            # Nginx 설정 파일 백업
+            sudo cp /etc/nginx/conf.d/proxy.conf /etc/nginx/conf.d/proxy.conf.backup
+
+            # upstream 포트 변경
+            sudo sed -i "s/server 10.0.2.10:$CURRENT_PORT;/server 10.0.2.10:$NEW_PORT;/" /etc/nginx/conf.d/proxy.conf
+
+            # 설정 파일 검증
+            sudo nginx -t
+
+            # Nginx 리로드 (무중단)
+            sudo nginx -s reload
+
+            echo "✅ Nginx 트래픽이 $NEW_COLOR($NEW_PORT)로 전환되었습니다"
+
+            # 새 포트로 헬스체크 확인
+            sleep 3
+            if curl -f http://localhost/actuator/health > /dev/null 2>&1; then
+              echo "✅ 트래픽 전환 후 헬스체크 성공"
+            else
+              echo "❌ 트래픽 전환 후 헬스체크 실패 - 롤백이 필요할 수 있습니다"
+              exit 1
+            fi
+
+      - name: Stop Old Container
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.MAIN_SERVER_HOST }}
+          username: ubuntu
+          key: ${{ secrets.EC2_SSH_KEY }}
+          proxy_host: ${{ secrets.NGINX_GATEWAY_HOST }}
+          proxy_username: ubuntu
+          proxy_key: ${{ secrets.EC2_SSH_KEY }}
+          timeout: 30s
+          command_timeout: 5m
+          script: |
+            cd /home/ubuntu/app
+
+            # 현재 실행 중인 컨테이너 확인
+            if docker ps | grep -q "mechuragi-main-blue.*Up"; then
+              if docker ps | grep -q "mechuragi-main-green.*Up"; then
+                # 둘 다 실행 중이면, Nginx가 가리키지 않는 쪽 중지
+                # 이전 단계에서 전환했으므로, 이전 컨테이너 중지
+                NGINX_PORT=$(ssh -o StrictHostKeyChecking=no ubuntu@${{ secrets.NGINX_GATEWAY_HOST }} "grep -oP 'server 10.0.2.10:\K\d+' /etc/nginx/conf.d/proxy.conf | head -1")
+
+                if [ "$NGINX_PORT" = "8080" ]; then
+                  echo "Green 컨테이너 중지 중..."
+                  docker-compose -f docker-compose.prod.yml stop mechuragi-main-green
+                  docker-compose -f docker-compose.prod.yml rm -f mechuragi-main-green
+                else
+                  echo "Blue 컨테이너 중지 중..."
+                  docker-compose -f docker-compose.prod.yml stop mechuragi-main-blue
+                  docker-compose -f docker-compose.prod.yml rm -f mechuragi-main-blue
+                fi
+
+                echo "✅ 이전 컨테이너 정리 완료"
+              fi
+            fi
+
+            echo "🎉 Blue-Green 배포 완료!"
 
       - name: Send Discord Notification - Deploy Success
         if: success()

@@ -1,0 +1,168 @@
+version: '3.8'
+
+# 통합 메인 서버용 Docker Compose 설정
+# MySQL + Redis + Spring Boot API (Blue-Green)를 하나의 호스트에서 관리
+
+services:
+  # MySQL 데이터베이스 (AI 서버도 접근)
+  mysql:
+    image: mysql:8.0
+    container_name: mechuragi-mysql
+    environment:
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+      - MYSQL_DATABASE=${DB_NAME}
+      - MYSQL_USER=${DB_USERNAME}
+      - MYSQL_PASSWORD=${DB_PASSWORD}
+      - TZ=Asia/Seoul
+    ports:
+      - "3306:3306"  # AI 서버(10.0.2.20)에서 접근 가능하도록 포트 노출
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./mysql/conf.d:/etc/mysql/conf.d  # 커스텀 설정 (선택사항)
+      - ./mysql/init:/docker-entrypoint-initdb.d  # 초기화 스크립트 (선택사항)
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --default-authentication-plugin=mysql_native_password
+      - --max_connections=200
+      - --innodb_buffer_pool_size=512M
+    restart: unless-stopped
+    networks:
+      - mechuragi-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # Redis 캐시 서버 (localhost 전용)
+  redis:
+    image: redis:7-alpine
+    container_name: mechuragi-redis
+    command: >
+      redis-server
+      --maxmemory 256mb
+      --maxmemory-policy allkeys-lru
+      --appendonly yes
+      --appendfsync everysec
+      --save 900 1
+      --save 300 10
+      --save 60 10000
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+    networks:
+      - mechuragi-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    # 포트 노출하지 않음 - API 서버만 localhost로 접근
+
+  # Spring Boot 메인 서비스 - Blue 버전
+  mechuragi-main-blue:
+    image: ${DOCKERHUB_USERNAME}/mechuragi-app:latest
+    container_name: mechuragi-main-blue
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/${DB_NAME}
+      - SPRING_DATASOURCE_USERNAME=${DB_USERNAME}
+      - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD}
+      - SPRING_REDIS_HOST=redis
+      - SPRING_REDIS_PORT=6379
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - JWT_SECRET=${JWT_SECRET}
+      - AWS_REGION=${AWS_REGION}
+      - S3_BUCKET=${S3_BUCKET}
+      - SES_FROM_EMAIL=${SES_FROM_EMAIL}
+      - SUPPORT_EMAIL=${SUPPORT_EMAIL}
+      - OAUTH2_REDIRECT_URI=${OAUTH2_REDIRECT_URI}
+      - KAKAO_CLIENT_ID=${KAKAO_CLIENT_ID}
+      - KAKAO_CLIENT_SECRET=${KAKAO_CLIENT_SECRET}
+      - KAKAO_REDIRECT_URI=${KAKAO_REDIRECT_URI}
+      - AI_SERVICE_URL=${AI_SERVICE_URL}
+      - TZ=Asia/Seoul
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - mechuragi-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/actuator/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # Spring Boot 메인 서비스 - Green 버전 (배포 시에만 사용)
+  mechuragi-main-green:
+    image: ${DOCKERHUB_USERNAME}/mechuragi-app:latest
+    container_name: mechuragi-main-green
+    ports:
+      - "8081:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/${DB_NAME}
+      - SPRING_DATASOURCE_USERNAME=${DB_USERNAME}
+      - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD}
+      - SPRING_REDIS_HOST=redis
+      - SPRING_REDIS_PORT=6379
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - JWT_SECRET=${JWT_SECRET}
+      - AWS_REGION=${AWS_REGION}
+      - S3_BUCKET=${S3_BUCKET}
+      - SES_FROM_EMAIL=${SES_FROM_EMAIL}
+      - SUPPORT_EMAIL=${SUPPORT_EMAIL}
+      - OAUTH2_REDIRECT_URI=${OAUTH2_REDIRECT_URI}
+      - KAKAO_CLIENT_ID=${KAKAO_CLIENT_ID}
+      - KAKAO_CLIENT_SECRET=${KAKAO_CLIENT_SECRET}
+      - KAKAO_REDIRECT_URI=${KAKAO_REDIRECT_URI}
+      - AI_SERVICE_URL=${AI_SERVICE_URL}
+      - TZ=Asia/Seoul
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - mechuragi-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/actuator/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    profiles:
+      - deploy  # Green 컨테이너는 배포 시에만 활성화
+
+networks:
+  mechuragi-network:
+    driver: bridge
+    name: mechuragi-network
+
+volumes:
+  mysql_data:
+    name: mechuragi-mysql-data
+  redis_data:
+    name: mechuragi-redis-data
