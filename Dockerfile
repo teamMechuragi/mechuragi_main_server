@@ -20,6 +20,9 @@ RUN ./gradlew build -x test --no-daemon
 # 실행 스테이지
 FROM eclipse-temurin:17-jre
 
+# 환경변수 설정
+ENV TZ=Asia/Seoul
+
 # 한국 시간대 설정 및 curl 설치 (HEALTHCHECK용)
 RUN apt-get update && apt-get install -y tzdata curl && \
     ln -sf /usr/share/zoneinfo/Asia/Seoul /etc/localtime && \
@@ -42,8 +45,8 @@ USER spring
 # 애플리케이션 포트 노출 (Spring Boot 기본 포트)
 EXPOSE 8080
 
-# 헬스체크 설정
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+# 헬스체크 설정 (Spring Boot 시작 시간 고려)
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
   CMD curl -f http://localhost:8080/actuator/health || exit 1
 
 # JVM 옵션 설정 및 애플리케이션 실행
