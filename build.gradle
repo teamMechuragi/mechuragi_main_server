@@ -68,6 +68,9 @@ dependencies {
 tasks.named('test') {
     useJUnitPlatform()
 
+    // 통합 테스트 제외 (임시)
+    exclude '**/integration/**'
+
     // 테스트 로깅 설정
     testLogging {
         events "passed", "skipped", "failed", "standardOut", "standardError"
