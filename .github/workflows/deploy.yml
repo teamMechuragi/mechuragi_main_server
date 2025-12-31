@@ -104,10 +104,11 @@ jobs:
           proxy_key: ${{ secrets.EC2_SSH_KEY }}
           source: "docker-compose.prod.yml"
           target: "/home/ubuntu/app/"
-          timeout: 30s
+          timeout: 60s
           command_timeout: 10m
           debug: true
           strip_components: 0
+          proxy_timeout: 60s
 
       - name: Deploy to Main Server (Blue-Green) via Bastion
         uses: appleboy/ssh-action@v1.0.3
