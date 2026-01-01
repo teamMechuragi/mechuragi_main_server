@@ -1,4 +1,4 @@
-package com.mechuragi.mechuragi_server.domain.ai.dto.internal.request;
+package com.mechuragi.mechuragi_server.domain.ai.dto.external.request;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotEmpty;
@@ -9,7 +9,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.util.List;
-
+// 다수 추천 음식 저장 요청
 @Getter
 @Builder
 @NoArgsConstructor

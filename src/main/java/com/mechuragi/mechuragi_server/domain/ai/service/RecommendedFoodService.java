@@ -1,7 +1,7 @@
 package com.mechuragi.mechuragi_server.domain.ai.service;
 
 import com.mechuragi.mechuragi_server.domain.ai.dto.common.response.RecommendedFoodResponse;
-import com.mechuragi.mechuragi_server.domain.ai.dto.internal.request.SaveRecommendedFoodRequest;
+import com.mechuragi.mechuragi_server.domain.ai.dto.external.request.SaveRecommendedFoodRequest;
 import com.mechuragi.mechuragi_server.domain.ai.entity.RecommendedFood;
 import com.mechuragi.mechuragi_server.domain.ai.repository.RecommendedFoodRepository;
 import com.mechuragi.mechuragi_server.domain.member.entity.Member;

@@ -1,4 +1,4 @@
-package com.mechuragi.mechuragi_server.domain.ai.dto.internal.request;
+package com.mechuragi.mechuragi_server.domain.ai.dto.external.request;
 
 import com.mechuragi.mechuragi_server.domain.ai.entity.type.RecommendationType;
 import jakarta.validation.constraints.NotBlank;
@@ -7,9 +7,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-
-import java.util.List;
-
+// 단일 추천 음식 저장 요청
 @Getter
 @Builder
 @NoArgsConstructor
@@ -19,10 +17,10 @@ public class SaveRecommendedFoodRequest {
     @NotNull
     private Long memberId;
 
-    @NotNull
+    @NotNull(message = "추천 타입은 필수입니다")
     private RecommendationType recommendationType;
 
-    @NotBlank
+    @NotBlank(message = "음식 이름은 필수입니다")
     private String name;
 
     private String description;

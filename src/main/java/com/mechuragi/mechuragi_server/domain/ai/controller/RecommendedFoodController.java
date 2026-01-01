@@ -2,7 +2,7 @@ package com.mechuragi.mechuragi_server.domain.ai.controller;
 
 import com.mechuragi.mechuragi_server.auth.dto.CustomUserDetails;
 import com.mechuragi.mechuragi_server.domain.ai.dto.common.response.RecommendedFoodResponse;
-import com.mechuragi.mechuragi_server.domain.ai.dto.internal.request.SaveRecommendedFoodsRequest;
+import com.mechuragi.mechuragi_server.domain.ai.dto.external.request.SaveRecommendedFoodsRequest;
 import com.mechuragi.mechuragi_server.domain.ai.service.RecommendedFoodService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
