@@ -4,6 +4,7 @@ import com.mechuragi.mechuragi_server.domain.recommend.dto.common.response.Recom
 import com.mechuragi.mechuragi_server.domain.recommend.dto.external.request.SaveRecommendedFoodRequest;
 import com.mechuragi.mechuragi_server.domain.recommend.entity.RecommendedFood;
 import com.mechuragi.mechuragi_server.domain.recommend.repository.RecommendedFoodRepository;
+import com.mechuragi.mechuragi_server.domain.recommend.service.mapper.RecommendedFoodMapper;
 import com.mechuragi.mechuragi_server.domain.member.entity.Member;
 import com.mechuragi.mechuragi_server.domain.member.repository.MemberRepository;
 import com.mechuragi.mechuragi_server.global.exception.BusinessException;
@@ -24,6 +25,7 @@ public class RecommendedFoodService {
 
     private final RecommendedFoodRepository recommendedFoodRepository;
     private final MemberRepository memberRepository;
+    private final RecommendedFoodMapper recommendedFoodMapper;
 
     @Transactional
     public void saveRecommendations(Long memberId, List<SaveRecommendedFoodRequest> recommendations) {
@@ -31,17 +33,7 @@ public class RecommendedFoodService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.MEMBER_NOT_FOUND));
 
         List<RecommendedFood> recommendedFoods = recommendations.stream()
-                .map(req -> RecommendedFood.builder()
-                        .member(member)
-                        .recommendationType(req.getRecommendationType())
-                        .name(req.getName())
-                        .description(req.getDescription())
-                        .reason(req.getReason())
-                        .ingredients(req.getIngredients())
-                        .cookingTime(req.getCookingTime())
-                        .difficulty(req.getDifficulty())
-                        .isScrapped(false)
-                        .build())
+                .map(req -> recommendedFoodMapper.toEntity(req, member))
                 .collect(Collectors.toList());
 
         recommendedFoodRepository.saveAll(recommendedFoods);
@@ -55,7 +47,7 @@ public class RecommendedFoodService {
         List<RecommendedFood> recommendations = recommendedFoodRepository.findByMemberOrderByCreatedAtDesc(member);
 
         return recommendations.stream()
-                .map(this::toResponse)
+                .map(recommendedFoodMapper::toDto)
                 .collect(Collectors.toList());
     }
 
@@ -67,17 +59,17 @@ public class RecommendedFoodService {
                 recommendedFoodRepository.findByMemberAndIsScrapedTrueOrderByCreatedAtDesc(member);
 
         return scrappedRecommendations.stream()
-                .map(this::toResponse)
+                .map(recommendedFoodMapper::toDto)
                 .collect(Collectors.toList());
     }
 
     @Transactional
     public void toggleScrap(Long memberId, Long recommendedFoodId) {
         RecommendedFood recommendedFood = recommendedFoodRepository.findById(recommendedFoodId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
+                .orElseThrow(() -> new BusinessException(ErrorCode.RECOMMENDATION_NOT_FOUND));
 
         if (!recommendedFood.getMember().getId().equals(memberId)) {
-            throw new BusinessException(ErrorCode.FORBIDDEN);
+            throw new BusinessException(ErrorCode.MEMBER_NOT_FOUND);
         }
 
         if (recommendedFood.getIsScrapped()) {
@@ -87,20 +79,5 @@ public class RecommendedFoodService {
             recommendedFood.scrap();
             log.info("추천 음식 스크랩 - ID: {}", recommendedFoodId);
         }
-    }
-
-    private RecommendedFoodResponse toResponse(RecommendedFood food) {
-        return RecommendedFoodResponse.builder()
-                .id(food.getId())
-                .recommendationType(food.getRecommendationType())
-                .name(food.getName())
-                .description(food.getDescription())
-                .reason(food.getReason())
-                .ingredients(food.getIngredients())
-                .cookingTime(food.getCookingTime())
-                .difficulty(food.getDifficulty())
-                .isScrapped(food.getIsScrapped())
-                .createdAt(food.getCreatedAt())
-                .build();
     }
 }

@@ -7,7 +7,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-// 단일 추천 음식 저장 요청
+
 @Getter
 @Builder
 @NoArgsConstructor
