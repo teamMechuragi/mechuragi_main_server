@@ -96,10 +96,10 @@ jobs:
       - name: Upload deployment files to server via Bastion
         uses: appleboy/scp-action@v0.1.7
         with:
-          host: ${{ secrets.MAIN_SERVER_HOST }}
+          host: ${{ secrets.MAIN_SERVER_PRIVATE_IP }}
           username: ubuntu
           key: ${{ secrets.EC2_SSH_KEY }}
-          proxy_host: ${{ secrets.NGINX_GATEWAY_HOST }}
+          proxy_host: ${{ secrets.NGINX_GATEWAY_PUBLIC_IP }}
           proxy_username: ubuntu
           proxy_key: ${{ secrets.EC2_SSH_KEY }}
           source: "docker-compose.prod.yml"
@@ -113,10 +113,10 @@ jobs:
       - name: Deploy to Main Server (Blue-Green) via Bastion
         uses: appleboy/ssh-action@v1.0.3
         with:
-          host: ${{ secrets.MAIN_SERVER_HOST }}
+          host: ${{ secrets.MAIN_SERVER_PRIVATE_IP }}
           username: ubuntu
           key: ${{ secrets.EC2_SSH_KEY }}
-          proxy_host: ${{ secrets.NGINX_GATEWAY_HOST }}
+          proxy_host: ${{ secrets.NGINX_GATEWAY_PUBLIC_IP }}
           proxy_username: ubuntu
           proxy_key: ${{ secrets.EC2_SSH_KEY }}
           timeout: 30s
@@ -195,7 +195,7 @@ jobs:
       - name: Switch Nginx Traffic to New Container
         uses: appleboy/ssh-action@v1.0.3
         with:
-          host: ${{ secrets.NGINX_GATEWAY_HOST }}
+          host: ${{ secrets.NGINX_GATEWAY_PUBLIC_IP }}
           username: ubuntu
           key: ${{ secrets.EC2_SSH_KEY }}
           timeout: 30s
@@ -246,10 +246,10 @@ jobs:
       - name: Stop Old Container
         uses: appleboy/ssh-action@v1.0.3
         with:
-          host: ${{ secrets.MAIN_SERVER_HOST }}
+          host: ${{ secrets.MAIN_SERVER_PRIVATE_IP }}
           username: ubuntu
           key: ${{ secrets.EC2_SSH_KEY }}
-          proxy_host: ${{ secrets.NGINX_GATEWAY_HOST }}
+          proxy_host: ${{ secrets.NGINX_GATEWAY_PUBLIC_IP }}
           proxy_username: ubuntu
           proxy_key: ${{ secrets.EC2_SSH_KEY }}
           timeout: 30s
@@ -265,7 +265,7 @@ jobs:
               if docker ps | grep -q "mechuragi-main-green.*Up"; then
                 # 둘 다 실행 중이면, Nginx가 가리키지 않는 쪽 중지
                 # 이전 단계에서 전환했으므로, 이전 컨테이너 중지
-                NGINX_PORT=$(ssh -o StrictHostKeyChecking=no ubuntu@${{ secrets.NGINX_GATEWAY_HOST }} "grep -oP 'server $MAIN_SERVER_IP:\K\d+' /etc/nginx/conf.d/proxy.conf | head -1")
+                NGINX_PORT=$(ssh -o StrictHostKeyChecking=no ubuntu@${{ secrets.NGINX_GATEWAY_PUBLIC_IP }} "grep -oP 'server $MAIN_SERVER_IP:\K\d+' /etc/nginx/conf.d/proxy.conf | head -1")
 
                 if [ "$NGINX_PORT" = "8080" ]; then
                   echo "Green 컨테이너 중지 중..."
