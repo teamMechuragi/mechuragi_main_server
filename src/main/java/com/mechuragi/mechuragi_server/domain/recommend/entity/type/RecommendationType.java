@@ -1,4 +1,4 @@
-package com.mechuragi.mechuragi_server.domain.ai.entity.type;
+package com.mechuragi.mechuragi_server.domain.recommend.entity.type;
 
 public enum RecommendationType {
     WEATHER("날씨 기반 추천"),

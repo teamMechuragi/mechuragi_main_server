@@ -1,6 +1,6 @@
-package com.mechuragi.mechuragi_server.domain.ai.entity;
+package com.mechuragi.mechuragi_server.domain.recommend.entity;
 
-import com.mechuragi.mechuragi_server.domain.ai.entity.type.RecommendationType;
+import com.mechuragi.mechuragi_server.domain.recommend.entity.type.RecommendationType;
 import com.mechuragi.mechuragi_server.domain.member.entity.Member;
 import jakarta.persistence.*;
 import lombok.AccessLevel;

@@ -1,4 +1,4 @@
-package com.mechuragi.mechuragi_server.domain.ai.dto.external.request;
+package com.mechuragi.mechuragi_server.domain.recommend.dto.external.request;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotEmpty;

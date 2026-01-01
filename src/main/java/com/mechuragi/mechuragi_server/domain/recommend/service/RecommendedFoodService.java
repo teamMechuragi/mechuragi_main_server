@@ -1,9 +1,9 @@
-package com.mechuragi.mechuragi_server.domain.ai.service;
+package com.mechuragi.mechuragi_server.domain.recommend.service;
 
-import com.mechuragi.mechuragi_server.domain.ai.dto.common.response.RecommendedFoodResponse;
-import com.mechuragi.mechuragi_server.domain.ai.dto.external.request.SaveRecommendedFoodRequest;
-import com.mechuragi.mechuragi_server.domain.ai.entity.RecommendedFood;
-import com.mechuragi.mechuragi_server.domain.ai.repository.RecommendedFoodRepository;
+import com.mechuragi.mechuragi_server.domain.recommend.dto.common.response.RecommendedFoodResponse;
+import com.mechuragi.mechuragi_server.domain.recommend.dto.external.request.SaveRecommendedFoodRequest;
+import com.mechuragi.mechuragi_server.domain.recommend.entity.RecommendedFood;
+import com.mechuragi.mechuragi_server.domain.recommend.repository.RecommendedFoodRepository;
 import com.mechuragi.mechuragi_server.domain.member.entity.Member;
 import com.mechuragi.mechuragi_server.domain.member.repository.MemberRepository;
 import com.mechuragi.mechuragi_server.global.exception.BusinessException;
