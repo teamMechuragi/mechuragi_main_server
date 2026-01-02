@@ -96,10 +96,10 @@ jobs:
       - name: Upload deployment files to server via Bastion
         uses: appleboy/scp-action@v0.1.7
         with:
-          host: ${{ secrets.MAIN_SERVER_HOST }}
+          host: ${{ secrets.MAIN_SERVER_PRIVATE_IP }}
           username: ubuntu
           key: ${{ secrets.EC2_SSH_KEY }}
-          proxy_host: ${{ secrets.NGINX_GATEWAY_HOST }}
+          proxy_host: ${{ secrets.NGINX_GATEWAY_PUBLIC_IP }}
           proxy_username: ubuntu
           proxy_key: ${{ secrets.EC2_SSH_KEY }}
           source: "docker-compose.prod.yml"
@@ -113,10 +113,10 @@ jobs:
       - name: Deploy to Main Server (Blue-Green) via Bastion
         uses: appleboy/ssh-action@v1.0.3
         with:
-          host: ${{ secrets.MAIN_SERVER_HOST }}
+          host: ${{ secrets.MAIN_SERVER_PRIVATE_IP }}
           username: ubuntu
           key: ${{ secrets.EC2_SSH_KEY }}
-          proxy_host: ${{ secrets.NGINX_GATEWAY_HOST }}
+          proxy_host: ${{ secrets.NGINX_GATEWAY_PUBLIC_IP }}
           proxy_username: ubuntu
           proxy_key: ${{ secrets.EC2_SSH_KEY }}
           timeout: 30s
@@ -195,7 +195,7 @@ jobs:
       - name: Switch Nginx Traffic to New Container
         uses: appleboy/ssh-action@v1.0.3
         with:
-          host: ${{ secrets.NGINX_GATEWAY_HOST }}
+          host: ${{ secrets.NGINX_GATEWAY_PUBLIC_IP }}
           username: ubuntu
           key: ${{ secrets.EC2_SSH_KEY }}
           timeout: 30s
@@ -205,7 +205,7 @@ jobs:
             MAIN_SERVER_IP="${{ secrets.MAIN_SERVER_PRIVATE_IP }}"
 
             # 현재 활성 포트 확인
-            CURRENT_PORT=$(grep -oP "server $MAIN_SERVER_IP:\K\d+" /etc/nginx/conf.d/proxy.conf | head -1)
+            CURRENT_PORT=$(grep -oP "server $MAIN_SERVER_IP:\K\d+" /usr/local/openresty/nginx/conf/nginx.conf | head -1)
 
             if [ "$CURRENT_PORT" = "8080" ]; then
               NEW_PORT=8081
@@ -220,19 +220,19 @@ jobs:
             echo "현재 활성 포트: $CURRENT_PORT ($OLD_COLOR)"
             echo "전환할 포트: $NEW_PORT ($NEW_COLOR)"
 
-            # Nginx 설정 파일 백업
-            sudo cp /etc/nginx/conf.d/proxy.conf /etc/nginx/conf.d/proxy.conf.backup
+            # OpenResty Nginx 설정 파일 백업
+            sudo cp /usr/local/openresty/nginx/conf/nginx.conf /usr/local/openresty/nginx/conf/nginx.conf.backup
 
             # upstream 포트 변경
-            sudo sed -i "s/server $MAIN_SERVER_IP:$CURRENT_PORT;/server $MAIN_SERVER_IP:$NEW_PORT;/" /etc/nginx/conf.d/proxy.conf
+            sudo sed -i "s/server $MAIN_SERVER_IP:$CURRENT_PORT;/server $MAIN_SERVER_IP:$NEW_PORT;/" /usr/local/openresty/nginx/conf/nginx.conf
 
             # 설정 파일 검증
-            sudo nginx -t
+            sudo /usr/local/openresty/nginx/sbin/nginx -t
 
-            # Nginx 리로드 (무중단)
-            sudo nginx -s reload
+            # OpenResty Nginx 리로드 (무중단)
+            sudo /usr/local/openresty/nginx/sbin/nginx -s reload
 
-            echo "✅ Nginx 트래픽이 $NEW_COLOR($NEW_PORT)로 전환되었습니다"
+            echo "✅ OpenResty 트래픽이 $NEW_COLOR($NEW_PORT)로 전환되었습니다"
 
             # 새 포트로 헬스체크 확인
             sleep 3
@@ -246,10 +246,10 @@ jobs:
       - name: Stop Old Container
         uses: appleboy/ssh-action@v1.0.3
         with:
-          host: ${{ secrets.MAIN_SERVER_HOST }}
+          host: ${{ secrets.MAIN_SERVER_PRIVATE_IP }}
           username: ubuntu
           key: ${{ secrets.EC2_SSH_KEY }}
-          proxy_host: ${{ secrets.NGINX_GATEWAY_HOST }}
+          proxy_host: ${{ secrets.NGINX_GATEWAY_PUBLIC_IP }}
           proxy_username: ubuntu
           proxy_key: ${{ secrets.EC2_SSH_KEY }}
           timeout: 30s
@@ -265,7 +265,7 @@ jobs:
               if docker ps | grep -q "mechuragi-main-green.*Up"; then
                 # 둘 다 실행 중이면, Nginx가 가리키지 않는 쪽 중지
                 # 이전 단계에서 전환했으므로, 이전 컨테이너 중지
-                NGINX_PORT=$(ssh -o StrictHostKeyChecking=no ubuntu@${{ secrets.NGINX_GATEWAY_HOST }} "grep -oP 'server $MAIN_SERVER_IP:\K\d+' /etc/nginx/conf.d/proxy.conf | head -1")
+                NGINX_PORT=$(ssh -o StrictHostKeyChecking=no ubuntu@${{ secrets.NGINX_GATEWAY_PUBLIC_IP }} "grep -oP 'server $MAIN_SERVER_IP:\K\d+' /etc/nginx/conf.d/proxy.conf | head -1")
 
                 if [ "$NGINX_PORT" = "8080" ]; then
                   echo "Green 컨테이너 중지 중..."
