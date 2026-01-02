@@ -56,7 +56,7 @@ public class RecommendedFoodService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.MEMBER_NOT_FOUND));
 
         List<RecommendedFood> scrappedRecommendations =
-                recommendedFoodRepository.findByMemberAndIsScrapedTrueOrderByCreatedAtDesc(member);
+                recommendedFoodRepository.findByMemberAndIsScrappedTrueOrderByCreatedAtDesc(member);
 
         return scrappedRecommendations.stream()
                 .map(recommendedFoodMapper::toDto)

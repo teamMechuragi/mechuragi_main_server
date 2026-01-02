@@ -12,5 +12,5 @@ public interface RecommendedFoodRepository extends JpaRepository<RecommendedFood
 
     List<RecommendedFood> findByMemberOrderByCreatedAtDesc(Member member);
 
-    List<RecommendedFood> findByMemberAndIsScrapedTrueOrderByCreatedAtDesc(Member member);
+    List<RecommendedFood> findByMemberAndIsScrappedTrueOrderByCreatedAtDesc(Member member);
 }
