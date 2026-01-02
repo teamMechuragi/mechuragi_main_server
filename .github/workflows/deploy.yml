@@ -104,11 +104,11 @@ jobs:
           proxy_key: ${{ secrets.EC2_SSH_KEY }}
           source: "docker-compose.prod.yml"
           target: "/home/ubuntu/app/"
-          timeout: 60s
+          timeout: 120s
           command_timeout: 10m
           debug: true
           strip_components: 0
-          proxy_timeout: 60s
+          proxy_timeout: 120s
 
       - name: Deploy to Main Server (Blue-Green) via Bastion
         uses: appleboy/ssh-action@v1.0.3
@@ -119,7 +119,7 @@ jobs:
           proxy_host: ${{ secrets.NGINX_GATEWAY_PUBLIC_IP }}
           proxy_username: ubuntu
           proxy_key: ${{ secrets.EC2_SSH_KEY }}
-          timeout: 30s
+          timeout: 120s
           command_timeout: 15m
           debug: true
           script: |
@@ -252,7 +252,7 @@ jobs:
           proxy_host: ${{ secrets.NGINX_GATEWAY_PUBLIC_IP }}
           proxy_username: ubuntu
           proxy_key: ${{ secrets.EC2_SSH_KEY }}
-          timeout: 30s
+          timeout: 120s
           command_timeout: 5m
           script: |
             cd /home/ubuntu/app
