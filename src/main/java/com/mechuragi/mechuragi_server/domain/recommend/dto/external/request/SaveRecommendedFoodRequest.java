@@ -1,6 +1,6 @@
-package com.mechuragi.mechuragi_server.domain.ai.dto.internal.request;
+package com.mechuragi.mechuragi_server.domain.recommend.dto.external.request;
 
-import com.mechuragi.mechuragi_server.domain.ai.entity.type.RecommendationType;
+import com.mechuragi.mechuragi_server.domain.recommend.entity.type.RecommendationType;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
@@ -12,7 +12,11 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class ScrapeFoodRequest {
+public class SaveRecommendedFoodRequest {
+
+    @NotNull
+    private Long memberId;
+
     @NotNull(message = "추천 타입은 필수입니다")
     private RecommendationType recommendationType;
 

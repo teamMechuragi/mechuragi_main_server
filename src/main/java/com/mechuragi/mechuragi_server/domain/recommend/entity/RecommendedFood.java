@@ -1,6 +1,6 @@
-package com.mechuragi.mechuragi_server.domain.ai.entity;
+package com.mechuragi.mechuragi_server.domain.recommend.entity;
 
-import com.mechuragi.mechuragi_server.domain.ai.entity.type.RecommendationType;
+import com.mechuragi.mechuragi_server.domain.recommend.entity.type.RecommendationType;
 import com.mechuragi.mechuragi_server.domain.member.entity.Member;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
@@ -8,16 +8,17 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "Scraped_foods")
+@Table(name = "recommended_foods")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @EntityListeners(AuditingEntityListener.class)
-public class ScrapedFood {
+public class RecommendedFood {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -49,14 +50,22 @@ public class ScrapedFood {
     @Column(length = 50)
     private String difficulty;
 
+    @Column(nullable = false)
+    private Boolean isScrapped = false;
+
     @CreatedDate
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
+    @LastModifiedDate
+    @Column(nullable = false)
+    private LocalDateTime updatedAt;
+
     @Builder
-    public ScrapedFood(Member member, RecommendationType recommendationType,
-                       String name, String description, String reason,
-                       String ingredients, String cookingTime, String difficulty) {
+    public RecommendedFood(Member member, RecommendationType recommendationType,
+                          String name, String description, String reason,
+                          String ingredients, String cookingTime, String difficulty,
+                          Boolean isScrapped) {
         this.member = member;
         this.recommendationType = recommendationType;
         this.name = name;
@@ -65,5 +74,14 @@ public class ScrapedFood {
         this.ingredients = ingredients;
         this.cookingTime = cookingTime;
         this.difficulty = difficulty;
+        this.isScrapped = isScrapped != null ? isScrapped : false;
+    }
+
+    public void scrap() {
+        this.isScrapped = true;
+    }
+
+    public void unscrap() {
+        this.isScrapped = false;
     }
 }

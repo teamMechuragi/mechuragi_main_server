@@ -1,16 +1,20 @@
-package com.mechuragi.mechuragi_server.domain.ai.dto.common.response;
+package com.mechuragi.mechuragi_server.domain.recommend.dto.common.response;
 
-import com.mechuragi.mechuragi_server.domain.ai.entity.type.RecommendationType;
+import com.mechuragi.mechuragi_server.domain.recommend.entity.type.RecommendationType;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
+
 @Getter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class FoodRecommendationDto {
+public class RecommendedFoodResponse {
+
+    private Long id;
     private RecommendationType recommendationType;
     private String name;
     private String description;
@@ -18,4 +22,6 @@ public class FoodRecommendationDto {
     private String ingredients;
     private String cookingTime;
     private String difficulty;
+    private Boolean isScrapped;
+    private LocalDateTime createdAt;
 }
