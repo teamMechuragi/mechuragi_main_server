@@ -92,6 +92,7 @@ jobs:
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/mechuragi-app:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
+          no-cache: true  # application-dev.yml 변경사항 반영을 위해 캐시 무시
 
       - name: Upload docker-compose.prod.yml to server via Bastion
         uses: appleboy/scp-action@v0.1.7
