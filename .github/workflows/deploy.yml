@@ -93,6 +93,21 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+      - name: Upload docker-compose.prod.yml to server via Bastion
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.MAIN_SERVER_PRIVATE_IP }}
+          username: ubuntu
+          key: ${{ secrets.EC2_SSH_KEY }}
+          proxy_host: ${{ secrets.NGINX_GATEWAY_PUBLIC_IP }}
+          proxy_username: ubuntu
+          proxy_key: ${{ secrets.EC2_SSH_KEY }}
+          source: "docker-compose.prod.yml"
+          target: "/home/ubuntu/app/"
+          timeout: 120s
+          command_timeout: 10m
+          proxy_timeout: 120s
+
       - name: Deploy to Main Server (Blue-Green) via Bastion
         uses: appleboy/ssh-action@v1.0.3
         with:
@@ -106,22 +121,12 @@ jobs:
           command_timeout: 15m
           debug: true
           script: |
-            # 애플리케이션 디렉토리 생성 및 이동
-            mkdir -p /home/ubuntu/app
+            # 애플리케이션 디렉토리로 이동
             cd /home/ubuntu/app
 
-            # docker-compose.prod.yml 파일 확인
-            if [ ! -f docker-compose.prod.yml ]; then
-              echo "❌ docker-compose.prod.yml 파일이 없습니다!"
-              echo "최초 1회 설정이 필요합니다."
-              echo "GitHub 레포에서 docker-compose.prod.yml을 복사해주세요:"
-              echo "로컬에서 실행: scp -i ~/.ssh/mechuragi-dev-key.pem docker-compose.prod.yml ubuntu@43.202.167.57:/tmp/"
-              echo "서버에서 실행: ssh -i ~/.ssh/mechuragi-dev-key.pem ubuntu@43.202.167.57"
-              echo "              sudo mv /tmp/docker-compose.prod.yml /home/ubuntu/app/"
-              exit 1
-            fi
-
-            echo "✅ docker-compose.prod.yml 파일 확인 완료"
+            # 배포 파일 확인 (SCP로 업로드됨)
+            echo "배포 파일 확인 중..."
+            ls -la docker-compose.prod.yml
 
             # 환경 변수 설정
             export DB_NAME="${{ secrets.DB_NAME }}"
