@@ -64,7 +64,7 @@ services:
 
   # Spring Boot 메인 서비스 - Blue 버전
   mechuragi-main-blue:
-    image: ${DOCKERHUB_USERNAME}/mechuragi-app:latest
+    image: ${DOCKERHUB_USERNAME}/mechuragi-app:${IMAGE_TAG}
     container_name: mechuragi-main-blue
     ports:
       - "8080:8080"
@@ -111,7 +111,7 @@ services:
 
   # Spring Boot 메인 서비스 - Green 버전 (배포 시에만 사용)
   mechuragi-main-green:
-    image: ${DOCKERHUB_USERNAME}/mechuragi-app:latest
+    image: ${DOCKERHUB_USERNAME}/mechuragi-app:${IMAGE_TAG}
     container_name: mechuragi-main-green
     ports:
       - "8081:8080"

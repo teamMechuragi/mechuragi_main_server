@@ -43,7 +43,7 @@ jobs:
         run: ./gradlew test
 
       - name: Build application
-        run: ./gradlew build -x test
+        run: ./gradlew build -x test --no-build-cache
   deploy:
     needs: test
     runs-on: ubuntu-latest
@@ -72,7 +72,7 @@ jobs:
           distribution: 'temurin'
 
       - name: Build application
-        run: ./gradlew clean build -x test
+        run: ./gradlew clean build -x test --no-build-cache
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
@@ -89,7 +89,9 @@ jobs:
           context: .
           platforms: linux/amd64,linux/arm64
           push: true
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/mechuragi-app:latest
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/mechuragi-app:${{ github.sha }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/mechuragi-app:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
           no-cache: true  # application-dev.yml 변경사항 반영을 위해 캐시 무시
@@ -174,13 +176,15 @@ jobs:
             # Services
             AI_SERVICE_URL=${{ secrets.AI_SERVICE_URL }}
             DOCKERHUB_USERNAME=${{ secrets.DOCKERHUB_USERNAME }}
+            IMAGE_TAG=${{ github.sha }}
             ENV_EOF
 
             echo "✅ .env 파일 생성 완료"
 
             # 최신 이미지 풀
             echo "🐳 최신 Docker 이미지 다운로드 중..."
-            docker pull ${{ secrets.DOCKERHUB_USERNAME }}/mechuragi-app:latest
+            IMAGE_TAG="${{ github.sha }}"
+            docker pull ${{ secrets.DOCKERHUB_USERNAME }}/mechuragi-app:$IMAGE_TAG
 
             # 현재 활성 컨테이너 확인 (Main Server 기준 - Single Source of Truth)
             if docker ps | grep -q "mechuragi-main-blue"; then
