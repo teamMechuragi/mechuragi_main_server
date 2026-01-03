@@ -134,6 +134,7 @@ jobs:
             export DB_PASSWORD="${{ secrets.DB_PASSWORD }}"
             export MYSQL_ROOT_PASSWORD="${{ secrets.MYSQL_ROOT_PASSWORD }}"
             export JWT_SECRET="${{ secrets.JWT_SECRET }}"
+            export JWT_EXPIRATION="${{ secrets.JWT_EXPIRATION }}"
             export AWS_REGION="${{ secrets.AWS_REGION }}"
             export S3_BUCKET="${{ secrets.S3_BUCKET }}"
             export SES_FROM_EMAIL="${{ secrets.SES_FROM_EMAIL }}"
