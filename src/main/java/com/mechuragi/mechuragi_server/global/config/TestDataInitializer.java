@@ -23,8 +23,8 @@ public class TestDataInitializer implements CommandLineRunner {
     }
 
     private void createTestMembers() {
-        // 이미 사용자가 있으면 생성하지 않음
-        if (memberRepository.count() > 0) {
+        // 이미 테스트 사용자가 있으면 생성하지 않음 (이메일로 중복 체크)
+        if (memberRepository.findByEmail("mechuragi001@gmail.com").isPresent()) {
             log.info("테스트 사용자가 이미 존재합니다.");
             return;
         }
