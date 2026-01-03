@@ -200,7 +200,7 @@ jobs:
 
             # Nginx Gateway로 SSH 접속하여 트래픽 전환
             MAIN_SERVER_IP="${{ secrets.MAIN_SERVER_PRIVATE_IP }}"
-            NGINX_GATEWAY="${{ secrets.NGINX_GATEWAY_PUBLIC_IP }}"
+            NGINX_GATEWAY="${{ secrets.NGINX_GATEWAY_PRIVATE_IP }}"
 
             ssh -o StrictHostKeyChecking=no ubuntu@$NGINX_GATEWAY << EOF
               # Nginx 설정 파일 백업
