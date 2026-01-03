@@ -1,0 +1,116 @@
+server:
+  port: 8080
+  address: 0.0.0.0  # 모든 네트워크 인터페이스에서 접속 허용
+  forward-headers-strategy: framework  # CloudFront X-Forwarded-* 헤더 인식
+
+spring:
+  config:
+    activate:
+      on-profile: prod
+  datasource:
+    url: ${SPRING_DATASOURCE_URL}
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      maximum-pool-size: 30
+      minimum-idle: 10
+      connection-timeout: 30000
+      idle-timeout: 300000
+      max-lifetime: 1800000
+
+  data:
+    redis:
+      host: ${SPRING_REDIS_HOST}
+      port: ${SPRING_REDIS_PORT}
+
+  jpa:
+    hibernate:
+      ddl-auto: none
+    show-sql: false  # 운영에서는 SQL 로그 비활성화
+    properties:
+      hibernate:
+        format_sql: false
+        jdbc:
+          time_zone: Asia/Seoul
+
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    baseline-version: 0
+    locations: classpath:db/migration
+    validate-on-migrate: true  # 운영에서는 마이그레이션 검증 활성화
+    out-of-order: false  # 운영에서는 순서 엄격히 관리
+
+  security:
+    oauth2:
+      client:
+        registration:
+          kakao:
+            client-id: ${KAKAO_CLIENT_ID}
+            client-secret: ${KAKAO_CLIENT_SECRET}
+            redirect-uri: ${KAKAO_REDIRECT_URI}
+            authorization-grant-type: authorization_code
+            client-authentication-method: client_secret_post
+            client-name: Kakao
+            scope:
+              - account_email
+        provider:
+          kakao:
+            authorization-uri: https://kauth.kakao.com/oauth/authorize
+            token-uri: https://kauth.kakao.com/oauth/token
+            user-info-uri: https://kapi.kakao.com/v2/user/me
+            user-name-attribute: id
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
+
+jwt:
+  secret: ${JWT_SECRET}
+  expiration: ${JWT_EXPIRATION:86400000}  # 24시간 (밀리초), 환경변수로 오버라이드 가능
+
+oauth2:
+  redirect-uri: ${OAUTH2_REDIRECT_URI}
+
+cloud:
+  aws:
+    region:
+      static: ${AWS_REGION:ap-northeast-2}
+    s3:
+      bucket: ${S3_BUCKET}
+    ses:
+      from-email: ${SES_FROM_EMAIL}
+
+ai-service:
+  url: ${AI_SERVICE_URL}
+
+logging:
+  level:
+    root: INFO
+    com.mechuragi.mechuragi_server: INFO  # 운영에서는 INFO 레벨
+    org.springframework.web: WARN
+    org.springframework.security: WARN
+    org.hibernate.SQL: WARN  # SQL 로그 최소화
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+  file:
+    name: logs/mechuragi-prod.log
+    max-size: 50MB  # 운영 환경에서는 더 큰 로그 파일
+    max-history: 90  # 90일 보관
+
+# Actuator 설정
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+      base-path: /actuator
+  endpoint:
+    health:
+      show-details: when-authorized  # 운영에서는 인증된 사용자만 상세 정보 조회
+    metrics:
+      enabled: true
+  metrics:
+    tags:
+      application: ${spring.application.name:mechuragi-server}
