@@ -93,7 +93,7 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: Upload docker-compose.prod.yml to server via Bastion
+      - name: Upload docker compose.prod.yml to server via Bastion
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.MAIN_SERVER_PRIVATE_IP }}
@@ -102,7 +102,7 @@ jobs:
           proxy_host: ${{ secrets.NGINX_GATEWAY_PUBLIC_IP }}
           proxy_username: ubuntu
           proxy_key: ${{ secrets.EC2_SSH_KEY }}
-          source: "docker-compose.prod.yml"
+          source: "docker compose.prod.yml"
           target: "/home/ubuntu/app/"
           timeout: 120s
           command_timeout: 10m
@@ -126,7 +126,7 @@ jobs:
 
             # 배포 파일 확인 (SCP로 업로드됨)
             echo "배포 파일 확인 중..."
-            ls -la docker-compose.prod.yml
+            ls -la docker compose.prod.yml
 
             # 환경 변수 설정
             export DB_NAME="${{ secrets.DB_NAME }}"
@@ -166,9 +166,9 @@ jobs:
 
             # Target 컨테이너 시작
             if [ "$TARGET" = "green" ]; then
-              docker-compose -f docker-compose.prod.yml up -d mechuragi-main-green --no-deps
+              docker compose -f docker compose.prod.yml up -d mechuragi-main-green --no-deps
             else
-              docker-compose -f docker-compose.prod.yml up -d mechuragi-main-blue --no-deps
+              docker compose -f docker compose.prod.yml up -d mechuragi-main-blue --no-deps
             fi
 
             # 헬스체크 대기 (최대 2분)
@@ -180,7 +180,7 @@ jobs:
               fi
               if [ $i -eq 24 ]; then
                 echo "헬스체크 실패"
-                docker-compose -f docker-compose.prod.yml logs mechuragi-main-$TARGET
+                docker compose -f docker compose.prod.yml logs mechuragi-main-$TARGET
                 exit 1
               fi
               echo "대기 중... ($i/24)"
@@ -267,12 +267,12 @@ jobs:
 
                 if [ "$NGINX_PORT" = "8080" ]; then
                   echo "Green 컨테이너 중지 중..."
-                  docker-compose -f docker-compose.prod.yml stop mechuragi-main-green
-                  docker-compose -f docker-compose.prod.yml rm -f mechuragi-main-green
+                  docker compose -f docker compose.prod.yml stop mechuragi-main-green
+                  docker compose -f docker compose.prod.yml rm -f mechuragi-main-green
                 else
                   echo "Blue 컨테이너 중지 중..."
-                  docker-compose -f docker-compose.prod.yml stop mechuragi-main-blue
-                  docker-compose -f docker-compose.prod.yml rm -f mechuragi-main-blue
+                  docker compose -f docker compose.prod.yml stop mechuragi-main-blue
+                  docker compose -f docker compose.prod.yml rm -f mechuragi-main-blue
                 fi
 
                 echo "✅ 이전 컨테이너 정리 완료"
