@@ -111,6 +111,8 @@ jobs:
 
       - name: Deploy to Main Server with Blue-Green Deployment
         uses: appleboy/ssh-action@v1.0.3
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.EC2_SSH_KEY }}
         with:
           host: ${{ secrets.MAIN_SERVER_PRIVATE_IP }}
           username: ubuntu
@@ -121,7 +123,15 @@ jobs:
           timeout: 120s
           command_timeout: 20m
           debug: true
+          envs: SSH_PRIVATE_KEY
           script: |
+            # ========================================
+            # 0단계: SSH Key 준비 (Nginx Gateway 접속용)
+            # ========================================
+            echo "🔑 SSH key 설정 중..."
+            echo "$SSH_PRIVATE_KEY" > /tmp/deploy_key.pem
+            chmod 600 /tmp/deploy_key.pem
+
             # ========================================
             # 1단계: 환경 설정 및 새 컨테이너 배포
             # ========================================
@@ -202,7 +212,7 @@ jobs:
             MAIN_SERVER_IP="${{ secrets.MAIN_SERVER_PRIVATE_IP }}"
             NGINX_GATEWAY="${{ secrets.NGINX_GATEWAY_PRIVATE_IP }}"
 
-            ssh -o StrictHostKeyChecking=no ubuntu@$NGINX_GATEWAY << EOF
+            ssh -i /tmp/deploy_key.pem -o StrictHostKeyChecking=no ubuntu@$NGINX_GATEWAY << EOF
               # Nginx 설정 파일 백업
               sudo cp /usr/local/openresty/nginx/conf/nginx.conf /usr/local/openresty/nginx/conf/nginx.conf.backup
 
@@ -264,6 +274,10 @@ jobs:
             echo "🎉 Blue-Green 배포 완료!"
             echo "   • 이전 버전: $CURRENT ($CURRENT_PORT) → 중지됨"
             echo "   • 새 버전: $TARGET ($TARGET_PORT) → 활성화"
+
+            # SSH Key 정리
+            echo "🧹 SSH key 정리 중..."
+            rm -f /tmp/deploy_key.pem
 
       - name: Send Discord Notification - Deploy Success
         if: success()
