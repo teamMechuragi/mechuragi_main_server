@@ -24,13 +24,6 @@ services:
     restart: unless-stopped
     networks:
       - app-network
-    logging:
-      driver: awslogs
-      options:
-        awslogs-region: ${AWS_REGION:-ap-northeast-2}
-        awslogs-group: /aws/mechuragi/dev/main-service/api
-        awslogs-stream: ${HOSTNAME:-main-server}
-        awslogs-create-group: "true"
 
   # Nginx 웹서버
   nginx:
@@ -46,13 +39,6 @@ services:
     restart: unless-stopped
     networks:
       - app-network
-    logging:
-      driver: awslogs
-      options:
-        awslogs-region: ${AWS_REGION:-ap-northeast-2}
-        awslogs-group: /aws/mechuragi/dev/nginx-gateway
-        awslogs-stream: ${HOSTNAME:-main-server}
-        awslogs-create-group: "true"
 
   # MySQL 데이터베이스
   mysql:
@@ -71,13 +57,6 @@ services:
     restart: unless-stopped
     networks:
       - app-network
-    logging:
-      driver: awslogs
-      options:
-        awslogs-region: ${AWS_REGION:-ap-northeast-2}
-        awslogs-group: /aws/mechuragi/dev/main-service/mysql
-        awslogs-stream: ${HOSTNAME:-main-server}
-        awslogs-create-group: "true"
 
   # Redis 캐시
   redis:
@@ -91,13 +70,6 @@ services:
     restart: unless-stopped
     networks:
       - app-network
-    logging:
-      driver: awslogs
-      options:
-        awslogs-region: ${AWS_REGION:-ap-northeast-2}
-        awslogs-group: /aws/mechuragi/dev/main-service/redis
-        awslogs-stream: ${HOSTNAME:-main-server}
-        awslogs-create-group: "true"
 
 networks:
   app-network:
