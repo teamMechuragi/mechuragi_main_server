@@ -35,6 +35,13 @@ services:
       timeout: 5s
       retries: 5
       start_period: 30s
+    logging:
+      driver: awslogs
+      options:
+        awslogs-region: ${AWS_REGION:-ap-northeast-2}
+        awslogs-group: /aws/mechuragi/dev/main-service/mysql
+        awslogs-stream: ${HOSTNAME:-main-server}
+        awslogs-create-group: "true"
 
   # Redis 캐시 서버 (localhost 전용)
   redis:
@@ -60,6 +67,13 @@ services:
       timeout: 5s
       retries: 5
       start_period: 10s
+    logging:
+      driver: awslogs
+      options:
+        awslogs-region: ${AWS_REGION:-ap-northeast-2}
+        awslogs-group: /aws/mechuragi/dev/main-service/redis
+        awslogs-stream: ${HOSTNAME:-main-server}
+        awslogs-create-group: "true"
     # 포트 노출하지 않음 - API 서버만 localhost로 접근
 
   # Spring Boot 메인 서비스 - Blue 버전
@@ -104,10 +118,12 @@ services:
       retries: 3
       start_period: 60s
     logging:
-      driver: "json-file"
+      driver: awslogs
       options:
-        max-size: "10m"
-        max-file: "3"
+        awslogs-region: ${AWS_REGION:-ap-northeast-2}
+        awslogs-group: /aws/mechuragi/dev/main-service/api
+        awslogs-stream: ${HOSTNAME:-main-server}
+        awslogs-create-group: "true"
 
   # Spring Boot 메인 서비스 - Green 버전 (배포 시에만 사용)
   mechuragi-main-green:
@@ -151,10 +167,12 @@ services:
       retries: 3
       start_period: 60s
     logging:
-      driver: "json-file"
+      driver: awslogs
       options:
-        max-size: "10m"
-        max-file: "3"
+        awslogs-region: ${AWS_REGION:-ap-northeast-2}
+        awslogs-group: /aws/mechuragi/dev/main-service/api
+        awslogs-stream: ${HOSTNAME:-main-server}
+        awslogs-create-group: "true"
     profiles:
       - deploy  # Green 컨테이너는 배포 시에만 활성화
 
