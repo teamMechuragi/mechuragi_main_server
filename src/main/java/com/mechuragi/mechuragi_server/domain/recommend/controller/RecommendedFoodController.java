@@ -25,12 +25,16 @@ public class RecommendedFoodController {
     private final RecommendedFoodService recommendedFoodService;
 
     @PostMapping("/save")
-    @Operation(summary = "추천 결과 저장 (AI 서버 전용)", description = "AI 서버에서 생성한 추천 결과를 저장합니다")
-    public ResponseEntity<Void> saveRecommendations(@Valid @RequestBody SaveRecommendedFoodsRequest request) {
-        log.info("추천 결과 저장 요청 - 회원: {}, 개수: {}",
-                request.getMemberId(), request.getRecommendations().size());
+    @Operation(summary = "추천 결과 저장", description = "AI 추천 결과를 저장합니다")
+    public ResponseEntity<Void> saveRecommendations(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @Valid @RequestBody SaveRecommendedFoodsRequest request) {
 
-        recommendedFoodService.saveRecommendations(request.getMemberId(), request.getRecommendations());
+        Long memberId = userDetails.getMemberId();
+        log.info("추천 결과 저장 요청 - 회원: {}, 개수: {}",
+                memberId, request.getRecommendations().size());
+
+        recommendedFoodService.saveRecommendations(memberId, request.getRecommendations());
         return ResponseEntity.ok().build();
     }
 

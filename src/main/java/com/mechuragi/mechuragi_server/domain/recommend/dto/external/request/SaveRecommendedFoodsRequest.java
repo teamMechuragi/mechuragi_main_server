@@ -17,9 +17,6 @@ import java.util.List;
 @AllArgsConstructor
 public class SaveRecommendedFoodsRequest {
 
-    @NotNull
-    private Long memberId;
-
     @NotNull(message = "추천 타입은 필수입니다")
     private RecommendationType recommendationType;
 
