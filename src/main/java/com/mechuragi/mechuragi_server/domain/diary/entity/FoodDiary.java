@@ -53,6 +53,9 @@ public class FoodDiary {
     @OneToMany(mappedBy = "foodDiary", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<FoodDiaryImage> images = new ArrayList<>();
 
+    @OneToMany(mappedBy = "foodDiary", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<FoodDiaryTag> diaryTags = new ArrayList<>();
+
     @CreatedDate
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -86,5 +89,16 @@ public class FoodDiary {
     // 모든 이미지 제거
     public void clearImages() {
         this.images.clear();
+    }
+
+    // 태그 추가
+    public void addTag(FoodDiaryTag diaryTag) {
+        this.diaryTags.add(diaryTag);
+        diaryTag.setFoodDiary(this);
+    }
+
+    // 모든 태그 제거
+    public void clearTags() {
+        this.diaryTags.clear();
     }
 }
