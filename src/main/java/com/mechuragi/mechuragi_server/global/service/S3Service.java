@@ -31,7 +31,7 @@ public class S3Service {
     private String region;
 
     private static final List<String> ALLOWED_EXTENSIONS = Arrays.asList("jpg", "jpeg", "png", "gif", "webp");
-    private static final long MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+    private static final long MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
     public String uploadImage(MultipartFile file, String folder) {
         validateFile(file);

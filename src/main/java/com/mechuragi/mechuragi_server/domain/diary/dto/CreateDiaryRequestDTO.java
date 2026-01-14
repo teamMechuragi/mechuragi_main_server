@@ -32,6 +32,9 @@ public class CreateDiaryRequestDTO {
     @NotNull(message = "일기 날짜는 필수입니다")
     private LocalDate diaryDate;
 
-    @Size(max = 4, message = "이미지는 최대 4장까지 첨부 가능합니다")
+    @Size(max = 20, message = "이미지는 최대 20장까지 첨부 가능합니다")
     private List<String> imageUrls;
+
+    @Size(max = 20, message = "태그는 최대 20개까지 추가 가능합니다")
+    private List<String> tags;
 }

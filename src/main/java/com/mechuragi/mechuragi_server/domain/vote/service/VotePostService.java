@@ -90,11 +90,13 @@ public class VotePostService {
     }
 
     /**
-     * 진행 중 투표 조회
+     * 모든 투표 조회 (최신순, 마감일 기준 1주 이내)
      */
     public Page<VoteResponseDTO> getActiveVotes(Pageable pageable) {
-        Instant now = Instant.now();
-        Page<VotePost> votePosts = votePostRepository.findActiveVotes(now, pageable);
+        Instant oneWeekAgo = Instant.now().minus(7, ChronoUnit.DAYS);
+        log.info("최근 투표 조회 - 1주 전 기준: {}", oneWeekAgo);
+        Page<VotePost> votePosts = votePostRepository.findAllOrderByCreatedAtDesc(oneWeekAgo, pageable);
+        log.info("조회된 투표 수: {}", votePosts.getTotalElements());
         return votePosts.map(v -> VoteResponseDTO.from(v, redisTemplate));
     }
 
@@ -136,12 +138,13 @@ public class VotePostService {
         Map<Long, VotePost> voteMap = hotVotes.stream()
                 .collect(Collectors.toMap(VotePost::getId, v -> v));
 
-        Instant now = Instant.now();
+        Instant oneWeekAgo = Instant.now().minus(7, ChronoUnit.DAYS);
 
+        // Redis 점수 순서대로 반환 (마감일 기준 1주 이내만)
         return voteIds.stream()
                 .map(voteMap::get)
                 .filter(Objects::nonNull)
-                .filter(v -> v.getStatus() == VoteStatus.ACTIVE && v.getDeadline().isAfter(now))
+                .filter(v -> v.getDeadline().isAfter(oneWeekAgo))
                 .map(v -> VoteResponseDTO.from(v, redisTemplate))
                 .collect(Collectors.toList());
     }

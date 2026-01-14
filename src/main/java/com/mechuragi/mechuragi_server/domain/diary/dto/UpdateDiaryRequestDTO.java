@@ -28,6 +28,9 @@ public class UpdateDiaryRequestDTO {
     @DecimalMax(value = "5.0", message = "별점은 5.0 이하여야 합니다")
     private BigDecimal rating;
 
-    @Size(max = 4, message = "이미지는 최대 4장까지 첨부 가능합니다")
+    @Size(max = 20, message = "이미지는 최대 20장까지 첨부 가능합니다")
     private List<String> imageUrls;
+
+    @Size(max = 20, message = "태그는 최대 20개까지 추가 가능합니다")
+    private List<String> tags;
 }

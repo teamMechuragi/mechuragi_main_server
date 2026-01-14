@@ -62,6 +62,19 @@ public class SecurityConfig {
                                 "/swagger-ui/**"             // OpenAPI 문서
                         ).permitAll()
 
+                        // 투표 GET 요청 (공개 조회)
+                        .requestMatchers(
+                                org.springframework.http.HttpMethod.GET,
+                                "/api/votes/hot",
+                                "/api/votes/active",
+                                "/api/votes/completed",
+                                "/api/votes/popular-menus",
+                                "/api/votes/*/comments",
+                                "/api/votes/*/comments/count",
+                                "/api/votes/*/likes/count"
+                        ).permitAll()
+                        .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/votes/*").permitAll()
+
                         // 관리자만 접근 가능
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
 

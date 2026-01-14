@@ -22,6 +22,7 @@ public class DiaryResponseDTO {
     private final BigDecimal rating;
     private final LocalDate diaryDate;
     private final List<DiaryImageResponseDTO> images;
+    private final List<String> tags;
     private final LocalDateTime createdAt;
     private final LocalDateTime updatedAt;
 
@@ -31,6 +32,10 @@ public class DiaryResponseDTO {
                 .map(DiaryImageResponseDTO::from)
                 .toList();
 
+        List<String> tags = diary.getDiaryTags().stream()
+                .map(diaryTag -> diaryTag.getTag().getName())
+                .toList();
+
         return DiaryResponseDTO.builder()
                 .id(diary.getId())
                 .title(diary.getTitle())
@@ -38,6 +43,7 @@ public class DiaryResponseDTO {
                 .rating(diary.getRating())
                 .diaryDate(diary.getDiaryDate())
                 .images(images)
+                .tags(tags)
                 .createdAt(diary.getCreatedAt())
                 .updatedAt(diary.getUpdatedAt())
                 .build();

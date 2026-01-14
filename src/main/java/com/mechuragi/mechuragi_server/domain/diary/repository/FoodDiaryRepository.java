@@ -35,4 +35,11 @@ public interface FoodDiaryRepository extends JpaRepository<FoodDiary, Long> {
            "LEFT JOIN FETCH fd.images " +
            "WHERE fd.id = :id")
     Optional<FoodDiary> findByIdWithImages(@Param("id") Long id);
+
+    // 일기 수정용 조회 (태그만 fetch, 이미지는 lazy loading)
+    @Query("SELECT DISTINCT fd FROM FoodDiary fd " +
+           "LEFT JOIN FETCH fd.diaryTags dt " +
+           "LEFT JOIN FETCH dt.tag " +
+           "WHERE fd.id = :id AND fd.member.id = :memberId")
+    Optional<FoodDiary> findByIdAndMemberIdWithRelations(@Param("id") Long id, @Param("memberId") Long memberId);
 }
