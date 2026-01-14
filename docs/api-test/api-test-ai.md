@@ -97,7 +97,7 @@ http://{baseURL}:8080/swagger-ui/index.html
   "message": "저녁 시간에 어울리는 음식을 추천해드렸습니다.",
   "recommendations": [
     {
-      "recommendationType": "TIME_BASED",
+      "recommendationType": "TIME",
       "name": "삼겹살",
       "description": "고소한 돼지고기를 구워 먹는 한국식 바베큐",
       "reason": "저녁 시간에 가족, 친구들과 함께 즐기기 좋습니다",
@@ -277,7 +277,7 @@ http://{baseURL}:8080/swagger-ui/index.html
 - 나중에 다시 확인 가능
 
 **참고:**
-- recommendationType: WEATHER, TIME_BASED, INGREDIENTS, FEELING, CONVERSATION 중 하나
+- recommendationType: WEATHER, TIME, INGREDIENTS, FEELING, CONVERSATION 중 하나
 - 모든 필드가 선택사항이지만, name은 필수 권장
 
 ---
@@ -427,7 +427,7 @@ scrapId=1
 ## 추천 타입 (RecommendationType)
 
 - `WEATHER`: 날씨 기반 추천
-- `TIME_BASED`: 시간대 기반 추천
+- `TIME`: 시간대 기반 추천
 - `INGREDIENTS`: 재료 기반 추천
 - `FEELING`: 기분 기반 추천
 - `CONVERSATION`: 대화 기반 추천
