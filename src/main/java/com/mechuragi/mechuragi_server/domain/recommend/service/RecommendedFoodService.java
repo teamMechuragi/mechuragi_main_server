@@ -1,8 +1,10 @@
 package com.mechuragi.mechuragi_server.domain.recommend.service;
 
 import com.mechuragi.mechuragi_server.domain.recommend.dto.common.response.RecommendedFoodResponse;
-import com.mechuragi.mechuragi_server.domain.recommend.dto.external.request.SaveRecommendedFoodRequest;
+import com.mechuragi.mechuragi_server.domain.recommend.dto.external.request.SaveRecommendationsRequest;
+import com.mechuragi.mechuragi_server.domain.recommend.entity.RecommendationSession;
 import com.mechuragi.mechuragi_server.domain.recommend.entity.RecommendedFood;
+import com.mechuragi.mechuragi_server.domain.recommend.repository.RecommendationSessionRepository;
 import com.mechuragi.mechuragi_server.domain.recommend.repository.RecommendedFoodRepository;
 import com.mechuragi.mechuragi_server.domain.recommend.service.mapper.RecommendedFoodMapper;
 import com.mechuragi.mechuragi_server.domain.member.entity.Member;
@@ -24,20 +26,28 @@ import java.util.stream.Collectors;
 public class RecommendedFoodService {
 
     private final RecommendedFoodRepository recommendedFoodRepository;
+    private final RecommendationSessionRepository sessionRepository;
     private final MemberRepository memberRepository;
     private final RecommendedFoodMapper recommendedFoodMapper;
 
     @Transactional
-    public void saveRecommendations(Long memberId, List<SaveRecommendedFoodRequest> recommendations) {
+    public void saveRecommendations(Long memberId, SaveRecommendationsRequest request) {
         Member member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.MEMBER_NOT_FOUND));
 
-        List<RecommendedFood> recommendedFoods = recommendations.stream()
+        // 세션 생성
+        RecommendationSession session = recommendedFoodMapper.toSessionEntity(request, member);
+        sessionRepository.save(session);
+
+        // 추천 음식 저장
+        List<RecommendedFood> recommendedFoods = request.getRecommendations().stream()
                 .map(req -> recommendedFoodMapper.toEntity(req, member))
                 .collect(Collectors.toList());
 
+        recommendedFoods.forEach(session::addRecommendedFood);
         recommendedFoodRepository.saveAll(recommendedFoods);
-        log.info("추천 결과 저장 완료 - 회원: {}, 개수: {}", memberId, recommendedFoods.size());
+
+        log.info("추천 결과 저장 완료 - 회원: {}, 세션: {}, 개수: {}", memberId, session.getId(), recommendedFoods.size());
     }
 
     public List<RecommendedFoodResponse> getAllRecommendations(Long memberId) {

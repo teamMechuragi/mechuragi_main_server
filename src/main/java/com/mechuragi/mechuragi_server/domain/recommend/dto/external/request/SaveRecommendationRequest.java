@@ -1,29 +1,28 @@
 package com.mechuragi.mechuragi_server.domain.recommend.dto.external.request;
 
 import com.mechuragi.mechuragi_server.domain.recommend.entity.type.RecommendationType;
-import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import java.util.List;
-// 다수 추천 음식 저장 요청
 @Getter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class SaveRecommendedFoodsRequest {
-
-    @NotNull
-    private Long memberId;
+public class SaveRecommendationRequest {
 
     @NotNull(message = "추천 타입은 필수입니다")
     private RecommendationType recommendationType;
 
-    @NotEmpty
-    @Valid
-    private List<SaveRecommendedFoodRequest> recommendations;
+    @NotBlank(message = "음식 이름은 필수입니다")
+    private String name;
+
+    private String description;
+    private String reason;
+    private String ingredients;
+    private String cookingTime;
+    private String difficulty;
 }
