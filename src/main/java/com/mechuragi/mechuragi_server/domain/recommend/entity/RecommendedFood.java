@@ -28,6 +28,10 @@ public class RecommendedFood {
     @JoinColumn(name = "member_id", nullable = false)
     private Member member;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "session_id")
+    private RecommendationSession session;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private RecommendationType recommendationType;
@@ -83,5 +87,9 @@ public class RecommendedFood {
 
     public void unscrap() {
         this.isScrapped = false;
+    }
+
+    public void setSession(RecommendationSession session) {
+        this.session = session;
     }
 }

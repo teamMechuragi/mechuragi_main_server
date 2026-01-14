@@ -12,7 +12,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class SaveRecommendedFoodRequest {
+public class SaveRecommendationRequest {
 
     @NotNull(message = "추천 타입은 필수입니다")
     private RecommendationType recommendationType;

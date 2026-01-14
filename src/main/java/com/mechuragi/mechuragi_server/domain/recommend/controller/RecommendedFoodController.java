@@ -2,7 +2,7 @@ package com.mechuragi.mechuragi_server.domain.recommend.controller;
 
 import com.mechuragi.mechuragi_server.auth.dto.CustomUserDetails;
 import com.mechuragi.mechuragi_server.domain.recommend.dto.common.response.RecommendedFoodResponse;
-import com.mechuragi.mechuragi_server.domain.recommend.dto.external.request.SaveRecommendedFoodsRequest;
+import com.mechuragi.mechuragi_server.domain.recommend.dto.external.request.SaveRecommendationsRequest;
 import com.mechuragi.mechuragi_server.domain.recommend.service.RecommendedFoodService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -28,13 +28,13 @@ public class RecommendedFoodController {
     @Operation(summary = "추천 결과 저장", description = "AI 추천 결과를 저장합니다")
     public ResponseEntity<Void> saveRecommendations(
             @AuthenticationPrincipal CustomUserDetails userDetails,
-            @Valid @RequestBody SaveRecommendedFoodsRequest request) {
+            @Valid @RequestBody SaveRecommendationsRequest request) {
 
         Long memberId = userDetails.getMemberId();
         log.info("추천 결과 저장 요청 - 회원: {}, 개수: {}",
                 memberId, request.getRecommendations().size());
 
-        recommendedFoodService.saveRecommendations(memberId, request.getRecommendations());
+        recommendedFoodService.saveRecommendations(memberId, request);
         return ResponseEntity.ok().build();
     }
 
