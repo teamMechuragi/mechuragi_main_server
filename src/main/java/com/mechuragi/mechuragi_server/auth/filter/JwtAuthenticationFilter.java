@@ -31,6 +31,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                                     HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
         try {
+            // 0. OAuth2 로그인/콜백 요청은 JWT 인증 대상이 아니므로 필터 제외
+            String uri = request.getRequestURI();
+            if (uri.startsWith("/oauth2/")
+                    || uri.startsWith("/login/oauth2/")) {
+                filterChain.doFilter(request, response);
+                return;
+            }
+
             // 1. 요청 헤더에서 JWT 토큰 추출
             String jwt = getJwtFromRequest(request);
 
