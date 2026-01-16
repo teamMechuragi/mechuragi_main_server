@@ -43,7 +43,7 @@ public class SecurityConfig {
 
                 // 세션 사용 안 함 (JWT 사용)
                 .sessionManagement(session ->
-                        session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                        session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
 
                 // 요청 인증/인가 설정
                 .authorizeHttpRequests(auth -> auth
