@@ -20,6 +20,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.List;
 
 @Service
@@ -45,8 +46,8 @@ public class FoodDiaryService {
             throw new BusinessException(ErrorCode.INVALID_RATING);
         }
 
-        // 미래 날짜 검증
-        if (request.getDiaryDate().isAfter(LocalDate.now())) {
+        // 미래 날짜 검증 (한국 시간 기준)
+        if (request.getDiaryDate().isAfter(LocalDate.now(ZoneId.of("Asia/Seoul")))) {
             throw new BusinessException(ErrorCode.FUTURE_DATE_NOT_ALLOWED);
         }
 
