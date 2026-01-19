@@ -54,6 +54,8 @@ cloud:
       static: ap-northeast-2
     s3:
       bucket: test-bucket
+    cloudfront:
+      domain: test.cloudfront.net
     ses:
       from-email: test@example.com
 
