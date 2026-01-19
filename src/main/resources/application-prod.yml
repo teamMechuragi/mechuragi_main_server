@@ -79,6 +79,8 @@ cloud:
       static: ${AWS_REGION:ap-northeast-2}
     s3:
       bucket: ${S3_BUCKET}
+    cloudfront:
+      domain: ${CLOUDFRONT_DOMAIN}
     ses:
       from-email: ${SES_FROM_EMAIL}
 
