@@ -70,6 +70,8 @@ cloud:
       static: ${AWS_REGION:ap-northeast-2}
     s3:
       bucket: ${S3_BUCKET:mechuragi-dev-images}
+    cloudfront:
+      domain: ${CLOUDFRONT_DOMAIN:mechuragi.kro.kr}
     ses:
       from-email: ${SES_FROM_EMAIL:mechuragi001@gmail.com}
 

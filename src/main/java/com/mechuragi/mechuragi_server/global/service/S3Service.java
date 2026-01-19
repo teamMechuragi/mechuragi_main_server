@@ -30,6 +30,9 @@ public class S3Service {
     @Value("${cloud.aws.region.static}")
     private String region;
 
+    @Value("${cloud.aws.cloudfront.domain}")
+    private String cloudfrontDomain;
+
     private static final List<String> ALLOWED_EXTENSIONS = Arrays.asList("jpg", "jpeg", "png", "gif", "webp");
     private static final long MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
@@ -37,7 +40,8 @@ public class S3Service {
         validateFile(file);
 
         String fileName = generateFileName(file.getOriginalFilename());
-        String key = folder + "/" + fileName;
+        // CloudFront path pattern `/images/*`에 맞게 images/ prefix 추가
+        String key = "images/" + folder + "/" + fileName;
 
         try {
             PutObjectRequest putObjectRequest = PutObjectRequest.builder()
@@ -49,7 +53,8 @@ public class S3Service {
 
             s3Client.putObject(putObjectRequest, RequestBody.fromInputStream(file.getInputStream(), file.getSize()));
 
-            String imageUrl = String.format("https://%s.s3.%s.amazonaws.com/%s", bucketName, region, key);
+            // CloudFront URL 반환 (S3 직접 접근 대신 CDN 경유)
+            String imageUrl = String.format("https://%s/%s", cloudfrontDomain, key);
             log.info("Image uploaded successfully: {}", imageUrl);
             return imageUrl;
 
@@ -122,12 +127,20 @@ public class S3Service {
     }
 
     private String extractKeyFromUrl(String imageUrl) {
-        // URL에서 S3 키 추출
+        // CloudFront URL에서 S3 키 추출
+        // https://cloudfront-domain/images/folder/filename.jpg -> images/folder/filename.jpg
+        String cloudfrontUrl = String.format("https://%s/", cloudfrontDomain);
+        if (imageUrl.startsWith(cloudfrontUrl)) {
+            return imageUrl.substring(cloudfrontUrl.length());
+        }
+
+        // 기존 S3 URL도 지원 (하위 호환성)
         // https://bucket-name.s3.region.amazonaws.com/folder/filename.jpg -> folder/filename.jpg
         String bucketUrl = String.format("https://%s.s3.%s.amazonaws.com/", bucketName, region);
         if (imageUrl.startsWith(bucketUrl)) {
             return imageUrl.substring(bucketUrl.length());
         }
+
         throw new BusinessException(ErrorCode.INVALID_FILE_URL);
     }
 }
