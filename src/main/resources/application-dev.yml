@@ -81,12 +81,18 @@ cloud:
     s3:
       bucket: ${S3_BUCKET}
     cloudfront:
-      domain: ${CLOUDFRONT_DOMAIN:mechuragi.kro.kr}
+      domain: ${APP_DOMAIN}
     ses:
       from-email: ${SES_FROM_EMAIL}
 
 ai-service:
   url: ${AI_SERVICE_URL:http://localhost:8082}
+
+app:
+  domain: ${APP_DOMAIN}
+
+cors:
+  allowed-origins: ${ALLOWED_ORIGINS}
 
 logging:
   level:

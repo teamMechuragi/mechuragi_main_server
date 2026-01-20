@@ -54,6 +54,30 @@ jwt:
   secret: testSecretKeyForIntegrationTestPleaseIgnoreThisValueItIsJustForTestingPurposes1234567890
   expiration: 86400000
 
+# OAuth2 테스트 리다이렉트 설정
+oauth2:
+  redirect-uri: http://localhost:3000/oauth2/callback
+
+# Cloud 테스트 설정
+cloud:
+  aws:
+    region:
+      static: ap-northeast-2
+    s3:
+      bucket: test-bucket
+    cloudfront:
+      domain: localhost:8080
+    ses:
+      from-email: test@test.com
+
+# App 테스트 설정
+app:
+  domain: localhost:8080
+
+# CORS 테스트 설정
+cors:
+  allowed-origins: http://localhost:3000,http://localhost:8080
+
 # 로깅 설정 (테스트용)
 logging:
   level:

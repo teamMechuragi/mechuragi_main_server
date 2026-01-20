@@ -26,6 +26,8 @@ services:
       - KAKAO_CLIENT_SECRET=${KAKAO_CLIENT_SECRET}
       - KAKAO_REDIRECT_URI=${KAKAO_REDIRECT_URI}
       - AI_SERVICE_URL=${AI_SERVICE_URL}
+      - APP_DOMAIN=${APP_DOMAIN}
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS}
     restart: unless-stopped
     networks:
       - app-network
@@ -61,6 +63,8 @@ services:
       - KAKAO_CLIENT_SECRET=${KAKAO_CLIENT_SECRET}
       - KAKAO_REDIRECT_URI=${KAKAO_REDIRECT_URI}
       - AI_SERVICE_URL=${AI_SERVICE_URL}
+      - APP_DOMAIN=${APP_DOMAIN}
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS}
     restart: unless-stopped
     networks:
       - app-network

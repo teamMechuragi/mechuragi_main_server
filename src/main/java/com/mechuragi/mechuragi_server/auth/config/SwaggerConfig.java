@@ -6,6 +6,7 @@ import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.security.SecurityRequirement;
 import io.swagger.v3.oas.models.security.SecurityScheme;
 import io.swagger.v3.oas.models.servers.Server;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -13,6 +14,9 @@ import java.util.List;
 
 @Configuration
 public class SwaggerConfig {
+
+    @Value("${app.domain:localhost:8080}")
+    private String appDomain;
 
     @Bean
     public OpenAPI openAPI() {
@@ -27,6 +31,10 @@ public class SwaggerConfig {
         SecurityRequirement securityRequirement = new SecurityRequirement()
                 .addList("Bearer Authentication");
 
+        String productionUrl = appDomain.contains("localhost")
+                ? "http://" + appDomain
+                : "https://" + appDomain;
+
         return new OpenAPI()
                 .info(new Info()
                         .title("메추라기 API")
@@ -34,7 +42,7 @@ public class SwaggerConfig {
                         .version("v1.0.0"))
                 .servers(List.of(
                         new Server().url("http://localhost:8080").description("로컬 서버"),
-                        new Server().url("https://mechuragi.kro.kr").description("프로덕션 서버")
+                        new Server().url(productionUrl).description("프로덕션 서버")
                 ))
                 .components(new Components()
                         .addSecuritySchemes("Bearer Authentication", securityScheme))
