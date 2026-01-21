@@ -25,6 +25,7 @@ public class MemberController {
 
     private final MemberService memberService;
 
+    // 로그인 전
     @Operation(summary = "회원가입")
     @PostMapping("/signup")
     public ResponseEntity<MemberResponse> signup(@Valid @RequestBody SignupRequest request) {
@@ -48,7 +49,8 @@ public class MemberController {
         return ResponseEntity.ok(isDuplicate);
     }
 
-    @Operation(summary = "현재 로그인한 회원 정보 조회")
+    // 로그인 후 - 내 정보 관리
+    @Operation(summary = "내 회원 정보 조회")
     @GetMapping("/me")
     public ResponseEntity<MemberResponse> getCurrentMember(
             @AuthenticationPrincipal CustomUserDetails userDetails) {
@@ -57,14 +59,8 @@ public class MemberController {
         return ResponseEntity.ok(member);
     }
 
-    @Operation(summary = "회원 정보 조회")
-    @GetMapping("/{memberId}")
-    public ResponseEntity<MemberResponse> getMember(@PathVariable Long memberId) {
-        MemberResponse member = memberService.getMember(memberId);
-        return ResponseEntity.ok(member);
-    }
 
-    @Operation(summary = "회원 정보 수정")
+    @Operation(summary = "내 회원 정보 수정")
     @PutMapping("/me/profile")
     public ResponseEntity<MemberResponse> updateMember(
             @AuthenticationPrincipal CustomUserDetails userDetails,
@@ -74,7 +70,7 @@ public class MemberController {
         return ResponseEntity.ok(updatedMember);
     }
 
-    @Operation(summary = "비밀번호 변경")
+    @Operation(summary = "내 비밀번호 변경")
     @PutMapping("/me/password")
     public ResponseEntity<Void> updatePassword(
             @AuthenticationPrincipal CustomUserDetails userDetails,
@@ -94,7 +90,7 @@ public class MemberController {
     }
 
     @PatchMapping("/me/notification-setting")
-    @Operation(summary = "알림 설정 상태 변경", description = "알림 설정 상태를 변경합니다.")
+    @Operation(summary = "내 알림 설정 상태 변경", description = "알림 설정 상태를 변경합니다.")
     public ResponseEntity<Void> updateVoteNotificationSetting(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @Valid @RequestBody UpdateNotificationSettingRequest request) {
@@ -102,4 +98,14 @@ public class MemberController {
         memberService.updateVoteNotificationSetting(memberId, request.getEnabled());
         return ResponseEntity.ok().build();
     }
+
+    // 다른 회원 정보 관리
+
+    @Operation(summary = "타인 및 공개된 회원 정보 조회")
+    @GetMapping("/{memberId}")
+    public ResponseEntity<MemberResponse> getMember(@PathVariable Long memberId) {
+        MemberResponse member = memberService.getMember(memberId);
+        return ResponseEntity.ok(member);
+    }
+
 }
