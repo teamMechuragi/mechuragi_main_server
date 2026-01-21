@@ -100,6 +100,11 @@ public class Member {
         this.status = status;
     }
 
+    public void markAsDeleted(String deletedSuffix) {
+        this.email = this.email + deletedSuffix;
+        this.nickname = this.nickname + deletedSuffix;
+    }
+
     public void updateVoteNotificationSetting(Boolean enabled) {
         if (enabled != null) {
             this.voteNotificationEnabled = enabled;
