@@ -65,26 +65,30 @@ public class MemberController {
     }
 
     @Operation(summary = "회원 정보 수정")
-    @PutMapping("/{memberId}")
+    @PutMapping("/me/profile")
     public ResponseEntity<MemberResponse> updateMember(
-            @PathVariable Long memberId,
+            @AuthenticationPrincipal CustomUserDetails userDetails,
             @Valid @RequestBody UpdateMemberRequest request) {
+        Long memberId = userDetails.getMemberId();
         MemberResponse updatedMember = memberService.updateMember(memberId, request);
         return ResponseEntity.ok(updatedMember);
     }
 
     @Operation(summary = "비밀번호 변경")
-    @PutMapping("/{memberId}/password")
+    @PutMapping("/me/password")
     public ResponseEntity<Void> updatePassword(
-            @PathVariable Long memberId,
+            @AuthenticationPrincipal CustomUserDetails userDetails,
             @Valid @RequestBody UpdatePasswordRequest request) {
+        Long memberId = userDetails.getMemberId();
         memberService.updatePassword(memberId, request);
         return ResponseEntity.ok().build();
     }
 
     @Operation(summary = "회원 탈퇴")
-    @DeleteMapping("/{memberId}")
-    public ResponseEntity<Void> deleteMember(@PathVariable Long memberId) {
+    @DeleteMapping("/me")
+    public ResponseEntity<Void> deleteMember(
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        Long memberId = userDetails.getMemberId();
         memberService.deleteMember(memberId);
         return ResponseEntity.noContent().build();
     }
