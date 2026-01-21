@@ -1,20 +1,19 @@
 package com.mechuragi.mechuragi_server.domain.member.controller;
 
 import com.mechuragi.mechuragi_server.auth.dto.CustomUserDetails;
-import com.mechuragi.mechuragi_server.domain.member.dto.MemberResponse;
-import com.mechuragi.mechuragi_server.domain.member.dto.SignupRequest;
-import com.mechuragi.mechuragi_server.domain.member.dto.UpdateMemberRequest;
-import com.mechuragi.mechuragi_server.domain.member.dto.UpdatePasswordRequest;
-import com.mechuragi.mechuragi_server.domain.member.dto.UpdateNotificationSettingRequest;
+import com.mechuragi.mechuragi_server.domain.member.dto.*;
 import com.mechuragi.mechuragi_server.domain.member.service.MemberService;
+import com.mechuragi.mechuragi_server.global.service.S3Service;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 @Slf4j
 @RestController
@@ -24,7 +23,9 @@ import org.springframework.web.bind.annotation.*;
 public class MemberController {
 
     private final MemberService memberService;
+    private final S3Service s3Service;
 
+    // 로그인 전
     @Operation(summary = "회원가입")
     @PostMapping("/signup")
     public ResponseEntity<MemberResponse> signup(@Valid @RequestBody SignupRequest request) {
@@ -48,7 +49,8 @@ public class MemberController {
         return ResponseEntity.ok(isDuplicate);
     }
 
-    @Operation(summary = "현재 로그인한 회원 정보 조회")
+    // 로그인 후 - 내 정보 관리
+    @Operation(summary = "내 회원 정보 조회")
     @GetMapping("/me")
     public ResponseEntity<MemberResponse> getCurrentMember(
             @AuthenticationPrincipal CustomUserDetails userDetails) {
@@ -57,40 +59,51 @@ public class MemberController {
         return ResponseEntity.ok(member);
     }
 
-    @Operation(summary = "회원 정보 조회")
-    @GetMapping("/{memberId}")
-    public ResponseEntity<MemberResponse> getMember(@PathVariable Long memberId) {
-        MemberResponse member = memberService.getMember(memberId);
-        return ResponseEntity.ok(member);
+    @PatchMapping(
+            value = "/me/profile-image",
+            consumes = MediaType.MULTIPART_FORM_DATA_VALUE
+    )
+    @Operation(summary = "내 프로필 이미지 변경")
+    public ResponseEntity<Void> updateProfileImage(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @RequestParam("file") MultipartFile file
+    ) {
+        memberService.updateProfileImage(userDetails.getMemberId(), file);
+        return ResponseEntity.ok().build();
     }
 
-    @Operation(summary = "회원 정보 수정")
-    @PutMapping("/{memberId}")
-    public ResponseEntity<MemberResponse> updateMember(
-            @PathVariable Long memberId,
-            @Valid @RequestBody UpdateMemberRequest request) {
-        MemberResponse updatedMember = memberService.updateMember(memberId, request);
+    @PutMapping("/me/nickname")
+    @Operation(summary = "내 닉네임 변경")
+    public ResponseEntity<MemberResponse> updateNickname(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @Valid @RequestBody UpdateNicknameRequest request
+    ) {
+        MemberResponse updatedMember =
+                memberService.updateNickname(userDetails.getMemberId(), request);
         return ResponseEntity.ok(updatedMember);
     }
 
-    @Operation(summary = "비밀번호 변경")
-    @PutMapping("/{memberId}/password")
+    @Operation(summary = "내 비밀번호 변경")
+    @PutMapping("/me/password")
     public ResponseEntity<Void> updatePassword(
-            @PathVariable Long memberId,
+            @AuthenticationPrincipal CustomUserDetails userDetails,
             @Valid @RequestBody UpdatePasswordRequest request) {
+        Long memberId = userDetails.getMemberId();
         memberService.updatePassword(memberId, request);
         return ResponseEntity.ok().build();
     }
 
     @Operation(summary = "회원 탈퇴")
-    @DeleteMapping("/{memberId}")
-    public ResponseEntity<Void> deleteMember(@PathVariable Long memberId) {
+    @DeleteMapping("/me")
+    public ResponseEntity<Void> deleteMember(
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        Long memberId = userDetails.getMemberId();
         memberService.deleteMember(memberId);
         return ResponseEntity.noContent().build();
     }
 
     @PatchMapping("/me/notification-setting")
-    @Operation(summary = "알림 설정 상태 변경", description = "알림 설정 상태를 변경합니다.")
+    @Operation(summary = "내 알림 설정 상태 변경", description = "알림 설정 상태를 변경합니다.")
     public ResponseEntity<Void> updateVoteNotificationSetting(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @Valid @RequestBody UpdateNotificationSettingRequest request) {
@@ -98,4 +111,14 @@ public class MemberController {
         memberService.updateVoteNotificationSetting(memberId, request.getEnabled());
         return ResponseEntity.ok().build();
     }
+
+    // 다른 회원 정보 관리
+
+    @Operation(summary = "타인 및 공개된 회원 정보 조회")
+    @GetMapping("/{memberId}")
+    public ResponseEntity<MemberResponse> getMember(@PathVariable Long memberId) {
+        MemberResponse member = memberService.getMember(memberId);
+        return ResponseEntity.ok(member);
+    }
+
 }

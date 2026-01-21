@@ -79,13 +79,12 @@ public class Member {
         this.voteNotificationEnabled = voteNotificationEnabled != null ? voteNotificationEnabled : true;
     }
 
-    public void updateProfile(String nickname, String profileImageUrl) {
-        if (nickname != null) {
-            this.nickname = nickname;
-        }
-        if (profileImageUrl != null) {
-            this.profileImageUrl = profileImageUrl;
-        }
+    public void updateNickname(String nickname) {
+        this.nickname = nickname;
+    }
+
+    public void updateProfileImage(String imageUrl) {
+        this.profileImageUrl = imageUrl;
     }
 
     public void updatePassword(String password) {
@@ -100,6 +99,11 @@ public class Member {
         this.status = status;
     }
 
+    public void markAsDeleted(String deletedSuffix) {
+        this.email = this.email + deletedSuffix;
+        this.nickname = this.nickname + deletedSuffix;
+    }
+
     public void updateVoteNotificationSetting(Boolean enabled) {
         if (enabled != null) {
             this.voteNotificationEnabled = enabled;
@@ -108,7 +112,7 @@ public class Member {
 
     /**
      * 닉네임에 멤버 ID를 추가하여 업데이트
-     * OAuth2 회원가입 시 랜덤 닉네임 + ID 조합을 위해 사용
+     * OAuth2 회원가입 시에만 랜덤 닉네임 + ID 조합을 위해 사용
      */
     public void appendIdToNickname(String baseNickname) {
         if (this.id != null) {

@@ -12,7 +12,7 @@ public enum ErrorCode {
     MEMBER_NOT_FOUND(HttpStatus.NOT_FOUND, "M001", "사용자를 찾을 수 없습니다."),
     EMAIL_ALREADY_EXISTS(HttpStatus.CONFLICT, "M002", "가입된 이메일이 존재합니다."),
     NICKNAME_DUPLICATED(HttpStatus.CONFLICT, "M003", "중복된 닉네임입니다."),
-    PASSWORD_MISMATCH(HttpStatus.UNAUTHORIZED,"M004","비밀번호가 일치하지 않습니다."),
+    PASSWORD_MISMATCH(HttpStatus.BAD_REQUEST,"M004","비밀번호가 일치하지 않습니다."),
     SOCIAL_ACCOUNT_EXISTS(HttpStatus.CONFLICT,"M005","가입된 소셜로그인 계정이 존재합니다."),
     ACCOUNT_NOT_ACTIVE(HttpStatus.FORBIDDEN,"M006","활성화된 계정이 아닙니다."),
 
@@ -24,9 +24,9 @@ public enum ErrorCode {
 
     // Auth
     INVALID_REFRESH_TOKEN(HttpStatus.UNAUTHORIZED, "A001", "유효하지 않은 Refresh Token입니다."),
-    REFRESH_TOKEN_NOT_FOUND(HttpStatus.NOT_FOUND, "A002", "Refresh Token을 찾을 수 없습니다."),
+    REFRESH_TOKEN_NOT_FOUND(HttpStatus.UNAUTHORIZED, "A002", "Refresh Token을 찾을 수 없습니다."),
     REFRESH_TOKEN_EXPIRED(HttpStatus.UNAUTHORIZED, "A003", "만료된 Refresh Token입니다."),
-    INVALID_JWT_TOKEN(HttpStatus.UNAUTHORIZED, "A004", "유효한 JWT 토큰이 없습니다"),
+    INVALID_JWT_TOKEN(HttpStatus.UNAUTHORIZED, "A004", "유효하지 않은 JWT 토큰입니다."),
     PASSWORD_CHANGE_DENIED(HttpStatus.BAD_REQUEST, "A005", "소셜 로그인 회원은 비밀번호를 변경할 수 없습니다."),
 
     // Preference
