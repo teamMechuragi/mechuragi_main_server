@@ -2,7 +2,7 @@ package com.mechuragi.mechuragi_server.domain.member.service;
 
 import com.mechuragi.mechuragi_server.domain.member.dto.MemberResponse;
 import com.mechuragi.mechuragi_server.domain.member.dto.SignupRequest;
-import com.mechuragi.mechuragi_server.domain.member.dto.UpdateMemberRequest;
+import com.mechuragi.mechuragi_server.domain.member.dto.UpdateNicknameRequest;
 import com.mechuragi.mechuragi_server.domain.member.dto.UpdatePasswordRequest;
 import com.mechuragi.mechuragi_server.domain.member.entity.Member;
 import com.mechuragi.mechuragi_server.domain.member.entity.type.MemberStatus;
@@ -10,11 +10,13 @@ import com.mechuragi.mechuragi_server.domain.member.repository.MemberRepository;
 import com.mechuragi.mechuragi_server.domain.member.service.mapper.MemberMapper;
 import com.mechuragi.mechuragi_server.global.exception.BusinessException;
 import com.mechuragi.mechuragi_server.global.exception.ErrorCode;
+import com.mechuragi.mechuragi_server.global.service.S3Service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -28,6 +30,7 @@ public class MemberService {
     private final MemberRepository memberRepository;
     private final PasswordEncoder passwordEncoder;
     private final MemberMapper memberMapper;
+    private final S3Service s3Service;
 
     // 일반 회원가입
     @Transactional
@@ -58,20 +61,32 @@ public class MemberService {
         return memberMapper.toDto(member);
     }
 
-    // 프로필 수정 (닉네임 및 프로필 사진 업데이트)
+    // 프로필 이미지 변경
     @Transactional
-    public MemberResponse updateMember(Long memberId, UpdateMemberRequest request) {
+    public void updateProfileImage(Long memberId, MultipartFile file) {
         Member member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.MEMBER_NOT_FOUND));
 
-        // 닉네임 중복 체크
-        if (request.getNickname() != null && !request.getNickname().equals(member.getNickname())) {
-            if (memberRepository.existsByNickname(request.getNickname())) {
-                throw new BusinessException(ErrorCode.NICKNAME_DUPLICATED);
-            }
+        if (member.getProfileImageUrl() != null) {
+            s3Service.deleteImage(member.getProfileImageUrl());
         }
 
-        member.updateProfile(request.getNickname(), request.getProfileImageUrl());
+        String imageUrl = s3Service.uploadImage(file, "profile-images");
+        member.updateProfileImage(imageUrl);
+    }
+
+    // 프로필 닉네임 변경
+    @Transactional
+    public MemberResponse updateNickname(Long memberId, UpdateNicknameRequest request) {
+        Member member = memberRepository.findById(memberId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.MEMBER_NOT_FOUND));
+
+        if (!request.getNickname().equals(member.getNickname())
+                && memberRepository.existsByNickname(request.getNickname())) {
+            throw new BusinessException(ErrorCode.NICKNAME_DUPLICATED);
+        }
+
+        member.updateNickname(request.getNickname());
         return memberMapper.toDto(member);
     }
 

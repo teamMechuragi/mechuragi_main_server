@@ -1,20 +1,19 @@
 package com.mechuragi.mechuragi_server.domain.member.controller;
 
 import com.mechuragi.mechuragi_server.auth.dto.CustomUserDetails;
-import com.mechuragi.mechuragi_server.domain.member.dto.MemberResponse;
-import com.mechuragi.mechuragi_server.domain.member.dto.SignupRequest;
-import com.mechuragi.mechuragi_server.domain.member.dto.UpdateMemberRequest;
-import com.mechuragi.mechuragi_server.domain.member.dto.UpdatePasswordRequest;
-import com.mechuragi.mechuragi_server.domain.member.dto.UpdateNotificationSettingRequest;
+import com.mechuragi.mechuragi_server.domain.member.dto.*;
 import com.mechuragi.mechuragi_server.domain.member.service.MemberService;
+import com.mechuragi.mechuragi_server.global.service.S3Service;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 @Slf4j
 @RestController
@@ -24,6 +23,7 @@ import org.springframework.web.bind.annotation.*;
 public class MemberController {
 
     private final MemberService memberService;
+    private final S3Service s3Service;
 
     // 로그인 전
     @Operation(summary = "회원가입")
@@ -59,14 +59,27 @@ public class MemberController {
         return ResponseEntity.ok(member);
     }
 
-
-    @Operation(summary = "내 회원 정보 수정")
-    @PutMapping("/me/profile")
-    public ResponseEntity<MemberResponse> updateMember(
+    @PatchMapping(
+            value = "/me/profile-image",
+            consumes = MediaType.MULTIPART_FORM_DATA_VALUE
+    )
+    @Operation(summary = "내 프로필 이미지 변경")
+    public ResponseEntity<Void> updateProfileImage(
             @AuthenticationPrincipal CustomUserDetails userDetails,
-            @Valid @RequestBody UpdateMemberRequest request) {
-        Long memberId = userDetails.getMemberId();
-        MemberResponse updatedMember = memberService.updateMember(memberId, request);
+            @RequestParam("file") MultipartFile file
+    ) {
+        memberService.updateProfileImage(userDetails.getMemberId(), file);
+        return ResponseEntity.ok().build();
+    }
+
+    @PutMapping("/me/nickname")
+    @Operation(summary = "내 닉네임 변경")
+    public ResponseEntity<MemberResponse> updateNickname(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @Valid @RequestBody UpdateNicknameRequest request
+    ) {
+        MemberResponse updatedMember =
+                memberService.updateNickname(userDetails.getMemberId(), request);
         return ResponseEntity.ok(updatedMember);
     }
 
