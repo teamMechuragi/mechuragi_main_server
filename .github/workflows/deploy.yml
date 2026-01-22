@@ -141,6 +141,10 @@ jobs:
             ENV_EOF
 
             echo "✅ .env 파일 생성 완료"
+            
+            # 인프라 서비스 반영 (생성된 .env를 바탕으로 설정 변경사항 적용)
+            echo "🔄 인프라 서비스(Redis, MySQL) 설정 체크 및 반영 중..."
+            docker compose -f docker-compose.prod.yml up -d redis mysql
 
             # 최신 이미지 풀
             echo "🐳 최신 Docker 이미지 다운로드 중..."
