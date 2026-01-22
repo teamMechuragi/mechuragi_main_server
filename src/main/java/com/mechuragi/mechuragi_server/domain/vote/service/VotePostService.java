@@ -5,6 +5,7 @@ import com.mechuragi.mechuragi_server.domain.member.repository.MemberRepository;
 import com.mechuragi.mechuragi_server.domain.notification.dto.VoteNotificationMessageDTO;
 import com.mechuragi.mechuragi_server.domain.notification.dto.VoteNotificationType;
 import com.mechuragi.mechuragi_server.domain.notification.event.VoteCompletedEvent;
+import com.mechuragi.mechuragi_server.domain.notification.entity.Notification;
 import com.mechuragi.mechuragi_server.domain.notification.service.NotificationService;
 import com.mechuragi.mechuragi_server.domain.vote.dto.*;
 import com.mechuragi.mechuragi_server.domain.vote.entity.VoteOption;
@@ -233,17 +234,24 @@ public class VotePostService {
                 return;
             }
 
-            notificationService.createNotification(
+            Notification notification = notificationService.createNotification(
                     author.getId(),
                     voteId,
                     title,
                     VoteNotificationType.ENDING_SOON
             );
 
+            if (notification == null) {
+                log.info("중복 알림으로 인해 발행 건너뜀: voteId={}", voteId);
+                votePost.markNotified10MinBefore();
+                votePostRepository.save(votePost);
+                return;
+            }
+
             // Pub/Sub timestamp는 LocalDateTime으로 유지 (프론트 표시용)
             VoteNotificationMessageDTO message = VoteNotificationMessageDTO.builder()
                     .voteId(voteId)
-                    .title(title)
+                    .title(notification.getTitle())
                     .type(VoteNotificationType.ENDING_SOON)
                     .timestamp(LocalDateTime.now())
                     .memberId(author.getId())
@@ -305,6 +313,36 @@ public class VotePostService {
         } catch (Exception e) {
             log.error("[VotePostService] Redis TTL 키 등록 실패: voteId={}", votePost.getId(), e);
         }
+    }
+
+    /**
+     * 가장 많이 득표한 옵션명 조회
+     */
+    public String getWinningOptionText(Long voteId) {
+        VotePost votePost = votePostRepository.findById(voteId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.VOTE_NOT_FOUND));
+
+        return votePost.getVoteOptions().stream()
+                .max((opt1, opt2) -> {
+                    int count1 = getOptionVoteCount(voteId, opt1.getId());
+                    int count2 = getOptionVoteCount(voteId, opt2.getId());
+                    return Integer.compare(count1, count2);
+                })
+                .map(opt -> opt.getOptionText())
+                .orElse("없음");
+    }
+
+    /**
+     * 특정 옵션의 투표 수 조회 (Redis 우선, 없으면 DB)
+     */
+    private int getOptionVoteCount(Long voteId, Long optionId) {
+        String optionKey = "vote:" + voteId + ":option:" + optionId + ":count";
+        String countStr = redisTemplate.opsForValue().get(optionKey);
+        if (countStr != null) {
+            return Integer.parseInt(countStr);
+        }
+        // Redis에 없으면 DB에서 조회 (VoteOption의 participations)
+        return 0;
     }
 
     /**
