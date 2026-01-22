@@ -64,7 +64,7 @@ services:
     container_name: mechuragi-server-redis
     ports:
       - "${REDIS_PORT:-6379}:6379"
-    command: redis-server --maxmemory 500mb --maxmemory-policy allkeys-lru --appendonly yes
+    command: redis-server --maxmemory 500mb --maxmemory-policy allkeys-lru --appendonly yes --notify-keyspace-events Ex
     volumes:
       - redis_data:/data
     restart: unless-stopped
