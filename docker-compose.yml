@@ -9,6 +9,12 @@ services:
     container_name: mechuragi-server-backend
     ports:
       - "8080:8080"
+    deploy:
+      resources:
+        limits:
+          memory: 800M  # t3.small(2GB) 기준, JVM은 75%인 ~600MB 사용
+        reservations:
+          memory: 400M
     environment:
       - SPRING_PROFILES_ACTIVE=docker
       # Docker 내부 네트워크의 MySQL 컨테이너 이름(mysql) 사용
@@ -64,7 +70,13 @@ services:
     container_name: mechuragi-server-redis
     ports:
       - "${REDIS_PORT:-6379}:6379"
-    command: redis-server --maxmemory 500mb --maxmemory-policy allkeys-lru --appendonly yes --notify-keyspace-events Ex
+    command: redis-server --maxmemory 150mb --maxmemory-policy allkeys-lru --appendonly yes --notify-keyspace-events Ex
+    deploy:
+      resources:
+        limits:
+          memory: 200M
+        reservations:
+          memory: 100M
     volumes:
       - redis_data:/data
     restart: unless-stopped
