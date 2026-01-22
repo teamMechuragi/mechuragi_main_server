@@ -4,6 +4,7 @@ import com.mechuragi.mechuragi_server.domain.member.entity.Member;
 import com.mechuragi.mechuragi_server.domain.member.repository.MemberRepository;
 import com.mechuragi.mechuragi_server.domain.notification.dto.VoteNotificationMessageDTO;
 import com.mechuragi.mechuragi_server.domain.notification.dto.VoteNotificationType;
+import com.mechuragi.mechuragi_server.domain.notification.entity.Notification;
 import com.mechuragi.mechuragi_server.domain.notification.metrics.VoteNotificationMetrics;
 import com.mechuragi.mechuragi_server.domain.notification.service.NotificationService;
 import io.micrometer.core.instrument.Timer;
@@ -47,17 +48,22 @@ public class VoteEventListener {
             }
 
             // 알림 저장
-            notificationService.createNotification(
+            Notification notification = notificationService.createNotification(
                     event.getAuthorId(),
                     event.getVoteId(),
                     event.getTitle(),
                     VoteNotificationType.COMPLETED
             );
 
-            // Redis Pub/Sub으로 실시간 알림 발행
+            if (notification == null) {
+                log.info("중복 알림으로 인해 발행 건너뜀: voteId={}", event.getVoteId());
+                return;
+            }
+
+            // Redis Pub/Sub으로 실시간 알림 발행 (저장된 알림의 title 사용)
             VoteNotificationMessageDTO message = VoteNotificationMessageDTO.builder()
                     .voteId(event.getVoteId())
-                    .title(event.getTitle())
+                    .title(notification.getTitle())
                     .type(VoteNotificationType.COMPLETED)
                     .timestamp(LocalDateTime.now())
                     .memberId(event.getAuthorId())

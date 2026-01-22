@@ -50,4 +50,9 @@ public interface VotePostRepository extends JpaRepository<VotePost, Long> {
             @Param("tenMinutesLater") Instant tenMinutesLater,
             @Param("elevenMinutesLater") Instant elevenMinutesLater
     );
+
+    // 활성 투표 전체 조회 (서버 시작 시 Redis 키 복구용)
+    @Query("SELECT v FROM VotePost v " +
+            "WHERE v.status = 'ACTIVE' AND v.deadline > :now")
+    List<VotePost> findAllActiveVotes(@Param("now") Instant now);
 }

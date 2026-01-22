@@ -1,9 +1,6 @@
 package com.mechuragi.mechuragi_server.domain.member.service;
 
-import com.mechuragi.mechuragi_server.domain.member.dto.MemberResponse;
-import com.mechuragi.mechuragi_server.domain.member.dto.SignupRequest;
-import com.mechuragi.mechuragi_server.domain.member.dto.UpdateNicknameRequest;
-import com.mechuragi.mechuragi_server.domain.member.dto.UpdatePasswordRequest;
+import com.mechuragi.mechuragi_server.domain.member.dto.*;
 import com.mechuragi.mechuragi_server.domain.member.entity.Member;
 import com.mechuragi.mechuragi_server.domain.member.entity.type.MemberStatus;
 import com.mechuragi.mechuragi_server.domain.member.repository.MemberRepository;
@@ -59,6 +56,14 @@ public class MemberService {
         Member member = memberRepository.findByEmail(email)
                 .orElseThrow(() -> new BusinessException(ErrorCode.MEMBER_NOT_FOUND));
         return memberMapper.toDto(member);
+    }
+
+    // 내 알림 설정 상태 조회
+    public NotificationSettingResponse getNotificationSetting(Long memberId) {
+        Member member = memberRepository.findById(memberId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.MEMBER_NOT_FOUND));
+        boolean enabled = member.getVoteNotificationEnabled();
+        return new NotificationSettingResponse(enabled);
     }
 
     // 프로필 이미지 변경

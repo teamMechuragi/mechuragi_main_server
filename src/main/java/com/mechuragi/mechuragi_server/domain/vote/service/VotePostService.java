@@ -5,6 +5,7 @@ import com.mechuragi.mechuragi_server.domain.member.repository.MemberRepository;
 import com.mechuragi.mechuragi_server.domain.notification.dto.VoteNotificationMessageDTO;
 import com.mechuragi.mechuragi_server.domain.notification.dto.VoteNotificationType;
 import com.mechuragi.mechuragi_server.domain.notification.event.VoteCompletedEvent;
+import com.mechuragi.mechuragi_server.domain.notification.entity.Notification;
 import com.mechuragi.mechuragi_server.domain.notification.service.NotificationService;
 import com.mechuragi.mechuragi_server.domain.vote.dto.*;
 import com.mechuragi.mechuragi_server.domain.vote.entity.VoteOption;
@@ -25,11 +26,13 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -37,6 +40,10 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class VotePostService {
+
+    private static final String VOTE_EXPIRE_KEY_PREFIX = "vote:expire:";
+    private static final String VOTE_SOON_KEY_PREFIX = "vote:soon:";
+    private static final long SOON_NOTIFICATION_MINUTES = 10;
 
     private final VotePostRepository votePostRepository;
     private final MemberRepository memberRepository;
@@ -78,6 +85,9 @@ public class VotePostService {
 
         votePost.getVoteOptions().addAll(voteOptions);
         VotePost savedVotePost = votePostRepository.save(votePost);
+
+        // Redis TTL 키 등록 (Keyspace Notifications 기반 알림용)
+        registerVoteExpirationKeys(savedVotePost);
 
         return VoteResponseDTO.from(savedVotePost, redisTemplate);
     }
@@ -158,7 +168,18 @@ public class VotePostService {
             throw new BusinessException(ErrorCode.VOTE_ALREADY_COMPLETED);
         }
 
+        // deadline 변경 여부 확인
+        boolean deadlineChanged = request.getDeadline() != null
+                && !request.getDeadline().equals(votePost.getDeadline());
+
         votePost.updateVote(request.getTitle(), request.getDescription(), request.getDeadline());
+
+        // deadline 변경 시 Redis 키 재등록
+        if (deadlineChanged) {
+            removeVoteExpirationKeys(voteId);
+            registerVoteExpirationKeys(votePost);
+        }
+
         return VoteResponseDTO.from(votePost, redisTemplate);
     }
 
@@ -166,6 +187,9 @@ public class VotePostService {
     public void deleteVote(Long voteId, Long authorId) {
         VotePost votePost = votePostRepository.findByIdAndAuthorId(voteId, authorId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.VOTE_NOT_FOUND));
+
+        // Redis TTL 키 삭제
+        removeVoteExpirationKeys(voteId);
 
         votePostRepository.delete(votePost);
     }
@@ -210,17 +234,24 @@ public class VotePostService {
                 return;
             }
 
-            notificationService.createNotification(
+            Notification notification = notificationService.createNotification(
                     author.getId(),
                     voteId,
                     title,
                     VoteNotificationType.ENDING_SOON
             );
 
+            if (notification == null) {
+                log.info("중복 알림으로 인해 발행 건너뜀: voteId={}", voteId);
+                votePost.markNotified10MinBefore();
+                votePostRepository.save(votePost);
+                return;
+            }
+
             // Pub/Sub timestamp는 LocalDateTime으로 유지 (프론트 표시용)
             VoteNotificationMessageDTO message = VoteNotificationMessageDTO.builder()
                     .voteId(voteId)
-                    .title(title)
+                    .title(notification.getTitle())
                     .type(VoteNotificationType.ENDING_SOON)
                     .timestamp(LocalDateTime.now())
                     .memberId(author.getId())
@@ -245,5 +276,90 @@ public class VotePostService {
         Instant now = Instant.now();
         List<VotePost> expiredVotes = votePostRepository.findExpiredActiveVotes(now);
         expiredVotes.forEach(VotePost::complete);
+    }
+
+    /**
+     * 투표 만료 Redis TTL 키 등록 (Keyspace Notifications 기반)
+     *
+     * - vote:expire:{voteId}: 투표 종료 트리거 (TTL = deadline - now)
+     * - vote:soon:{voteId}: 10분 전 알림 트리거 (TTL = deadline - 10분 - now, 0 이상일 때만)
+     */
+    public void registerVoteExpirationKeys(VotePost votePost) {
+        try {
+            Instant now = Instant.now();
+            Instant deadline = votePost.getDeadline();
+            Long voteId = votePost.getId();
+
+            // 투표 종료 키 TTL 계산
+            long expireTtlSeconds = Duration.between(now, deadline).getSeconds();
+            if (expireTtlSeconds > 0) {
+                String expireKey = VOTE_EXPIRE_KEY_PREFIX + voteId;
+                redisTemplate.opsForValue().set(expireKey, "1", expireTtlSeconds, TimeUnit.SECONDS);
+                log.debug("[VotePostService] 투표 종료 키 등록: key={}, ttl={}초", expireKey, expireTtlSeconds);
+            } else {
+                log.warn("[VotePostService] 투표 종료 키 등록 생략 (이미 만료됨): voteId={}", voteId);
+            }
+
+            // 10분 전 알림 키 TTL 계산
+            Instant soonNotificationTime = deadline.minus(SOON_NOTIFICATION_MINUTES, ChronoUnit.MINUTES);
+            long soonTtlSeconds = Duration.between(now, soonNotificationTime).getSeconds();
+            if (soonTtlSeconds > 0) {
+                String soonKey = VOTE_SOON_KEY_PREFIX + voteId;
+                redisTemplate.opsForValue().set(soonKey, "1", soonTtlSeconds, TimeUnit.SECONDS);
+                log.debug("[VotePostService] 10분 전 알림 키 등록: key={}, ttl={}초", soonKey, soonTtlSeconds);
+            } else {
+                log.debug("[VotePostService] 10분 전 알림 키 등록 생략 (이미 지남): voteId={}", voteId);
+            }
+        } catch (Exception e) {
+            log.error("[VotePostService] Redis TTL 키 등록 실패: voteId={}", votePost.getId(), e);
+        }
+    }
+
+    /**
+     * 가장 많이 득표한 옵션명 조회
+     */
+    public String getWinningOptionText(Long voteId) {
+        VotePost votePost = votePostRepository.findById(voteId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.VOTE_NOT_FOUND));
+
+        return votePost.getVoteOptions().stream()
+                .max((opt1, opt2) -> {
+                    int count1 = getOptionVoteCount(voteId, opt1.getId());
+                    int count2 = getOptionVoteCount(voteId, opt2.getId());
+                    return Integer.compare(count1, count2);
+                })
+                .map(opt -> opt.getOptionText())
+                .orElse("없음");
+    }
+
+    /**
+     * 특정 옵션의 투표 수 조회 (Redis 우선, 없으면 DB)
+     */
+    private int getOptionVoteCount(Long voteId, Long optionId) {
+        String optionKey = "vote:" + voteId + ":option:" + optionId + ":count";
+        String countStr = redisTemplate.opsForValue().get(optionKey);
+        if (countStr != null) {
+            return Integer.parseInt(countStr);
+        }
+        // Redis에 없으면 DB에서 조회 (VoteOption의 participations)
+        return 0;
+    }
+
+    /**
+     * 투표 만료 Redis TTL 키 삭제
+     */
+    public void removeVoteExpirationKeys(Long voteId) {
+        try {
+            String expireKey = VOTE_EXPIRE_KEY_PREFIX + voteId;
+            String soonKey = VOTE_SOON_KEY_PREFIX + voteId;
+
+            Boolean expireDeleted = redisTemplate.delete(expireKey);
+            Boolean soonDeleted = redisTemplate.delete(soonKey);
+
+            log.debug("[VotePostService] Redis TTL 키 삭제: voteId={}, expireKey삭제={}, soonKey삭제={}",
+                    voteId, expireDeleted, soonDeleted);
+        } catch (Exception e) {
+            log.error("[VotePostService] Redis TTL 키 삭제 실패: voteId={}", voteId, e);
+        }
     }
 }

@@ -3,80 +3,71 @@ package com.mechuragi.mechuragi_server.domain.notification.service;
 import com.mechuragi.mechuragi_server.domain.notification.dto.VoteNotificationMessageDTO;
 import com.mechuragi.mechuragi_server.domain.notification.dto.VoteNotificationType;
 import com.mechuragi.mechuragi_server.domain.notification.metrics.VoteNotificationMetrics;
+import com.mechuragi.mechuragi_server.global.sse.SseEmitterRepository;
 import io.micrometer.core.instrument.Timer;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
+
+import java.io.IOException;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class VoteNotificationService {
-    private final SimpMessagingTemplate messagingTemplate; // 서버에서 STOMP 경로로 메시지 전송
+
+    private final SseEmitterRepository sseEmitterRepository;
     private final VoteNotificationMetrics metrics;
 
     /**
-     * STOMP를 통해 특정 사용자에게 알림 전송
+     * SSE를 통해 특정 사용자에게 알림 전송
      */
     public void sendNotificationToUser(Long memberId, VoteNotificationMessageDTO message) {
         Timer.Sample sample = metrics.startNotificationTimer();
 
-        try {
-            String destination = getDestination(message.getType(), memberId);
-            messagingTemplate.convertAndSendToUser(
-                    memberId.toString(),
-                    destination,
-                    message
-            );
+        SseEmitter emitter = sseEmitterRepository.findById(memberId);
+        if (emitter == null) {
+            log.debug("[SSE] 연결된 Emitter 없음: memberId={}", memberId);
+            metrics.recordNotificationDuration(sample);
+            return;
+        }
 
-            // 메트릭 기록
-            metrics.recordStompMessageSent(destination);
+        String eventName = getEventName(message.getType());
+
+        try {
+            emitter.send(SseEmitter.event()
+                    .name(eventName)
+                    .data(message));
+
+            metrics.recordSseMessageSent(eventName);
             metrics.recordNotificationSent(message.getType().name());
             metrics.recordNotificationDuration(sample);
 
-            log.info("STOMP 알림 전송 성공: destination={}, voteId={}, memberId={}",
-                    destination, message.getVoteId(), memberId);
+            log.info("[SSE] 알림 전송 성공: event={}, voteId={}, memberId={}",
+                    eventName, message.getVoteId(), memberId);
+        } catch (IOException e) {
+            metrics.recordNotificationFailed(message.getType().name());
+            log.warn("[SSE] 알림 전송 실패 (연결 끊김): memberId={}, error={}", memberId, e.getMessage());
+            sseEmitterRepository.deleteById(memberId);
         } catch (Exception e) {
             metrics.recordNotificationFailed(message.getType().name());
-            log.error("STOMP 알림 전송 실패: voteId={}, memberId={}", message.getVoteId(), memberId, e);
+            log.error("[SSE] 알림 전송 실패: voteId={}, memberId={}", message.getVoteId(), memberId, e);
         }
     }
 
     /**
-     * 브로드캐스트 방식으로 알림 전송 (하위 호환성 유지)
+     * 브로드캐스트 방식 (SSE에서는 사용하지 않음 - 하위 호환성 유지)
      */
     @Deprecated
     public void sendNotification(VoteNotificationMessageDTO message) {
-        Timer.Sample sample = metrics.startNotificationTimer();
-
-        try {
-            String destination = getDestinationBroadcast(message.getType());
-            messagingTemplate.convertAndSend(destination, message);
-
-            // 메트릭 기록
-            metrics.recordStompMessageSent(destination);
-            metrics.recordNotificationSent(message.getType().name());
-            metrics.recordNotificationDuration(sample);
-
-            log.info("STOMP 알림 전송 성공: destination={}, voteId={}", destination, message.getVoteId());
-        } catch (Exception e) {
-            metrics.recordNotificationFailed(message.getType().name());
-            log.error("STOMP 알림 전송 실패: voteId={}", message.getVoteId(), e);
-        }
+        log.warn("[SSE] 브로드캐스트 방식은 SSE에서 지원되지 않습니다. memberId를 지정하세요.");
     }
 
-    private String getDestination(VoteNotificationType type, Long memberId) {
+    private String getEventName(VoteNotificationType type) {
         return switch (type) {
-            case COMPLETED -> "/queue/vote/end";
-            case ENDING_SOON -> "/queue/vote/soon";
-        };
-    }
-
-    private String getDestinationBroadcast(VoteNotificationType type) {
-        return switch (type) {
-            case COMPLETED -> "/topic/vote/end";
-            case ENDING_SOON -> "/topic/vote/soon";
+            case COMPLETED -> "vote-end";
+            case ENDING_SOON -> "vote-soon";
         };
     }
 }

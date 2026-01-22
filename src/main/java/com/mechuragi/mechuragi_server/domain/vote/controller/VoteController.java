@@ -69,7 +69,7 @@ public class VoteController {
         return ResponseEntity.ok(response);
     }
 
-    @Operation(summary = "커뮤니티상 인기 메뉴 조회")
+    @Operation(summary = "오늘의 인기 메뉴 조회")
     @GetMapping("/popular-menus")
     public ResponseEntity<List<PopularMenuResponseDTO>> getPopularMenus() {
         List<PopularMenuResponseDTO> response = popularMenuService.getPopularMenus();

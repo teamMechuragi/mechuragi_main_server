@@ -112,6 +112,16 @@ public class MemberController {
         return ResponseEntity.ok().build();
     }
 
+    @GetMapping("/me/notification-setting")
+    @Operation(summary = "내 알림 설정 상태 조회", description = "알림 설정 상태를 조회합니다.")
+    public ResponseEntity<NotificationSettingResponse> getNotificationSetting(
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        Long memberId = userDetails.getMemberId();
+        NotificationSettingResponse notificationSetting = memberService.getNotificationSetting(memberId);
+        return ResponseEntity.ok(notificationSetting);
+    }
+
+
     // 다른 회원 정보 관리
 
     @Operation(summary = "타인 및 공개된 회원 정보 조회")
