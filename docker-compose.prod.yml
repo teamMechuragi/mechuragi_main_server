@@ -49,20 +49,28 @@ services:
         awslogs-stream: ${HOSTNAME:-main-server}
         awslogs-create-group: "true"
 
-  # Redis 캐시 서버 (localhost 전용)
+  # Redis 원격 캐시 서버
   redis:
     image: redis:7-alpine
     container_name: mechuragi-redis
-    command: >
-      redis-server
-      --maxmemory 150mb
-      --maxmemory-policy allkeys-lru
-      --appendonly yes
-      --appendfsync everysec
-      --save 900 1
-      --save 300 10
-      --save 60 10000
-      --notify-keyspace-events Ex
+    command:
+      - redis-server
+      - --maxmemory
+      - 150mb
+      - --maxmemory-policy
+      - allkeys-lru
+      - --appendonly
+      - yes
+      - --appendfsync
+      - everysec
+      - --save
+      - "900 1"
+      - --save
+      - "300 10"
+      - --save
+      - "60 10000"
+      - --notify-keyspace-events
+      - Ex
     deploy:
       resources:
         limits:
