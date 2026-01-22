@@ -23,7 +23,7 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 @Tag(name = "SSE", description = "Server-Sent Events 연결 API")
 public class SseController {
 
-    private static final Long SSE_TIMEOUT = 30 * 60 * 1000L; // 30분
+    private static final Long SSE_TIMEOUT = 60 * 1000L; // 1분 (클라이언트가 재연결하도록 유도)
 
     private final SseEmitterRepository sseEmitterRepository;
 
@@ -57,7 +57,12 @@ public class SseController {
         });
 
         emitter.onError(e -> {
-            log.warn("[SSE] 연결 에러: memberId={}, error={}", memberId, e.getMessage());
+            // ClientAbortException은 클라이언트가 연결을 끊은 정상적인 상황
+            if (isClientAbortException(e)) {
+                log.debug("[SSE] 클라이언트 연결 종료: memberId={}", memberId);
+            } else {
+                log.warn("[SSE] 연결 에러: memberId={}, error={}", memberId, e.getMessage());
+            }
             sseEmitterRepository.deleteById(memberId);
         });
 
@@ -73,5 +78,22 @@ public class SseController {
         }
 
         return ResponseEntity.ok(emitter);
+    }
+
+    /**
+     * ClientAbortException 여부 확인 (클라이언트가 연결을 끊은 경우)
+     */
+    private boolean isClientAbortException(Throwable e) {
+        Throwable cause = e;
+        while (cause != null) {
+            String className = cause.getClass().getName();
+            if (className.contains("ClientAbortException") ||
+                className.contains("BrokenPipeException") ||
+                className.contains("ConnectionResetException")) {
+                return true;
+            }
+            cause = cause.getCause();
+        }
+        return false;
     }
 }
