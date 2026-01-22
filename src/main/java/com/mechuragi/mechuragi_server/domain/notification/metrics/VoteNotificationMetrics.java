@@ -17,7 +17,7 @@ public class VoteNotificationMetrics {
     private final Counter notificationSentCounter;
     private final Counter notificationFailedCounter;
     private final Counter redisMessageReceivedCounter;
-    private final Counter stompMessageSentCounter;
+    private final Counter sseMessageSentCounter;
     private final Timer notificationProcessingTimer;
     private final Timer redisPublishTimer;
 
@@ -41,9 +41,9 @@ public class VoteNotificationMetrics {
                 .description("Redis Pub/Sub 메시지 수신 횟수")
                 .register(registry);
 
-        // STOMP 메시지 발송 카운터
-        this.stompMessageSentCounter = Counter.builder("vote.stomp.message.sent")
-                .description("STOMP를 통한 메시지 발송 횟수")
+        // SSE 메시지 발송 카운터
+        this.sseMessageSentCounter = Counter.builder("vote.sse.message.sent")
+                .description("SSE를 통한 메시지 발송 횟수")
                 .register(registry);
 
         // 알림 처리 시간 타이머
@@ -127,26 +127,26 @@ public class VoteNotificationMetrics {
     }
 
     /**
-     * STOMP 메시지 발송 기록
+     * SSE 메시지 발송 기록
      */
-    public void recordStompMessageSent() {
-        stompMessageSentCounter.increment();
-        log.debug("[Metrics] STOMP 메시지 발송");
+    public void recordSseMessageSent() {
+        sseMessageSentCounter.increment();
+        log.debug("[Metrics] SSE 메시지 발송");
     }
 
     /**
-     * STOMP 메시지 발송 기록 (목적지별)
-     * @param destination STOMP 목적지
+     * SSE 메시지 발송 기록 (이벤트별)
+     * @param eventName SSE 이벤트명
      */
-    public void recordStompMessageSent(String destination) {
-        Counter.builder("vote.stomp.message.sent")
-                .description("STOMP를 통한 메시지 발송 횟수 (목적지별)")
-                .tag("destination", destination)
+    public void recordSseMessageSent(String eventName) {
+        Counter.builder("vote.sse.message.sent")
+                .description("SSE를 통한 메시지 발송 횟수 (이벤트별)")
+                .tag("event", eventName)
                 .register(registry)
                 .increment();
 
-        stompMessageSentCounter.increment();
-        log.debug("[Metrics] STOMP 메시지 발송: destination={}", destination);
+        sseMessageSentCounter.increment();
+        log.debug("[Metrics] SSE 메시지 발송: event={}", eventName);
     }
 
     /**
@@ -187,10 +187,10 @@ public class VoteNotificationMetrics {
      * 현재 메트릭 통계 로그 출력
      */
     public void logMetricsSummary() {
-        log.info("[Metrics Summary] 알림 발송 성공: {}, 실패: {}, Redis 수신: {}, STOMP 발송: {}",
+        log.info("[Metrics Summary] 알림 발송 성공: {}, 실패: {}, Redis 수신: {}, SSE 발송: {}",
                 notificationSentCounter.count(),
                 notificationFailedCounter.count(),
                 redisMessageReceivedCounter.count(),
-                stompMessageSentCounter.count());
+                sseMessageSentCounter.count());
     }
 }
