@@ -7,14 +7,20 @@ import com.mechuragi.mechuragi_server.domain.notification.dto.UnreadCountRespons
 import com.mechuragi.mechuragi_server.domain.notification.dto.VoteNotificationType;
 import com.mechuragi.mechuragi_server.domain.notification.entity.Notification;
 import com.mechuragi.mechuragi_server.domain.notification.repository.NotificationRepository;
+import com.mechuragi.mechuragi_server.domain.vote.entity.VoteOption;
+import com.mechuragi.mechuragi_server.domain.vote.entity.VotePost;
+import com.mechuragi.mechuragi_server.domain.vote.repository.VotePostRepository;
 import com.mechuragi.mechuragi_server.global.exception.BusinessException;
 import com.mechuragi.mechuragi_server.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Comparator;
 
 @Slf4j
 @Service
@@ -23,6 +29,8 @@ import org.springframework.transaction.annotation.Transactional;
 public class NotificationService {
     private final NotificationRepository notificationRepository;
     private final MemberRepository memberRepository;
+    private final VotePostRepository votePostRepository;
+    private final RedisTemplate<String, String> redisTemplate;
 
     /**
      * 알림 저장
@@ -43,7 +51,7 @@ public class NotificationService {
         // 알림 타입에 따라 메시지 생성
         String notificationMessage = switch (type) {
             case ENDING_SOON -> "투표 마감 10분전입니다";
-            case COMPLETED -> "투표가 마감되었습니다";
+            case COMPLETED -> "투표 종료! 추천 메뉴: " + getWinningOptionText(voteId);
         };
 
         Notification notification = Notification.builder()
@@ -91,5 +99,36 @@ public class NotificationService {
         return UnreadCountResponseDTO.builder()
                 .unreadCount(count)
                 .build();
+    }
+
+    /**
+     * 가장 많이 득표한 옵션명 조회
+     */
+    private String getWinningOptionText(Long voteId) {
+        VotePost votePost = votePostRepository.findById(voteId).orElse(null);
+        if (votePost == null || votePost.getVoteOptions().isEmpty()) {
+            return "없음";
+        }
+
+        return votePost.getVoteOptions().stream()
+                .max(Comparator.comparingInt(opt -> getOptionVoteCount(voteId, opt.getId())))
+                .map(VoteOption::getOptionText)
+                .orElse("없음");
+    }
+
+    /**
+     * 특정 옵션의 투표 수 조회 (Redis 우선, 없으면 DB)
+     */
+    private int getOptionVoteCount(Long voteId, Long optionId) {
+        String optionKey = "vote:" + voteId + ":option:" + optionId + ":count";
+        String countStr = redisTemplate.opsForValue().get(optionKey);
+        if (countStr != null) {
+            try {
+                return Integer.parseInt(countStr);
+            } catch (NumberFormatException e) {
+                log.warn("Redis 옵션 카운트 파싱 실패: key={}, value={}", optionKey, countStr);
+            }
+        }
+        return 0;
     }
 }
