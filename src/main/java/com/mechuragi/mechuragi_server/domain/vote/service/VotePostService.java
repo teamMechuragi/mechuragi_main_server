@@ -23,6 +23,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.ZSetOperations;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -132,17 +133,22 @@ public class VotePostService {
      */
     @Cacheable(value = "hotVotes", key = "'list:' + #size")
     public List<VoteResponseDTO> getHotVotes(int size) {
-        Set<String> topVoteIds = redisTemplate.opsForZSet()
-                .reverseRange("vote:hot", 0, size - 1);
+        // 점수와 함께 조회
+        Set<ZSetOperations.TypedTuple<String>> topVotesWithScores = redisTemplate.opsForZSet()
+                .reverseRangeWithScores("vote:hot", 0, size * 2 - 1);
 
-        if (topVoteIds == null || topVoteIds.isEmpty()) {
+        if (topVotesWithScores == null || topVotesWithScores.isEmpty()) {
             return new ArrayList<>();
         }
 
-        List<Long> voteIds = topVoteIds.stream()
-                .map(Long::valueOf)
-                .collect(Collectors.toList());
+        // voteId -> score 매핑
+        Map<Long, Double> scoreMap = topVotesWithScores.stream()
+                .collect(Collectors.toMap(
+                        tuple -> Long.valueOf(tuple.getValue()),
+                        tuple -> tuple.getScore() != null ? tuple.getScore() : 0.0
+                ));
 
+        List<Long> voteIds = new ArrayList<>(scoreMap.keySet());
         List<VotePost> hotVotes = votePostRepository.findAllById(voteIds);
 
         Map<Long, VotePost> voteMap = hotVotes.stream()
@@ -150,11 +156,15 @@ public class VotePostService {
 
         Instant oneWeekAgo = Instant.now().minus(7, ChronoUnit.DAYS);
 
-        // Redis 점수 순서대로 반환 (마감일 기준 1주 이내만)
+        // 점수 높은 순 → 동점이면 최신순으로 정렬
         return voteIds.stream()
                 .map(voteMap::get)
                 .filter(Objects::nonNull)
                 .filter(v -> v.getDeadline().isAfter(oneWeekAgo))
+                .sorted(Comparator
+                        .comparing((VotePost v) -> scoreMap.getOrDefault(v.getId(), 0.0)).reversed()
+                        .thenComparing(VotePost::getCreatedAt, Comparator.reverseOrder()))
+                .limit(size)
                 .map(v -> VoteResponseDTO.from(v, redisTemplate))
                 .collect(Collectors.toList());
     }
