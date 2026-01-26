@@ -11,6 +11,4 @@ import java.util.List;
 public interface RecommendedFoodRepository extends JpaRepository<RecommendedFood, Long> {
 
     List<RecommendedFood> findByMemberOrderByCreatedAtDesc(Member member);
-
-    List<RecommendedFood> findByMemberAndIsScrappedTrueOrderByCreatedAtDesc(Member member);
 }

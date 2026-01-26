@@ -54,9 +54,6 @@ public class RecommendedFood {
     @Column(length = 50)
     private String difficulty;
 
-    @Column(nullable = false)
-    private Boolean isScrapped = false;
-
     @CreatedDate
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -68,8 +65,7 @@ public class RecommendedFood {
     @Builder
     public RecommendedFood(Member member, RecommendationType recommendationType,
                           String name, String description, String reason,
-                          String ingredients, String cookingTime, String difficulty,
-                          Boolean isScrapped) {
+                          String ingredients, String cookingTime, String difficulty) {
         this.member = member;
         this.recommendationType = recommendationType;
         this.name = name;
@@ -78,15 +74,6 @@ public class RecommendedFood {
         this.ingredients = ingredients;
         this.cookingTime = cookingTime;
         this.difficulty = difficulty;
-        this.isScrapped = isScrapped != null ? isScrapped : false;
-    }
-
-    public void scrap() {
-        this.isScrapped = true;
-    }
-
-    public void unscrap() {
-        this.isScrapped = false;
     }
 
     public void setSession(RecommendationSession session) {
