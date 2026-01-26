@@ -4,6 +4,7 @@ import com.mechuragi.mechuragi_server.domain.recommend.dto.common.response.Recom
 import com.mechuragi.mechuragi_server.domain.recommend.dto.external.request.SaveRecommendationsRequest;
 import com.mechuragi.mechuragi_server.domain.recommend.entity.RecommendationSession;
 import com.mechuragi.mechuragi_server.domain.recommend.entity.RecommendedFood;
+import com.mechuragi.mechuragi_server.domain.recommend.repository.BookmarkRepository;
 import com.mechuragi.mechuragi_server.domain.recommend.repository.RecommendationSessionRepository;
 import com.mechuragi.mechuragi_server.domain.recommend.repository.RecommendedFoodRepository;
 import com.mechuragi.mechuragi_server.domain.recommend.service.mapper.RecommendedFoodMapper;
@@ -27,6 +28,7 @@ public class RecommendedFoodService {
 
     private final RecommendedFoodRepository recommendedFoodRepository;
     private final RecommendationSessionRepository sessionRepository;
+    private final BookmarkRepository bookmarkRepository;
     private final MemberRepository memberRepository;
     private final RecommendedFoodMapper recommendedFoodMapper;
 
@@ -57,37 +59,11 @@ public class RecommendedFoodService {
         List<RecommendedFood> recommendations = recommendedFoodRepository.findByMemberOrderByCreatedAtDesc(member);
 
         return recommendations.stream()
-                .map(recommendedFoodMapper::toDto)
+                .map(food -> {
+                    boolean isBookmarked = food.getSession() != null &&
+                            bookmarkRepository.existsByMemberIdAndSessionId(memberId, food.getSession().getId());
+                    return recommendedFoodMapper.toDto(food, isBookmarked);
+                })
                 .collect(Collectors.toList());
-    }
-
-    public List<RecommendedFoodResponse> getScrappedRecommendations(Long memberId) {
-        Member member = memberRepository.findById(memberId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.MEMBER_NOT_FOUND));
-
-        List<RecommendedFood> scrappedRecommendations =
-                recommendedFoodRepository.findByMemberAndIsScrappedTrueOrderByCreatedAtDesc(member);
-
-        return scrappedRecommendations.stream()
-                .map(recommendedFoodMapper::toDto)
-                .collect(Collectors.toList());
-    }
-
-    @Transactional
-    public void toggleScrap(Long memberId, Long recommendedFoodId) {
-        RecommendedFood recommendedFood = recommendedFoodRepository.findById(recommendedFoodId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.RECOMMENDATION_NOT_FOUND));
-
-        if (!recommendedFood.getMember().getId().equals(memberId)) {
-            throw new BusinessException(ErrorCode.MEMBER_NOT_FOUND);
-        }
-
-        if (recommendedFood.getIsScrapped()) {
-            recommendedFood.unscrap();
-            log.info("추천 음식 스크랩 해제 - ID: {}", recommendedFoodId);
-        } else {
-            recommendedFood.scrap();
-            log.info("추천 음식 스크랩 - ID: {}", recommendedFoodId);
-        }
     }
 }

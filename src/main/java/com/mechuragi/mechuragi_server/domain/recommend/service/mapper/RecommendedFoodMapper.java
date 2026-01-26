@@ -27,7 +27,6 @@ public class RecommendedFoodMapper {
                 .ingredients(request.getIngredients())
                 .cookingTime(request.getCookingTime())
                 .difficulty(request.getDifficulty())
-                .isScrapped(false)
                 .build();
     }
 
@@ -35,6 +34,13 @@ public class RecommendedFoodMapper {
      * RecommendedFood 엔티티를 RecommendedFoodResponse DTO로 변환
      */
     public RecommendedFoodResponse toDto(RecommendedFood food) {
+        return toDto(food, false);
+    }
+
+    /**
+     * RecommendedFood 엔티티를 RecommendedFoodResponse DTO로 변환 (북마크 상태 포함)
+     */
+    public RecommendedFoodResponse toDto(RecommendedFood food, boolean isScrapped) {
         return RecommendedFoodResponse.builder()
                 .id(food.getId())
                 .recommendationType(food.getRecommendationType())
@@ -44,7 +50,7 @@ public class RecommendedFoodMapper {
                 .ingredients(food.getIngredients())
                 .cookingTime(food.getCookingTime())
                 .difficulty(food.getDifficulty())
-                .isScrapped(food.getIsScrapped())
+                .isScrapped(isScrapped)
                 .createdAt(food.getCreatedAt())
                 .build();
     }
