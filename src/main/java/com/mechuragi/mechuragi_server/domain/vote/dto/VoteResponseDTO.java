@@ -28,6 +28,7 @@ public class VoteResponseDTO {
     private Boolean allowMultipleChoice;
     private int totalParticipants;
     private int totalLikes;
+    private Long authorId;
     private String authorName;
     private LocalDateTime createdAt;
     private List<VoteOptionResponseDTO> options;
@@ -66,6 +67,7 @@ public class VoteResponseDTO {
                 .allowMultipleChoice(votePost.getAllowMultipleChoice())
                 .totalParticipants(participants)
                 .totalLikes(likes)
+                .authorId(votePost.getAuthor().getId())
                 .authorName(votePost.getAuthor().getNickname())
                 .createdAt(votePost.getCreatedAt())
                 .options(options)

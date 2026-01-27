@@ -154,15 +154,21 @@ public class VotePostService {
         Map<Long, VotePost> voteMap = hotVotes.stream()
                 .collect(Collectors.toMap(VotePost::getId, v -> v));
 
-        Instant oneWeekAgo = Instant.now().minus(7, ChronoUnit.DAYS);
+        Instant now = Instant.now();
+        Instant oneWeekAgo = now.minus(7, ChronoUnit.DAYS);
 
-        // 점수 높은 순 → 동점이면 최신순으로 정렬
+        // 투표중 여부 판단 함수
+        java.util.function.Predicate<VotePost> isActive = v ->
+                v.getStatus() == VoteStatus.ACTIVE && v.getDeadline().isAfter(now);
+
+        // 1순위: 투표중 우선 → 2순위: 점수 높은 순 → 3순위: 최신순
         return voteIds.stream()
                 .map(voteMap::get)
                 .filter(Objects::nonNull)
                 .filter(v -> v.getDeadline().isAfter(oneWeekAgo))
                 .sorted(Comparator
-                        .comparing((VotePost v) -> scoreMap.getOrDefault(v.getId(), 0.0)).reversed()
+                        .comparing((VotePost v) -> isActive.test(v) ? 0 : 1)
+                        .thenComparing((VotePost v) -> scoreMap.getOrDefault(v.getId(), 0.0), Comparator.reverseOrder())
                         .thenComparing(VotePost::getCreatedAt, Comparator.reverseOrder()))
                 .limit(size)
                 .map(v -> VoteResponseDTO.from(v, redisTemplate))
