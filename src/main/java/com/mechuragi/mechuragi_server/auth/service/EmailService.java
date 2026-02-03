@@ -35,11 +35,6 @@ public class EmailService {
      */
     @Transactional
     public void sendVerificationEmail(String email) {
-        // 이메일 중복 체크
-        if (memberRepository.existsByEmail(email)) {
-            throw new BusinessException(ErrorCode.EMAIL_ALREADY_EXISTS);
-        }
-
         // 인증 코드 생성
         String verificationCode = generateVerificationCode();
 
