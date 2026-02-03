@@ -56,6 +56,7 @@ public class SecurityConfig {
                         .requestMatchers(
                                 "/api/members/signup", // 회원가입
                                 "/api/members/check/**",     // 이메일/닉네임 중복 체크
+                                "/api/email/**",             // 이메일 인증
                                 "/api/auth/**",              // 인증/인가
                                 "/api/test/**",              // 테스트
                                 "/actuator/**",              // Actuator
