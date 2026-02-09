@@ -81,10 +81,19 @@ public class FoodDiaryController {
     }
 
     @PostMapping(value = "/upload-image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    @Operation(summary = "먹방 일기 이미지 업로드", description = "먹방 일기에 사용할 이미지를 S3에 업로드합니다.")
+    @Operation(summary = "먹방 일기 이미지 업로드 (기존 방식 - deprecated)", description = "먹방 일기에 사용할 이미지를 S3에 업로드합니다.")
     public ResponseEntity<Map<String, String>> uploadImage(
             @RequestParam("file") MultipartFile file) {
         String imageUrl = s3Service.uploadImage(file, "diary");
         return ResponseEntity.ok(Map.of("imageUrl", imageUrl));
+    }
+
+    @PostMapping("/presigned-url")
+    @Operation(summary = "일기 이미지 업로드용 Pre-signed URL 발급", description = "클라이언트가 S3에 직접 업로드할 수 있는 Pre-signed URL을 발급합니다.")
+    public ResponseEntity<Map<String, String>> getPresignedUploadUrl(
+            @RequestParam("filename") String filename,
+            @RequestParam("contentType") String contentType) {
+        Map<String, String> result = s3Service.generatePresignedUploadUrl("diary", filename, contentType);
+        return ResponseEntity.ok(result);
     }
 }
