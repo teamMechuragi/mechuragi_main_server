@@ -112,12 +112,21 @@ public class VoteController {
         return ResponseEntity.noContent().build();
     }
 
-    @Operation(summary = "투표 이미지 업로드")
+    @Operation(summary = "투표 이미지 업로드 (기존 방식 - deprecated)")
     @PostMapping(value = "/upload-image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<Map<String, String>> uploadImage(
             @RequestParam("file") MultipartFile file) {
         String imageUrl = s3Service.uploadImage(file, "vote-images");
         return ResponseEntity.ok(Map.of("imageUrl", imageUrl));
+    }
+
+    @Operation(summary = "이미지 업로드용 Pre-signed URL 발급")
+    @PostMapping("/presigned-url")
+    public ResponseEntity<Map<String, String>> getPresignedUploadUrl(
+            @RequestParam("filename") String filename,
+            @RequestParam("contentType") String contentType) {
+        Map<String, String> result = s3Service.generatePresignedUploadUrl("vote-images", filename, contentType);
+        return ResponseEntity.ok(result);
     }
 
     @Operation(summary = "투표 참여")
