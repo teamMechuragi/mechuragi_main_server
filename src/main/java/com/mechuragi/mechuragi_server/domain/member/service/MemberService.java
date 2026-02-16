@@ -1,5 +1,6 @@
 package com.mechuragi.mechuragi_server.domain.member.service;
 
+import com.mechuragi.mechuragi_server.global.email.service.EmailService;
 import com.mechuragi.mechuragi_server.domain.member.dto.*;
 import com.mechuragi.mechuragi_server.domain.member.entity.Member;
 import com.mechuragi.mechuragi_server.domain.member.entity.type.MemberStatus;
@@ -28,6 +29,7 @@ public class MemberService {
     private final PasswordEncoder passwordEncoder;
     private final MemberMapper memberMapper;
     private final S3Service s3Service;
+    private final EmailService emailService;
 
     // 일반 회원가입
     @Transactional
@@ -40,6 +42,9 @@ public class MemberService {
         Member savedMember = memberRepository.save(member);
 
         log.info("회원가입 완료: email={}, nickname={}", request.getEmail(), savedMember.getNickname());
+
+        // 회원가입 환영 메일 발송
+        emailService.sendWelcomeEmail(savedMember.getEmail(), savedMember.getNickname());
 
         return memberMapper.toDto(savedMember);
     }

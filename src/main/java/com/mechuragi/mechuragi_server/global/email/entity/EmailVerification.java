@@ -1,4 +1,4 @@
-package com.mechuragi.mechuragi_server.auth.entity;
+package com.mechuragi.mechuragi_server.global.email.entity;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
