@@ -1,9 +1,8 @@
-package com.mechuragi.mechuragi_server.auth.controller;
+package com.mechuragi.mechuragi_server.global.email.controller;
 
-import com.mechuragi.mechuragi_server.auth.dto.SendVerificationEmailRequest;
-import com.mechuragi.mechuragi_server.auth.dto.VerifyEmailRequest;
-import com.mechuragi.mechuragi_server.auth.service.EmailService;
-import com.mechuragi.mechuragi_server.domain.member.service.MemberService;
+import com.mechuragi.mechuragi_server.global.email.dto.SendVerificationEmailRequest;
+import com.mechuragi.mechuragi_server.global.email.dto.VerifyEmailRequest;
+import com.mechuragi.mechuragi_server.global.email.service.EmailService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;

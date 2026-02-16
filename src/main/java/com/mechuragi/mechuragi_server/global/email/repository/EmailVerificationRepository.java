@@ -1,6 +1,6 @@
-package com.mechuragi.mechuragi_server.auth.repository;
+package com.mechuragi.mechuragi_server.global.email.repository;
 
-import com.mechuragi.mechuragi_server.auth.entity.EmailVerification;
+import com.mechuragi.mechuragi_server.global.email.entity.EmailVerification;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
