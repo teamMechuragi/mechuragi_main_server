@@ -55,6 +55,7 @@ public class SecurityConfig {
                         // 인증 없이 접근 가능한 경로
                         .requestMatchers(
                                 "/api/members/signup", // 회원가입
+                                "/api/members/reset-password", // 비밀번호 재설정
                                 "/api/members/check/**",     // 이메일/닉네임 중복 체크
                                 "/api/email/**",             // 이메일 인증
                                 "/api/auth/**",              // 인증/인가

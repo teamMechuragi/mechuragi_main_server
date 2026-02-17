@@ -49,6 +49,14 @@ public class MemberController {
         return ResponseEntity.ok(isDuplicate);
     }
 
+    @Operation(summary = "비밀번호 재설정", description = "이메일 인증 후 비밀번호를 재설정합니다.")
+    @PutMapping("/reset-password")
+    public ResponseEntity<Void> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
+        log.info("비밀번호 재설정 요청: email={}", request.getEmail());
+        memberService.resetPassword(request);
+        return ResponseEntity.ok().build();
+    }
+
     // 로그인 후 - 내 정보 관리
     @Operation(summary = "내 회원 정보 조회")
     @GetMapping("/me")

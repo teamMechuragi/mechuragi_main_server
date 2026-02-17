@@ -119,6 +119,31 @@ public class MemberService {
         member.updatePassword(encodedPassword);
     }
 
+    // 비밀번호 재설정 (비로그인 상태)
+    @Transactional
+    public void resetPassword(ResetPasswordRequest request) {
+        // 이메일 인증 여부 확인
+        if (!emailService.isEmailVerified(request.getEmail())) {
+            throw new BusinessException(ErrorCode.EMAIL_NOT_VERIFIED);
+        }
+
+        // 이메일로 회원 조회
+        Member member = memberRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> new BusinessException(ErrorCode.MEMBER_NOT_FOUND));
+
+        // 소셜 로그인 회원은 비밀번호 변경 불가
+        if (member.getPassword() == null) {
+            throw new BusinessException(ErrorCode.PASSWORD_CHANGE_DENIED);
+        }
+
+        // 새 비밀번호 암호화 및 저장
+        String encodedPassword = passwordEncoder.encode(request.getNewPassword());
+        member.updatePassword(encodedPassword);
+
+        // 사용된 이메일 인증 데이터 삭제 (재사용 방지)
+        emailService.deleteVerificationData(request.getEmail());
+    }
+
     // 회원 탈퇴 (소프트 삭제)
     @Transactional
     public void deleteMember(Long memberId) {
