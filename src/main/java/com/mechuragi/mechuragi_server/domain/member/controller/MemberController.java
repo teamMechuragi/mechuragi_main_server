@@ -9,11 +9,11 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
+
+import java.util.Map;
 
 @Slf4j
 @RestController
@@ -59,16 +59,23 @@ public class MemberController {
         return ResponseEntity.ok(member);
     }
 
-    @PatchMapping(
-            value = "/me/profile-image",
-            consumes = MediaType.MULTIPART_FORM_DATA_VALUE
-    )
-    @Operation(summary = "내 프로필 이미지 변경")
+    @PostMapping("/me/profile-image/presigned-url")
+    @Operation(summary = "프로필 이미지 업로드용 Pre-signed URL 발급")
+    public ResponseEntity<Map<String, String>> getProfileImagePresignedUrl(
+            @RequestParam("filename") String filename,
+            @RequestParam("contentType") String contentType) {
+        Map<String, String> result = s3Service.generatePresignedUploadUrl("profile-images", filename, contentType);
+        return ResponseEntity.ok(result);
+    }
+
+    @PatchMapping("/me/profile-image")
+    @Operation(summary = "내 프로필 이미지 변경 (Pre-signed URL 업로드 후 호출)")
     public ResponseEntity<Void> updateProfileImage(
             @AuthenticationPrincipal CustomUserDetails userDetails,
-            @RequestParam("file") MultipartFile file
+            @RequestBody Map<String, String> request
     ) {
-        memberService.updateProfileImage(userDetails.getMemberId(), file);
+        String imageUrl = request.get("imageUrl");
+        memberService.updateProfileImage(userDetails.getMemberId(), imageUrl);
         return ResponseEntity.ok().build();
     }
 

@@ -14,7 +14,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -73,7 +72,7 @@ public class MemberService {
 
     // 프로필 이미지 변경
     @Transactional
-    public void updateProfileImage(Long memberId, MultipartFile file) {
+    public void updateProfileImage(Long memberId, String imageUrl) {
         Member member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.MEMBER_NOT_FOUND));
 
@@ -81,7 +80,6 @@ public class MemberService {
             s3Service.deleteImage(member.getProfileImageUrl());
         }
 
-        String imageUrl = s3Service.uploadImage(file, "profile-images");
         member.updateProfileImage(imageUrl);
     }
 
