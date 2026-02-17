@@ -21,6 +21,7 @@ public enum ErrorCode {
     EMAIL_VERIFICATION_CODE_EXPIRED(HttpStatus.BAD_REQUEST, "E002", "인증 코드가 만료되었습니다."),
     EMAIL_ALREADY_VERIFIED(HttpStatus.BAD_REQUEST, "E003", "이미 인증 완료된 이메일입니다."),
     EMAIL_SEND_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "E004", "이메일 발송에 실패했습니다."),
+    EMAIL_NOT_VERIFIED(HttpStatus.BAD_REQUEST, "E005", "이메일 인증이 완료되지 않았습니다."),
 
     // Auth
     INVALID_REFRESH_TOKEN(HttpStatus.UNAUTHORIZED, "A001", "유효하지 않은 Refresh Token입니다."),

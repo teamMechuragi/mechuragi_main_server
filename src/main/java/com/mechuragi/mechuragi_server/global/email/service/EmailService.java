@@ -99,6 +99,23 @@ public class EmailService {
     }
 
     /**
+     * 이메일 인증 완료 여부 확인
+     */
+    public boolean isEmailVerified(String email) {
+        return emailVerificationRepository.findByEmail(email)
+                .map(EmailVerification::getVerified)
+                .orElse(false);
+    }
+
+    /**
+     * 이메일 인증 데이터 삭제
+     */
+    @Transactional
+    public void deleteVerificationData(String email) {
+        emailVerificationRepository.deleteByEmail(email);
+    }
+
+    /**
      * 회원가입 환영 메일 발송
      */
     public void sendWelcomeEmail(String email, String nickname) {
