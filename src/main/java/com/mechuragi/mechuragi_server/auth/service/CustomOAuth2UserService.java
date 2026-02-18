@@ -12,6 +12,7 @@ import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserServ
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest;
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserService;
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
+import org.springframework.security.oauth2.core.OAuth2Error;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -53,7 +54,18 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
         );
 
         // 5. 회원 정보 조회 또는 생성
-        Member member = saveOrUpdate(attributes);
+        Member member;
+        try {
+            member = saveOrUpdate(attributes);
+        } catch (BusinessException ex) {
+            // BusinessException은 AuthenticationException이 아니므로 Spring Security 필터가 잡지 못함.
+            // OAuth2AuthenticationException으로 감싸야 OAuth2FailureHandler까지 전달된다.
+            throw new OAuth2AuthenticationException(
+                    new OAuth2Error(ex.getErrorCode().getCode()),
+                    ex.getMessage(),
+                    ex
+            );
+        }
 
         log.info("OAuth2 로그인 성공: email={}, provider={}", member.getEmail(), member.getProvider());
 
