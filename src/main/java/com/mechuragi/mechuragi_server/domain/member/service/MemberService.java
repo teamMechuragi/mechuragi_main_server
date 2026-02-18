@@ -159,7 +159,7 @@ public class MemberService {
         Member member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.MEMBER_NOT_FOUND));
 
-        String deletedSuffix = "_deleted_" + LocalDate.now().format(DateTimeFormatter.BASIC_ISO_DATE);
+        String deletedSuffix = "_deleted_" + LocalDate.now().format(DateTimeFormatter.BASIC_ISO_DATE) + memberId;
         member.markAsDeleted(deletedSuffix);
         member.changeStatus(MemberStatus.INACTIVE);
     }
