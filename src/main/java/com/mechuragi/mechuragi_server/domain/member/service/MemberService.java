@@ -6,6 +6,7 @@ import com.mechuragi.mechuragi_server.domain.member.entity.Member;
 import com.mechuragi.mechuragi_server.domain.member.entity.type.MemberStatus;
 import com.mechuragi.mechuragi_server.domain.member.repository.MemberRepository;
 import com.mechuragi.mechuragi_server.domain.member.service.mapper.MemberMapper;
+import com.mechuragi.mechuragi_server.domain.member.entity.type.AuthProvider;
 import com.mechuragi.mechuragi_server.global.exception.BusinessException;
 import com.mechuragi.mechuragi_server.global.exception.ErrorCode;
 import com.mechuragi.mechuragi_server.global.service.S3Service;
@@ -33,6 +34,14 @@ public class MemberService {
     // 일반 회원가입
     @Transactional
     public MemberResponse signup(SignupRequest request) {
+
+        // 이메일 중복 확인 및 소셜 계정 여부 체크
+        memberRepository.findByEmail(request.getEmail()).ifPresent(existingMember -> {
+            if (existingMember.getProvider() != AuthProvider.NORMAL) {
+                throw new BusinessException(ErrorCode.SOCIAL_ACCOUNT_EXISTS);
+            }
+            throw new BusinessException(ErrorCode.EMAIL_ALREADY_EXISTS);
+        });
 
         // 회원 엔티티 생성 (Mapper 사용)
         Member member = memberMapper.toEntity(request);

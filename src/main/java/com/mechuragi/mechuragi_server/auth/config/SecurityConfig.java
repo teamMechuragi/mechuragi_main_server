@@ -1,6 +1,7 @@
 package com.mechuragi.mechuragi_server.auth.config;
 
 import com.mechuragi.mechuragi_server.auth.filter.JwtAuthenticationFilter;
+import com.mechuragi.mechuragi_server.auth.handler.OAuth2FailureHandler;
 import com.mechuragi.mechuragi_server.auth.handler.OAuth2SuccessHandler;
 import com.mechuragi.mechuragi_server.auth.service.CustomOAuth2UserService;
 import lombok.RequiredArgsConstructor;
@@ -33,6 +34,7 @@ public class SecurityConfig {
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final CustomOAuth2UserService customOAuth2UserService;
     private final OAuth2SuccessHandler oAuth2SuccessHandler;
+    private final OAuth2FailureHandler oAuth2FailureHandler;
 
     @Value("${cors.allowed-origins:http://localhost:3000,http://localhost:8080}")
     private String allowedOrigins;
@@ -94,6 +96,7 @@ public class SecurityConfig {
                         .userInfoEndpoint(userInfo -> userInfo
                                 .userService(customOAuth2UserService))
                         .successHandler(oAuth2SuccessHandler)
+                        .failureHandler(oAuth2FailureHandler)
                 )
 
                 // JWT 필터 등록 (UsernamePasswordAuthenticationFilter 앞에)
