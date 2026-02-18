@@ -42,6 +42,7 @@ public class OAuth2FailureHandler extends SimpleUrlAuthenticationFailureHandler 
                 .queryParam("error", errorCode)
                 .queryParam("message", message)
                 .build()
+                .encode()
                 .toUriString();
 
         log.info("OAuth2 실패 후 프론트엔드로 리다이렉트: {}", targetUrl);
