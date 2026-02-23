@@ -17,10 +17,10 @@ import java.time.Instant;
 public class VoteUpdateRequestDTO {
 
     @NotBlank(message = "투표 제목은 필수입니다")
-    @Size(max = 50, message = "투표 제목은 50자 이하여야 합니다")
+    @Size(max = 30, message = "투표 제목은 30자 이하여야 합니다")
     private String title;
 
-    @Size(max = 50, message = "투표 설명은 50자 이하여야 합니다")
+    @Size(max = 100, message = "투표 내용은 100자 이하여야 합니다")
     private String description;
 
     @NotNull(message = "마감일은 필수입니다")

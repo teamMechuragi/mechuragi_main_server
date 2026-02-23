@@ -1,5 +1,6 @@
 package com.mechuragi.mechuragi_server.domain.vote.dto;
 
+import com.mechuragi.mechuragi_server.domain.vote.entity.VoteOption;
 import com.mechuragi.mechuragi_server.domain.vote.entity.VotePost;
 import com.mechuragi.mechuragi_server.domain.vote.entity.VotePost.VoteStatus;
 import lombok.AllArgsConstructor;
@@ -10,9 +11,11 @@ import org.springframework.data.redis.core.RedisTemplate;
 
 import java.time.Instant;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 @Getter
 @Builder
@@ -42,21 +45,30 @@ public class VoteResponseDTO {
         int likes = Optional.ofNullable(redisTemplate.opsForValue().get(likesKey))
                 .map(Integer::parseInt).orElse(votePost.getTotalLikes());
 
-        List<VoteOptionResponseDTO> options = votePost.getVoteOptions().stream()
-                .map(opt -> {
-                    String optionKey = "vote:" + votePost.getId() + ":option:" + opt.getId() + ":count";
-                    int count = Optional.ofNullable(redisTemplate.opsForValue().get(optionKey))
-                            .map(Integer::parseInt).orElse(opt.getVoteCount());
-                    return VoteOptionResponseDTO.builder()
-                            .id(opt.getId())
-                            .optionText(opt.getOptionText())
-                            .imageUrl(opt.getImageUrl())
-                            .voteCount(count)
-                            .votePercentage(opt.getVotePercentage())
-                            .displayOrder(opt.getDisplayOrder())
-                            .build();
-                })
-                .collect(Collectors.toList());
+        List<VoteOption> voteOptions = votePost.getVoteOptions();
+        int n = voteOptions.size();
+        int[] counts = new int[n];
+        for (int i = 0; i < n; i++) {
+            VoteOption opt = voteOptions.get(i);
+            String optionKey = "vote:" + votePost.getId() + ":option:" + opt.getId() + ":count";
+            counts[i] = Optional.ofNullable(redisTemplate.opsForValue().get(optionKey))
+                    .map(Integer::parseInt).orElse(opt.getVoteCount());
+        }
+
+        int[] percentages = largestRemainder(counts, participants);
+
+        List<VoteOptionResponseDTO> options = new ArrayList<>();
+        for (int i = 0; i < n; i++) {
+            VoteOption opt = voteOptions.get(i);
+            options.add(VoteOptionResponseDTO.builder()
+                    .id(opt.getId())
+                    .optionText(opt.getOptionText())
+                    .imageUrl(opt.getImageUrl())
+                    .voteCount(counts[i])
+                    .votePercentage(percentages[i])
+                    .displayOrder(opt.getDisplayOrder())
+                    .build());
+        }
 
         return VoteResponseDTO.builder()
                 .id(votePost.getId())
@@ -74,6 +86,32 @@ public class VoteResponseDTO {
                 .build();
     }
 
+    private static int[] largestRemainder(int[] counts, int total) {
+        int n = counts.length;
+        int[] result = new int[n];
+        if (total == 0 || n == 0) return result;
+
+        double[] remainders = new double[n];
+        int floorSum = 0;
+        for (int i = 0; i < n; i++) {
+            double raw = (double) counts[i] / total * 100.0;
+            result[i] = (int) raw;
+            remainders[i] = raw - result[i];
+            floorSum += result[i];
+        }
+
+        int remaining = 100 - floorSum;
+        Integer[] indices = IntStream.range(0, n).boxed()
+                .sorted((a, b) -> Double.compare(remainders[b], remainders[a]))
+                .toArray(Integer[]::new);
+
+        for (int i = 0; i < remaining && i < n; i++) {
+            result[indices[i]]++;
+        }
+
+        return result;
+    }
+
     @Getter
     @Builder
     @NoArgsConstructor
@@ -84,7 +122,7 @@ public class VoteResponseDTO {
         private String optionText;
         private String imageUrl;
         private int voteCount;
-        private double votePercentage;
+        private int votePercentage;
         private int displayOrder;
     }
 }
