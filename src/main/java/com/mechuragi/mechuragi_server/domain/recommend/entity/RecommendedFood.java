@@ -45,15 +45,6 @@ public class RecommendedFood {
     @Column(columnDefinition = "TEXT")
     private String reason;
 
-    @Column(columnDefinition = "TEXT")
-    private String ingredients;
-
-    @Column(length = 50)
-    private String cookingTime;
-
-    @Column(length = 50)
-    private String difficulty;
-
     @CreatedDate
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -64,16 +55,12 @@ public class RecommendedFood {
 
     @Builder
     public RecommendedFood(Member member, RecommendationType recommendationType,
-                          String name, String description, String reason,
-                          String ingredients, String cookingTime, String difficulty) {
+                          String name, String description, String reason) {
         this.member = member;
         this.recommendationType = recommendationType;
         this.name = name;
         this.description = description;
         this.reason = reason;
-        this.ingredients = ingredients;
-        this.cookingTime = cookingTime;
-        this.difficulty = difficulty;
     }
 
     public void setSession(RecommendationSession session) {

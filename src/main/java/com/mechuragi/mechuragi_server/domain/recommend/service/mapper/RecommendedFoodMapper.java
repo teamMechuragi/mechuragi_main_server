@@ -24,9 +24,6 @@ public class RecommendedFoodMapper {
                 .name(request.getName())
                 .description(request.getDescription())
                 .reason(request.getReason())
-                .ingredients(request.getIngredients())
-                .cookingTime(request.getCookingTime())
-                .difficulty(request.getDifficulty())
                 .build();
     }
 
@@ -47,9 +44,6 @@ public class RecommendedFoodMapper {
                 .name(food.getName())
                 .description(food.getDescription())
                 .reason(food.getReason())
-                .ingredients(food.getIngredients())
-                .cookingTime(food.getCookingTime())
-                .difficulty(food.getDifficulty())
                 .isScrapped(isScrapped)
                 .createdAt(food.getCreatedAt())
                 .build();
