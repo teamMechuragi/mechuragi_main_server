@@ -18,13 +18,13 @@ public class PreferenceDetailResponseDTO {
     private Long id;
     private String preferenceName;
     private Integer numberOfDiners;
-    private String allergyInfo;
-    private FoodPreference.DietStatus isOnDiet;
+    private FoodPreference.DietStatus dietStatus;
     private FoodPreference.VeganOption veganOption;
     private FoodPreference.SpiceLevel spiceLevel;
     private List<String> preferredFoodTypes;
     private List<String> preferredTastes;
-    private List<String> dislikedFoods;
+    private List<String> avoidedFoods;
+    private List<String> allergies;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }
