@@ -19,9 +19,6 @@ public class RecommendedFoodResponse {
     private String name;
     private String description;
     private String reason;
-    private String ingredients;
-    private String cookingTime;
-    private String difficulty;
     private Boolean isScrapped;
     private LocalDateTime createdAt;
 }
