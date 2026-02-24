@@ -17,7 +17,6 @@ public class RecommendedFoodResponse {
     private Long id;
     private RecommendationType recommendationType;
     private String name;
-    private String description;
     private String reason;
     private Boolean isScrapped;
     private LocalDateTime createdAt;

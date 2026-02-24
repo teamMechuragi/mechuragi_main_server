@@ -22,7 +22,6 @@ public class RecommendedFoodMapper {
                 .member(member)
                 .recommendationType(request.getRecommendationType())
                 .name(request.getName())
-                .description(request.getDescription())
                 .reason(request.getReason())
                 .build();
     }
@@ -42,7 +41,6 @@ public class RecommendedFoodMapper {
                 .id(food.getId())
                 .recommendationType(food.getRecommendationType())
                 .name(food.getName())
-                .description(food.getDescription())
                 .reason(food.getReason())
                 .isScrapped(isScrapped)
                 .createdAt(food.getCreatedAt())

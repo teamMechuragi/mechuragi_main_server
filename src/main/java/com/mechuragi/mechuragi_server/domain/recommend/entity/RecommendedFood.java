@@ -40,9 +40,6 @@ public class RecommendedFood {
     private String name;
 
     @Column(columnDefinition = "TEXT")
-    private String description;
-
-    @Column(columnDefinition = "TEXT")
     private String reason;
 
     @CreatedDate
@@ -55,11 +52,10 @@ public class RecommendedFood {
 
     @Builder
     public RecommendedFood(Member member, RecommendationType recommendationType,
-                          String name, String description, String reason) {
+                          String name, String reason) {
         this.member = member;
         this.recommendationType = recommendationType;
         this.name = name;
-        this.description = description;
         this.reason = reason;
     }
 
