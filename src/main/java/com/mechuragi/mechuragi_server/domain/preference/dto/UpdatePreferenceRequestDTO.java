@@ -20,9 +20,7 @@ public class UpdatePreferenceRequestDTO {
     @Positive(message = "인원 수는 1명 이상이어야 합니다")
     private Integer numberOfDiners;
 
-    private String allergyInfo;
-
-    private FoodPreference.DietStatus isOnDiet;
+    private FoodPreference.DietStatus dietStatus;
 
     private FoodPreference.VeganOption veganOption;
 
@@ -32,5 +30,7 @@ public class UpdatePreferenceRequestDTO {
 
     private List<String> preferredTastes;
 
-    private List<String> dislikedFoods;
+    private List<String> avoidedFoods;
+
+    private List<String> allergies;
 }

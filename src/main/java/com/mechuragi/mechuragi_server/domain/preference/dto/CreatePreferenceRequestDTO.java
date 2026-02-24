@@ -23,10 +23,8 @@ public class CreatePreferenceRequestDTO {
     @Positive(message = "인원 수는 1명 이상이어야 합니다")
     private Integer numberOfDiners;
 
-    private String allergyInfo;
-
-    @NotNull(message = "다이어트 여부는 필수입니다")
-    private FoodPreference.DietStatus isOnDiet;
+    @NotNull(message = "다이어트 상태는 필수입니다")
+    private FoodPreference.DietStatus dietStatus;
 
     @NotNull(message = "비건 옵션은 필수입니다")
     private FoodPreference.VeganOption veganOption;
@@ -40,5 +38,7 @@ public class CreatePreferenceRequestDTO {
     @NotEmpty(message = "선호 맛은 최소 1개 이상 선택해야 합니다")
     private List<String> preferredTastes;
 
-    private List<String> dislikedFoods;
+    private List<String> avoidedFoods;
+
+    private List<String> allergies;
 }
