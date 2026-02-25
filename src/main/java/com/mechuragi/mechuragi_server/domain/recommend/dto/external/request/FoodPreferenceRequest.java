@@ -1,5 +1,6 @@
 package com.mechuragi.mechuragi_server.domain.recommend.dto.external.request;
 
+import com.mechuragi.mechuragi_server.domain.preference.entity.FoodPreference;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -12,10 +13,12 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class FoodPreferenceRequest {
-    private String dietStatus;
-    private String veganOption;
-    private String spiceLevel;
+    private Integer numberOfDiners;
+    private FoodPreference.DietStatus dietStatus;
+    private FoodPreference.VeganOption veganOption;
+    private FoodPreference.SpiceLevel spiceLevel;
     private List<String> foodTypes;
     private List<String> tastes;
-    private List<String> dislikedFoods;
+    private List<String> avoidedFoods;
+    private List<String> allergies;
 }

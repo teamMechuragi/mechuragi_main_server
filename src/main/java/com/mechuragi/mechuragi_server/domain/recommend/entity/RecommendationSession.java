@@ -1,6 +1,7 @@
 package com.mechuragi.mechuragi_server.domain.recommend.entity;
 
 import com.mechuragi.mechuragi_server.domain.member.entity.Member;
+import com.mechuragi.mechuragi_server.domain.preference.entity.FoodPreference;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -28,22 +29,46 @@ public class RecommendationSession {
     @JoinColumn(name = "member_id", nullable = false)
     private Member member;
 
-    @Column(columnDefinition = "TEXT")
-    private String context;
+    // 추천 요청 컨텍스트 (날씨, 시간 등 상황 정보)
+    @ElementCollection(fetch = FetchType.LAZY)
+    @CollectionTable(name = "session_context", joinColumns = @JoinColumn(name = "session_id"))
+    @Column(name = "context_item")
+    private List<String> context = new ArrayList<>();
 
-    // Preference fields
-    private String dietStatus;
-    private String veganOption;
-    private String spiceLevel;
+    // 추천 시점의 취향 스냅샷 (Preference Snapshot)
+    private Integer numberOfDiners;
 
-    @Column(columnDefinition = "TEXT")
-    private String foodTypes;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "diet_status")
+    private FoodPreference.DietStatus dietStatus;
 
-    @Column(columnDefinition = "TEXT")
-    private String tastes;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "vegan_option")
+    private FoodPreference.VeganOption veganOption;
 
-    @Column(columnDefinition = "TEXT")
-    private String dislikedFoods;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "spice_level")
+    private FoodPreference.SpiceLevel spiceLevel;
+
+    @ElementCollection(fetch = FetchType.LAZY)
+    @CollectionTable(name = "session_preferred_food_types", joinColumns = @JoinColumn(name = "session_id"))
+    @Column(name = "food_type")
+    private List<String> preferredFoodTypes = new ArrayList<>();
+
+    @ElementCollection(fetch = FetchType.LAZY)
+    @CollectionTable(name = "session_preferred_tastes", joinColumns = @JoinColumn(name = "session_id"))
+    @Column(name = "taste")
+    private List<String> preferredTastes = new ArrayList<>();
+
+    @ElementCollection(fetch = FetchType.LAZY)
+    @CollectionTable(name = "session_avoided_foods", joinColumns = @JoinColumn(name = "session_id"))
+    @Column(name = "food_name")
+    private List<String> avoidedFoods = new ArrayList<>();
+
+    @ElementCollection(fetch = FetchType.LAZY)
+    @CollectionTable(name = "session_allergies", joinColumns = @JoinColumn(name = "session_id"))
+    @Column(name = "allergy_name")
+    private List<String> allergies = new ArrayList<>();
 
     @OneToMany(mappedBy = "session", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<RecommendedFood> recommendedFoods = new ArrayList<>();
@@ -53,17 +78,25 @@ public class RecommendationSession {
     private LocalDateTime createdAt;
 
     @Builder
-    public RecommendationSession(Member member, String context,
-                                  String dietStatus, String veganOption, String spiceLevel,
-                                  String foodTypes, String tastes, String dislikedFoods) {
+    public RecommendationSession(Member member, List<String> context,
+                                  Integer numberOfDiners,
+                                  FoodPreference.DietStatus dietStatus,
+                                  FoodPreference.VeganOption veganOption,
+                                  FoodPreference.SpiceLevel spiceLevel,
+                                  List<String> preferredFoodTypes,
+                                  List<String> preferredTastes,
+                                  List<String> avoidedFoods,
+                                  List<String> allergies) {
         this.member = member;
-        this.context = context;
+        if (context != null) this.context = new ArrayList<>(context);
+        this.numberOfDiners = numberOfDiners;
         this.dietStatus = dietStatus;
         this.veganOption = veganOption;
         this.spiceLevel = spiceLevel;
-        this.foodTypes = foodTypes;
-        this.tastes = tastes;
-        this.dislikedFoods = dislikedFoods;
+        if (preferredFoodTypes != null) this.preferredFoodTypes = new ArrayList<>(preferredFoodTypes);
+        if (preferredTastes != null) this.preferredTastes = new ArrayList<>(preferredTastes);
+        if (avoidedFoods != null) this.avoidedFoods = new ArrayList<>(avoidedFoods);
+        if (allergies != null) this.allergies = new ArrayList<>(allergies);
     }
 
     public void addRecommendedFood(RecommendedFood food) {

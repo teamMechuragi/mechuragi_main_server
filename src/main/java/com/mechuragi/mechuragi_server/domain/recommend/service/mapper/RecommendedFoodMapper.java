@@ -9,8 +9,6 @@ import com.mechuragi.mechuragi_server.domain.recommend.entity.RecommendationSess
 import com.mechuragi.mechuragi_server.domain.recommend.entity.RecommendedFood;
 import org.springframework.stereotype.Component;
 
-import java.util.List;
-
 @Component
 public class RecommendedFoodMapper {
 
@@ -55,20 +53,15 @@ public class RecommendedFoodMapper {
 
         return RecommendationSession.builder()
                 .member(member)
-                .context(convertListToString(request.getContext()))
+                .context(request.getContext())
+                .numberOfDiners(pref != null ? pref.getNumberOfDiners() : null)
                 .dietStatus(pref != null ? pref.getDietStatus() : null)
                 .veganOption(pref != null ? pref.getVeganOption() : null)
                 .spiceLevel(pref != null ? pref.getSpiceLevel() : null)
-                .foodTypes(pref != null ? convertListToString(pref.getFoodTypes()) : null)
-                .tastes(pref != null ? convertListToString(pref.getTastes()) : null)
-                .dislikedFoods(pref != null ? convertListToString(pref.getDislikedFoods()) : null)
+                .preferredFoodTypes(pref != null ? pref.getFoodTypes() : null)
+                .preferredTastes(pref != null ? pref.getTastes() : null)
+                .avoidedFoods(pref != null ? pref.getAvoidedFoods() : null)
+                .allergies(pref != null ? pref.getAllergies() : null)
                 .build();
-    }
-
-    private String convertListToString(List<String> list) {
-        if (list == null || list.isEmpty()) {
-            return null;
-        }
-        return String.join(",", list);
     }
 }
