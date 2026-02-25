@@ -30,6 +30,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request,
                                     HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
+        // 요청 수신 시각 저장 (전체 레거시 경로 소요 시간 기준점)
+        request.setAttribute("requestStartTime", System.currentTimeMillis());
+
         try {
             // 0. OAuth2 로그인/콜백 요청은 JWT 인증 대상이 아니므로 필터 제외
             String uri = request.getRequestURI();
@@ -44,6 +47,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
             // 2. 토큰 유효성 검증
             if (StringUtils.hasText(jwt) && jwtTokenProvider.validateToken(jwt)) {
+                long authStart = System.currentTimeMillis();
+
                 // 3. 토큰에서 이메일 추출
                 String email = jwtTokenProvider.getEmailFromToken(jwt);
 
@@ -61,6 +66,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
                 // 6. SecurityContext에 Authentication 설정
                 SecurityContextHolder.getContext().setAuthentication(authentication);
+
+                long authTimeMs = System.currentTimeMillis() - authStart;
+                request.setAttribute("authTimeMs", authTimeMs);
+                log.info("[성능] Spring Security 인증 처리: {}ms", authTimeMs);
 
                 log.debug("JWT 인증 성공: {}", email);
             }
