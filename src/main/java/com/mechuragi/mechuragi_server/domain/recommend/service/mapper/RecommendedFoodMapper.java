@@ -34,13 +34,13 @@ public class RecommendedFoodMapper {
     /**
      * RecommendedFood 엔티티를 RecommendedFoodResponse DTO로 변환 (북마크 상태 포함)
      */
-    public RecommendedFoodResponse toDto(RecommendedFood food, boolean isScrapped) {
+    public RecommendedFoodResponse toDto(RecommendedFood food, boolean isBookmarked) {
         return RecommendedFoodResponse.builder()
                 .id(food.getId())
                 .recommendationType(food.getRecommendationType())
                 .name(food.getName())
                 .reason(food.getReason())
-                .isScrapped(isScrapped)
+                .isBookmarked(isBookmarked)
                 .createdAt(food.getCreatedAt())
                 .build();
     }

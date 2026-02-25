@@ -18,6 +18,6 @@ public class RecommendedFoodResponse {
     private RecommendationType recommendationType;
     private String name;
     private String reason;
-    private Boolean isScrapped;
+    private Boolean isBookmarked;
     private LocalDateTime createdAt;
 }
