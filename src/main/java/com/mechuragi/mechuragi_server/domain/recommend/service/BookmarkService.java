@@ -1,6 +1,5 @@
 package com.mechuragi.mechuragi_server.domain.recommend.service;
 
-import com.mechuragi.mechuragi_server.domain.member.entity.Member;
 import com.mechuragi.mechuragi_server.domain.member.repository.MemberRepository;
 import com.mechuragi.mechuragi_server.domain.recommend.dto.common.response.BookmarkedSessionResponse;
 import com.mechuragi.mechuragi_server.domain.recommend.dto.common.response.RecommendedFoodResponse;
@@ -32,9 +31,6 @@ public class BookmarkService {
 
     @Transactional
     public void bookmarkLatestSession(Long memberId) {
-        Member member = memberRepository.findById(memberId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.MEMBER_NOT_FOUND));
-
         RecommendationSession session = sessionRepository.findTopByMemberIdOrderByCreatedAtDesc(memberId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RECOMMENDATION_NOT_FOUND));
 
@@ -44,7 +40,7 @@ public class BookmarkService {
         }
 
         Bookmark bookmark = Bookmark.builder()
-                .member(member)
+                .member(memberRepository.getReferenceById(memberId))
                 .session(session)
                 .build();
         bookmarkRepository.save(bookmark);
@@ -53,14 +49,11 @@ public class BookmarkService {
 
     @Transactional
     public void toggleBookmarkBySessionId(Long memberId, Long sessionId) {
-        Member member = memberRepository.findById(memberId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.MEMBER_NOT_FOUND));
-
         RecommendationSession session = sessionRepository.findById(sessionId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RECOMMENDATION_NOT_FOUND));
 
         if (!session.getMember().getId().equals(memberId)) {
-            throw new BusinessException(ErrorCode.MEMBER_NOT_FOUND);
+            throw new BusinessException(ErrorCode.SCRAP_FORBIDDEN);
         }
 
         var existingBookmark = bookmarkRepository.findByMemberIdAndSessionId(memberId, sessionId);
@@ -70,7 +63,7 @@ public class BookmarkService {
             log.info("추천 세션 북마크 해제 - sessionId: {}", sessionId);
         } else {
             Bookmark bookmark = Bookmark.builder()
-                    .member(member)
+                    .member(session.getMember())
                     .session(session)
                     .build();
             bookmarkRepository.save(bookmark);
@@ -79,8 +72,9 @@ public class BookmarkService {
     }
 
     public List<BookmarkedSessionResponse> getBookmarkedSessions(Long memberId) {
-        memberRepository.findById(memberId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.MEMBER_NOT_FOUND));
+        if (!memberRepository.existsById(memberId)) {
+            throw new BusinessException(ErrorCode.MEMBER_NOT_FOUND);
+        }
 
         List<RecommendationSession> sessions = bookmarkRepository.findBookmarkedSessionsByMemberId(memberId);
 

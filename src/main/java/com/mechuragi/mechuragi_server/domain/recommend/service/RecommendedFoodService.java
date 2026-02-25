@@ -18,6 +18,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -37,19 +38,13 @@ public class RecommendedFoodService {
         Member member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.MEMBER_NOT_FOUND));
 
-        // 세션 생성
         RecommendationSession session = recommendedFoodMapper.toSessionEntity(request, member);
-        sessionRepository.save(session);
-
-        // 추천 음식 저장
-        List<RecommendedFood> recommendedFoods = request.getRecommendations().stream()
+        request.getRecommendations().stream()
                 .map(req -> recommendedFoodMapper.toEntity(req, member))
-                .collect(Collectors.toList());
+                .forEach(session::addRecommendedFood);
 
-        recommendedFoods.forEach(session::addRecommendedFood);
-        recommendedFoodRepository.saveAll(recommendedFoods);
-
-        log.info("추천 결과 저장 완료 - 회원: {}, 세션: {}, 개수: {}", memberId, session.getId(), recommendedFoods.size());
+        sessionRepository.save(session); // CascadeType.ALL로 recommendedFoods도 함께 저장
+        log.info("추천 결과 저장 완료 - 회원: {}, 세션: {}, 개수: {}", memberId, session.getId(), request.getRecommendations().size());
     }
 
     public List<RecommendedFoodResponse> getAllRecommendations(Long memberId) {
@@ -57,11 +52,12 @@ public class RecommendedFoodService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.MEMBER_NOT_FOUND));
 
         List<RecommendedFood> recommendations = recommendedFoodRepository.findByMemberOrderByCreatedAtDesc(member);
+        Set<Long> bookmarkedSessionIds = bookmarkRepository.findSessionIdsByMemberId(memberId);
 
         return recommendations.stream()
                 .map(food -> {
                     boolean isBookmarked = food.getSession() != null &&
-                            bookmarkRepository.existsByMemberIdAndSessionId(memberId, food.getSession().getId());
+                            bookmarkedSessionIds.contains(food.getSession().getId());
                     return recommendedFoodMapper.toDto(food, isBookmarked);
                 })
                 .collect(Collectors.toList());
