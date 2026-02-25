@@ -1,5 +1,8 @@
 server:
   port: 8080
+  tomcat:
+    threads:
+      max: 32  # 저사양 EC2 스레드풀 고갈 시뮬레이션 (부하 테스트용)
 
 spring:
   config:

@@ -62,6 +62,7 @@ public class SecurityConfig {
                                 "/api/email/**",             // 이메일 인증
                                 "/api/auth/**",              // 인증/인가
                                 "/api/test/**",              // 테스트
+                                "/test/**",                  // 로컬 부하 테스트용 임시 토큰
                                 "/actuator/**",              // Actuator
                                 "/error",                    // 에러 페이지
                                 "/oauth2/**",                // OAuth2 로그인
