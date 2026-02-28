@@ -27,11 +27,9 @@ public interface VotePostRepository extends JpaRepository<VotePost, Long> {
             "ORDER BY v.createdAt DESC")
     Page<VotePost> findCompletedVotes(@Param("now") Instant now, Pageable pageable);
 
-    // 모든 투표 조회 (최신순, 마감일 기준 1주 이내)
-    @Query("SELECT v FROM VotePost v " +
-            "WHERE v.deadline >= :oneWeekAgo " +
-            "ORDER BY v.createdAt DESC")
-    Page<VotePost> findAllOrderByCreatedAtDesc(@Param("oneWeekAgo") Instant oneWeekAgo, Pageable pageable);
+    // 모든 투표 조회 (최신순)
+    @Query("SELECT v FROM VotePost v ORDER BY v.createdAt DESC")
+    Page<VotePost> findAllOrderByCreatedAtDesc(Pageable pageable);
 
     // 사용자별 투표 게시물 조회
     Page<VotePost> findByAuthorIdOrderByCreatedAtDesc(Long authorId, Pageable pageable);
