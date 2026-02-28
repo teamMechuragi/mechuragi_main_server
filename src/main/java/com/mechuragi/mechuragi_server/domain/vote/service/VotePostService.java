@@ -21,6 +21,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ZSetOperations;
@@ -101,12 +102,10 @@ public class VotePostService {
     }
 
     /**
-     * 모든 투표 조회 (최신순, 마감일 기준 1주 이내)
+     * 모든 투표 조회 (최신순)
      */
     public Page<VoteResponseDTO> getActiveVotes(Pageable pageable) {
-        Instant oneWeekAgo = Instant.now().minus(7, ChronoUnit.DAYS);
-        log.info("최근 투표 조회 - 1주 전 기준: {}", oneWeekAgo);
-        Page<VotePost> votePosts = votePostRepository.findAllOrderByCreatedAtDesc(oneWeekAgo, pageable);
+        Page<VotePost> votePosts = votePostRepository.findAllOrderByCreatedAtDesc(pageable);
         log.info("조회된 투표 수: {}", votePosts.getTotalElements());
         return votePosts.map(v -> VoteResponseDTO.from(v, redisTemplate));
     }
@@ -129,50 +128,64 @@ public class VotePostService {
     }
 
     /**
-     * 핫한 투표 조회 (Redis 기반)
+     * 핫한 투표 조회 (Redis 기반, 부족 시 DB 폴백)
      */
     @Cacheable(value = "hotVotes", key = "'list:' + #size")
     public List<VoteResponseDTO> getHotVotes(int size) {
-        // 점수와 함께 조회
-        Set<ZSetOperations.TypedTuple<String>> topVotesWithScores = redisTemplate.opsForZSet()
-                .reverseRangeWithScores("vote:hot", 0, size * 2 - 1);
-
-        if (topVotesWithScores == null || topVotesWithScores.isEmpty()) {
-            return new ArrayList<>();
-        }
-
-        // voteId -> score 매핑
-        Map<Long, Double> scoreMap = topVotesWithScores.stream()
-                .collect(Collectors.toMap(
-                        tuple -> Long.valueOf(tuple.getValue()),
-                        tuple -> tuple.getScore() != null ? tuple.getScore() : 0.0
-                ));
-
-        List<Long> voteIds = new ArrayList<>(scoreMap.keySet());
-        List<VotePost> hotVotes = votePostRepository.findAllById(voteIds);
-
-        Map<Long, VotePost> voteMap = hotVotes.stream()
-                .collect(Collectors.toMap(VotePost::getId, v -> v));
-
         Instant now = Instant.now();
-        Instant oneWeekAgo = now.minus(7, ChronoUnit.DAYS);
 
         // 투표중 여부 판단 함수
         java.util.function.Predicate<VotePost> isActive = v ->
                 v.getStatus() == VoteStatus.ACTIVE && v.getDeadline().isAfter(now);
 
-        // 1순위: 투표중 우선 → 2순위: 점수 높은 순 → 3순위: 최신순
-        return voteIds.stream()
-                .map(voteMap::get)
-                .filter(Objects::nonNull)
-                .filter(v -> v.getDeadline().isAfter(oneWeekAgo))
-                .sorted(Comparator
-                        .comparing((VotePost v) -> isActive.test(v) ? 0 : 1)
-                        .thenComparing((VotePost v) -> scoreMap.getOrDefault(v.getId(), 0.0), Comparator.reverseOrder())
-                        .thenComparing(VotePost::getCreatedAt, Comparator.reverseOrder()))
-                .limit(size)
-                .map(v -> VoteResponseDTO.from(v, redisTemplate))
-                .collect(Collectors.toList());
+        List<VoteResponseDTO> result = new ArrayList<>();
+        Set<Long> includedIds = new HashSet<>();
+
+        // Redis ZSet에서 조회
+        Set<ZSetOperations.TypedTuple<String>> topVotesWithScores = redisTemplate.opsForZSet()
+                .reverseRangeWithScores("vote:hot", 0, size * 2 - 1);
+
+        if (topVotesWithScores != null && !topVotesWithScores.isEmpty()) {
+            // voteId -> score 매핑
+            Map<Long, Double> scoreMap = topVotesWithScores.stream()
+                    .collect(Collectors.toMap(
+                            tuple -> Long.valueOf(tuple.getValue()),
+                            tuple -> tuple.getScore() != null ? tuple.getScore() : 0.0
+                    ));
+
+            List<Long> voteIds = new ArrayList<>(scoreMap.keySet());
+            List<VotePost> hotVotes = votePostRepository.findAllById(voteIds);
+
+            Map<Long, VotePost> voteMap = hotVotes.stream()
+                    .collect(Collectors.toMap(VotePost::getId, v -> v));
+
+            // 1순위: 투표중 우선 → 2순위: 점수 높은 순 → 3순위: 최신순
+            voteIds.stream()
+                    .map(voteMap::get)
+                    .filter(Objects::nonNull)
+                    .sorted(Comparator
+                            .comparing((VotePost v) -> isActive.test(v) ? 0 : 1)
+                            .thenComparing((VotePost v) -> scoreMap.getOrDefault(v.getId(), 0.0), Comparator.reverseOrder())
+                            .thenComparing(VotePost::getCreatedAt, Comparator.reverseOrder()))
+                    .limit(size)
+                    .forEach(v -> {
+                        result.add(VoteResponseDTO.from(v, redisTemplate));
+                        includedIds.add(v.getId());
+                    });
+        }
+
+        // Redis 결과가 부족한 경우 DB에서 최신순으로 보충
+        if (result.size() < size) {
+            int remaining = size - result.size();
+            Page<VotePost> dbFallback = votePostRepository.findAllOrderByCreatedAtDesc(
+                    PageRequest.of(0, size + includedIds.size()));
+            dbFallback.getContent().stream()
+                    .filter(v -> !includedIds.contains(v.getId()))
+                    .limit(remaining)
+                    .forEach(v -> result.add(VoteResponseDTO.from(v, redisTemplate)));
+        }
+
+        return result;
     }
 
     @Transactional
