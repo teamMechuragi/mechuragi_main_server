@@ -23,19 +23,13 @@ AI 기반 메뉴/식당 추천 커뮤니티 플랫폼
 
 ## 📌 프로젝트 소개
 
-**Mechuragi**는 **Claude API**와 **Custom ML 모델**을 활용한 **AI 기반 메뉴/식당 추천 커뮤니티 플랫폼**입니다.
+**Mechuragi**는 **Claude API**를 활용한 **AI 기반 메뉴 추천 커뮤니티 플랫폼**입니다.
 
 **🎯 핵심 기능**
 1. **메뉴 추천 (Claude API)**
    - 사용자 취향 정보 (식사인원, 알러지, 다이어트 여부, 비건, 매운맛 정도, 선호 음식 종류, 선호 맛, 안 먹는 음식 등)
    - 오늘의 상황 정보 (날씨, 시간대, 기분, 재료 등)
    - → **Claude API 분석**을 통한 맞춤 메뉴 추천
-
-2. **식당 추천 (Custom ML Model)**
-   - 추천받은 메뉴 정보
-   - 사용자 위치 정보
-   - 식당 요구사항 (주차 가능 여부, 유아 동반 가능, 펫프렌들리, 비건, 할랄식당)
-   - → **Custom ML 모델 분석**을 통한 최적 식당 추천
 
 **추가 기능**: 실시간 인기메뉴, 투표 커뮤니티, 먹방 일기, 실시간 알림 (SSE)
 
@@ -56,7 +50,6 @@ AI 기반 메뉴/식당 추천 커뮤니티 플랫폼
 **Multi-Server Architecture**
 - **메인 서버 (EC2)**: Spring Boot 기반 API 서버, SSE 실시간 알림, Redis 캐싱, MySQL DB
 - **AI 추천 서버 (EC2)**: 메뉴 추천 AI 서비스 (AWS Bedrock Claude API 연동)
-- **AI 장소 서버 (EC2)**: FastAPI 기반 식당 추천 ML 모델 (Sentence-BERT)
 - **Nginx 서버 (EC2)**: OpenResty + Lua 기반 JWT 인증 게이트웨이, 리버스 프록시, NAT 인스턴스, 블루-그린 배포
 
 **Frontend & CDN**
@@ -108,37 +101,9 @@ AI 기반 메뉴/식당 추천 커뮤니티 플랫폼
 
 ---
 
-## 🏪 2단계: 맞춤 식당 추천 (Custom ML Model)
-
-### 🗺️ 배리어프리 식당 필터링
-<table>
-  <tr>
-    <td align="center" width="50%">
-      <img src="./assets/장소 조건 설정.png" width="250"/><br/>
-      <b>식당 요구사항 설정</b>
-    </td>
-    <td align="center" width="50%">
-      <img src="./assets/장소 추천.png" width="250"/><br/>
-      <b>AI 메뉴/장소 추천</b>
-    </td>
-  </tr>
-</table>
-
-**포용적 식문화를 위한 배리어프리 필터:**
-- 🚗 **주차 가능** - 차량 이용자를 위한 주차 공간
-- 🐾 **펫 프렌들리** - 반려동물 동반 가능
-- ♿ **휠체어 접근** - 경사로, 승강기 등 이동약자 지원
-- 👶 **유아 동반** - 유아 의자, 수유실 등 키즈 케어 시설
-- 🥗 **비건/할랄** - 종교 및 채식 단계별 엄격한 식단 기준
-
-**Sentence-BERT 기반 Custom ML 모델**이 사용자 위치, 취향, 배리어프리 조건을 종합하여 **최적의 식당**을 추천합니다. 특히 **30년 이상 전통 노포**에는 가중치를 부여하여 검증된 맛집을 우선 추천합니다.
-
----
-
 ## 🎯 제작 목표
 
 🍽 Claude API 기반 맞춤 메뉴 추천
-🏪 Custom ML 모델 기반 식당 추천
 📅 먹방 일기 캘린더로 식사 기록
 👥 커뮤니티 투표로 메뉴 선택
 🔔 실시간 알림 및 인기메뉴 확인
@@ -148,8 +113,6 @@ AI 기반 메뉴/식당 추천 커뮤니티 플랫폼
 ## ✅ 기대 효과
 
 - Claude API를 활용한 정확하고 맥락 있는 메뉴 추천
-- Custom ML 모델을 통한 사용자 맞춤 식당 추천
-- 상세한 식당 요구사항 반영 (주차, 유아동반, 펫프렌들리, 비건, 할랄)
 - 메뉴 결정 스트레스 해소 및 식사 경험 향상
 - 실시간 인기메뉴와 커뮤니티 기반 소통 경험 강화
 
@@ -162,7 +125,6 @@ AI 기반 메뉴/식당 추천 커뮤니티 플랫폼
 | 구분 | 기능 설명 |
 |------|-----------|
 | **메뉴 추천** | Claude API 기반 맞춤 메뉴 추천<br>- 사용자 취향 (식사인원, 알러지, 다이어트, 비건, 매운맛 정도, 선호 음식, 선호 맛, 안 먹는 음식)<br>- 상황 정보 (기분, 날씨, 재료, 시간대) |
-| **식당 추천** | Custom ML 모델 기반 식당 추천<br>- 메뉴 정보 + 위치 정보<br>- 식당 요구사항 (주차 가능, 유아동반 가능, 펫프렌들리, 비건, 할랄식당) |
 
 ### 📱 부가 기능
 
@@ -180,7 +142,6 @@ AI 기반 메뉴/식당 추천 커뮤니티 플랫폼
 
 ### 🎨 Frontend
 ![React](https://img.shields.io/badge/React-61DAFB?style=for-the-badge&logo=React&logoColor=black)
-![React Native](https://img.shields.io/badge/React_Native-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)
 ![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
 ![Next.js](https://img.shields.io/badge/Next.js-000000?style=for-the-badge&logo=nextdotjs&logoColor=white)
 ![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white)
