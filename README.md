@@ -83,7 +83,7 @@ AI 기반 메뉴/식당 추천 커뮤니티 플랫폼
 
 ---
 
-## 🎯 1단계: AI 메뉴 추천 (Claude API)
+## 🎯 AI 메뉴 추천 (Claude API)
 
 ### 📝 취향 설정
 <p align="center">
