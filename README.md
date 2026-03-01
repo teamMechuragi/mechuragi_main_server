@@ -5,16 +5,33 @@ AI 기반 메뉴/식당 추천 커뮤니티 플랫폼
 
 ## 📱 주요 화면
 
+### 🎬 앱 데모
+<p align="center">
+  <img src="./assets/demo.gif" width="300"/>
+</p>
+
 ### 🎨 스플래시 & 온보딩
 <table>
   <tr>
     <td align="center">
-      <img src="./assets/스플레시.png" width="250"/><br/>
-      <i>"AI가 만드는 모두의 식탁" - 메추라기 시작 화면</i>
+      <img src="./assets/스플레시.png" width="200"/><br/>
+      <i>메추라기 시작 화면</i>
     </td>
     <td align="center">
-      <img src="./assets/온보딩4.png" width="250"/><br/>
-      <i>온보딩 화면</i>
+      <img src="./assets/온보딩1.png" width="200"/><br/>
+      <i>AI 메뉴 추천</i>
+    </td>
+    <td align="center">
+      <img src="./assets/온보딩2.png" width="200"/><br/>
+      <i>먹방 일기 캘린더</i>
+    </td>
+    <td align="center">
+      <img src="./assets/온보딩3.png" width="200"/><br/>
+      <i>커뮤니티 투표</i>
+    </td>
+    <td align="center">
+      <img src="./assets/온보딩4.png" width="200"/><br/>
+      <i>취향 설정</i>
     </td>
   </tr>
 </table>
