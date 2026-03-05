@@ -215,7 +215,33 @@ AI 기반 메뉴/식당 추천 커뮤니티 플랫폼
 | **Direct** | Client → Nginx (Lua JWT 검증) → AI Server → Bedrock |
 | **Legacy** | Client → Nginx → Main Server (Spring Security JWT 검증) → AI Server → Bedrock |
 
-Spring Security 인증 오버헤드 측정을 통해 OpenResty Lua 기반 직접 경로의 지연 절감 효과 검증
+**테스트 환경**
+
+| 항목 | 설정값 |
+|------|--------|
+| 도구 | k6 |
+| 가상 사용자 (VU) | 50명 동시 요청 |
+| 테스트 시간 | 60초 |
+| Mock 지연 | 3,000ms (Bedrock) + 200ms (VPC 네트워크) = 3,200ms |
+| Tomcat 스레드 제한 | Main Server 32개, AI Server 32개 |
+
+> Bedrock 호출을 Mock으로 대체하여 외부 변수를 제거하고 인프라 구조 자체의 성능만 측정
+
+**측정 결과**
+
+| 지표 | Direct Path | Legacy Path | 차이 |
+|------|:-----------:|:-----------:|:----:|
+| avg | 3,231ms | 5,033ms | **+56%** |
+| p95 | 3,545ms | 6,470ms | **+82%** |
+| max | 3,556ms | 10,321ms | **+190%** |
+| 처리량 (60s) | 285건 | 195건 | **-32%** |
+| 에러율 | 0% | 0% | - |
+
+**분석**
+
+Legacy Path는 Main Server에서 1차 큐잉, AI Server에서 2차 큐잉이 직렬로 발생하는 구조적 문제가 확인되었습니다. Main Server가 RestClient(동기 블로킹)로 AI Server를 호출하는 구조상, Main Server 스레드는 AI Server 응답이 올 때까지 점유되어 부하 증가 시 두 서버의 스레드 풀이 동시에 소진됩니다.
+
+Direct Path는 스레드 소비 지점이 1개로, 응답 시간이 Mock 지연(3,200ms)에 수렴하며 편차가 거의 없었습니다. Lua 인증 오버헤드(~1~5ms)는 구조적 병목과 비교해 무시 가능한 수준으로, **처리량 32% 향상, p95 응답시간 45% 단축** 효과를 확인하여 Direct Path를 채택하였습니다.
 
 ### 🔗 Version Control
 ![GitHub](https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white)
@@ -250,5 +276,5 @@ Spring Security 인증 오버헤드 측정을 통해 OpenResty Lua 기반 직접
 |------|------|-----------|
 | 🎨 박은진 | Design | - 서비스 전체 UI/UX 디자인 및 시각적 요소 기획 (Figma) |
 | 🐰 김지영 | Frontend | - 프론트엔드 프로젝트 초기 설정 및 아키텍처 구성 <br> - 전체 페이지 구현 (온보딩 · 홈 · 로그인 · 회원가입 · 마이페이지 · 설정 · 캘린더 · 커뮤니티 · 메뉴 추천 전 유형) <br> - Header · Footer · Toast · NotificationBell 공통 컴포넌트 구현 <br> - Framer Motion 기반 페이지 전환 애니메이션 및 인터랙션 구현 <br> - 홈 화면 TMI 슬라이드 배너 기획 및 구현 (10종) <br> - 로딩 스피너 · 에러 상태 등 사용자 피드백 UI 처리 |
-| 🦝 김진아 | Backend | - JWT 인증 · 카카오 OAuth2 소셜 로그인 · 이메일 인증 구현 <br> - AWS 인프라 구축 (Terraform: VPC · EC2 · S3 · CloudFront · ACM · SES · IAM) <br> - Ansible 플레이북 작성 및 서버 구성 자동화 <br> - Nginx 라우팅 · CloudFront 경로 설정 · 도메인 연동 <br> - CloudWatch 로그 그룹 설정 <br> - Redis Pub/Sub 기반 실시간 알림 · SSE 연동 · 인기 메뉴 스케줄러 구현 <br> - 프론트엔드 일부 API 연동 (AI 추천 · 취향 설정 · 북마크 · 알림 · 비밀번호 찾기 · 인기 메뉴) <br> - k6 부하 테스트 (AI 추천 경로 성능 비교) |
+| 🦝 김진아 | Backend | - JWT 인증 (Access/Refresh Token 발급·갱신) · 카카오 OAuth2 소셜 로그인 · Spring Security 설정 <br> - 회원 도메인 구현 (회원가입 · 프로필 수정 · 비밀번호 변경 · 소프트 탈퇴 · 알림 설정) <br> - 이메일 인증 (AWS SES) · 비밀번호 찾기 · 환영 메일 발송 <br> - 음식 취향 설정 CRUD · 활성 취향 토글 <br> - AI 추천 결과 저장/조회 · 북마크 기능 <br> - SSE 실시간 알림 (투표 마감 임박·종료) · Redis 기반 인기 메뉴 스케줄러 <br> - AWS 인프라 구축 (Terraform: VPC · EC2 · S3 · CloudFront · ACM · SES · IAM) <br> - Ansible 서버 구성 자동화 · Nginx 라우팅 · CloudWatch 로그 설정 <br> - 프론트엔드 일부 API 연동 (AI 추천 · 취향 설정 · 북마크 · 알림 · 비밀번호 찾기 · 인기 메뉴) <br> - k6 부하 테스트 (AI 추천 경로 성능 비교) <br> - AI 추천 서비스 전면 리팩토링 (DTO 재설계 및 인프라 구조 개편) <br> - OpenResty + Lua JWT 인증 게이트웨이 전체 재구현 (인프라 구조 기반) |
 | 🐿️ 김희주 | Backend | - DB 설계 및 JPA 엔티티 모델링 <br> - 커뮤니티 투표 시스템 구현 (CRUD · 좋아요 · 댓글 · 핫한 투표 순위) <br> - 먹방 일기 구현 <br> - AWS Bedrock Claude API 연동 및 AI 메뉴 추천 서비스 구현 <br> - OpenResty + Lua JWT 인증 게이트웨이 구현 <br> - GitHub Actions + Docker 기반 Blue-Green 무중단 배포 구축 <br> - 프론트엔드 일부 API 연동 (먹방 일기 · 투표 · 온보딩 · 이미지 업로드) <br> - k6 부하 테스트 (이미지 업로드 방식 성능 검증) |
